@@ -55,7 +55,7 @@ const joinRoom = () => {
 <style scoped>
 .title-text-clip {
   background-image: var(--cards-bg);
-  background-size: cover;
+  background-size: contain;
   background-position: center;
   -webkit-background-clip: text;
   background-clip: text;
