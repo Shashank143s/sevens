@@ -16,7 +16,7 @@ const joinRoom = () => {
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
     <div class="text-center max-w-md">
-      <h1 class="text-8xl font-black mb-4 tracking-tighter">SEVENS</h1>
+      <h1 class="text-8xl font-black mb-4 tracking-tighter">SEVƎИƧ</h1>
       <p class="text-xl mb-12 text-slate-400">First to empty hand wins!</p>
       <button
         type="button"
