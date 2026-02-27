@@ -15,12 +15,12 @@ const select = (avatar: string) => {
 </script>
 
 <template>
-  <div class="grid grid-cols-5 gap-4">
+  <div class="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4">
     <button
       v-for="a in avatars"
       :key="a"
       type="button"
-      class="text-5xl hover:scale-125 transition p-2 rounded-2xl active:bg-slate-100"
+      class="text-3xl sm:text-4xl md:text-5xl hover:scale-125 active:scale-95 transition p-2 rounded-xl sm:rounded-2xl active:bg-slate-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
       @click="select(a)"
     >
       {{ a }}

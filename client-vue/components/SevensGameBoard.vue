@@ -17,7 +17,7 @@ const { state } = useSevensClient(props.matchId, '0')
       :player-i-d="state.playerID"
     />
   </div>
-  <div v-else class="min-h-screen bg-slate-900 flex items-center justify-center text-white text-2xl">
+  <div v-else class="min-h-screen min-h-[100dvh] bg-slate-900 flex items-center justify-center text-white text-lg sm:text-2xl safe-area-padding">
     Connecting...
   </div>
 </template>
