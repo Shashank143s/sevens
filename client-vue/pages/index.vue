@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import cardsSymbols from '~/assets/images/cards_symbols.webp'
+import backgroundLobby from '~/assets/images/background_lobby.png'
 
 const roomCode = ref('')
 const router = useRouter()
@@ -16,8 +17,11 @@ const joinRoom = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center">
-    <div class="text-center max-w-md">
+  <div
+    class="min-h-screen text-white flex items-center justify-end bg-cover bg-center bg-no-repeat"
+    :style="{ backgroundImage: `url(${backgroundLobby})` }"
+  >
+    <div class="text-center max-w-md mr-16 lg:mr-24">
       <h1
         class="title-text-clip text-8xl font-black mb-4 tracking-tighter"
         :style="{ '--cards-bg': `url(${cardsSymbols})` }"
