@@ -1,0 +1,19 @@
+{
+  "name": "sevens-server",
+  "scripts": {
+    "dev": "ts-node src/server.ts",
+    "slice-cards": "node scripts/slice-cards.mjs"
+  },
+  "dependencies": {
+    "boardgame.io": "^0.50.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}
