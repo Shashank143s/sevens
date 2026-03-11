@@ -7,7 +7,7 @@ const server = Server({
   origins: [Origins.LOCALHOST],
 });
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://sevens-ukxv.onrender.com';
 
 /** Read JSON body for a Koa request */
 async function readJsonBody(ctx: { request: { body?: unknown; req: NodeJS.ReadableStream } }): Promise<Record<string, unknown>> {

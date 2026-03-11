@@ -29,7 +29,7 @@ export function useSevensClient(
 
   const client = Client({
     game: Sevens,
-    multiplayer: SocketIO({ server: 'http://localhost:8000' }),
+    multiplayer: SocketIO({ server: 'https://sevens-ukxv.onrender.com' }),
     debug: false,
     matchID,
     playerID: playerId,

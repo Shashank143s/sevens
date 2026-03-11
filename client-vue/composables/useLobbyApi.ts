@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000'
+const API_BASE = 'https://sevens-ukxv.onrender.com'
 const GAME_NAME = 'sevens'
 
 export interface MatchPlayer {
