@@ -1,7 +1,7 @@
 import { Server, Origins } from 'boardgame.io/server';
 import { Sevens } from './game';
 import { runBot } from './botRunner';
-import cors from 'cors';
+// import cors from 'cors';
 
 const server = Server({
   games: [Sevens],
@@ -9,13 +9,13 @@ const server = Server({
 });
 
 // Add CORS middleware
-server.app.use(async (ctx, next) => {
-  await cors({
-    origin: 'https://sevens-frontend.onrender.com', // Frontend URL
-    methods: ['GET', 'POST'], // Allowed HTTP methods
-    credentials: true, // Allow cookies and authentication headers
-  })(ctx.req, ctx.res, next);
-});
+// server.app.use(async (ctx, next) => {
+//   await cors({
+//     origin: 'https://sevens-frontend.onrender.com', // Frontend URL
+//     methods: ['GET', 'POST'], // Allowed HTTP methods
+//     credentials: true, // Allow cookies and authentication headers
+//   })(ctx.req, ctx.res, next);
+// });
 
 const API_BASE = 'https://sevens-ukxv.onrender.com';
 
@@ -40,10 +40,13 @@ async function readJsonBody(ctx: { request: { body?: unknown; req: NodeJS.Readab
 /** CORS for custom API routes (boardgame.io CORS runs only after configureApp in run(); our route runs before that) */
 server.app.use(async (ctx: any, next: () => Promise<void>) => {
   const origin = ctx.get('Origin');
-  const allowOrigin = origin && /^https?:\/\/localhost(:\d+)?$/.test(origin) ? origin : 'http://localhost:3000';
+  const allowOrigin = origin && /^https?:\/\/(localhost(:\d+)?|sevens-frontend\.onrender\.com)$/.test(origin)
+    ? origin
+    : 'https://sevens-frontend.onrender.com';
   ctx.set('Access-Control-Allow-Origin', allowOrigin);
   ctx.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   ctx.set('Access-Control-Allow-Headers', 'Content-Type');
+  ctx.set('Access-Control-Allow-Credentials', 'true'); // Allow credentials (cookies, etc.)
   if (ctx.method === 'OPTIONS') {
     ctx.status = 204;
     return;
