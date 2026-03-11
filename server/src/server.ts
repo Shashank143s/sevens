@@ -1,10 +1,20 @@
 import { Server, Origins } from 'boardgame.io/server';
 import { Sevens } from './game';
 import { runBot } from './botRunner';
+import cors from 'cors';
 
 const server = Server({
   games: [Sevens],
   origins: [Origins.LOCALHOST],
+});
+
+// Add CORS middleware
+server.app.use(async (ctx, next) => {
+  await cors({
+    origin: 'https://sevens-frontend.onrender.com', // Frontend URL
+    methods: ['GET', 'POST'], // Allowed HTTP methods
+    credentials: true, // Allow cookies and authentication headers
+  })(ctx.req, ctx.res, next);
 });
 
 const API_BASE = 'https://sevens-ukxv.onrender.com';
