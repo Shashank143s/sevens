@@ -1,21 +1,50 @@
 <script setup lang="ts">
 import type { Card, Suit } from '@shared/types'
+import SuitesLane from './SuitesLane.vue'
+import backgroundGame from '~/assets/images/poker_cards_table.png'
+
+type PileLike = { started?: boolean; low: number | null; high: number | null }
+
+/** Mirror of server isPlayable: can this card be played on this pile? */
+function isPlayable(card: Card, pile: PileLike): boolean {
+  const started = pile.started ?? (pile.low != null || pile.high != null)
+  if (!started) return card.rank === 7
+  return (
+    card.rank === (pile.low ?? 0) - 1 ||
+    card.rank === (pile.high ?? 0) + 1
+  )
+}
+
+/** Cards from hand that are legal to play. */
+function getPlayableCards(
+  hand: Card[],
+  piles: Record<Suit, PileLike>,
+): Card[] {
+  return hand.filter((card) => isPlayable(card, piles[card.suit]))
+}
+
+export interface PlayerInfo {
+  id: number
+  name?: string | null
+  avatar?: string
+}
 
 const props = defineProps<{
   G: {
-    piles: Record<Suit, { low: number; high: number }>
+    piles: Record<Suit, { started?: boolean; low: number | null; high: number | null }>
     hands: Card[][]
-    playedCards: Card[]
+    playedCards?: Card[]
   }
   ctx: { currentPlayer: string }
   moves: Record<string, (...args: unknown[]) => void>
-  playerID: string | null
+  playerId: string | null
+  players?: PlayerInfo[]
 }>()
 
-const { G, ctx, moves, playerID } = toRefs(props)
+const { G, ctx, moves, playerId } = toRefs(props)
 
 const playerIndex = computed(() =>
-  playerID.value != null ? parseInt(playerID.value, 10) : -1
+  playerId.value != null ? parseInt(playerId.value, 10) : -1
 )
 const currentPlayerIndex = computed(() =>
   parseInt(ctx.value.currentPlayer, 10)
@@ -24,6 +53,76 @@ const myHand = computed(() => {
   const idx = playerIndex.value
   return idx >= 0 ? (G.value.hands[idx] || []) : []
 })
+
+type SortMode = 'byRank' | 'bySuit'
+const sortMode = ref<SortMode>('byRank')
+const sidebarOpen = ref(true)
+
+const SUIT_ORDER: Record<Suit, number> = {
+  spades: 0,
+  hearts: 1,
+  diamonds: 2,
+  clubs: 3,
+}
+
+const sortedHand = computed(() => {
+  const hand = [...myHand.value]
+  if (sortMode.value === 'byRank') {
+    return hand.sort((a, b) => a.rank - b.rank)
+  }
+  return hand.sort((a, b) => {
+    const suitDiff = SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit]
+    return suitDiff !== 0 ? suitDiff : a.rank - b.rank
+  })
+})
+
+const isMyTurn = computed(
+  () => playerIndex.value >= 0 && playerIndex.value === currentPlayerIndex.value,
+)
+
+const currentPlayerDisplay = computed(() => getPlayerDisplay(currentPlayerIndex.value))
+
+const TURN_SECONDS = 30
+const timeLeft = ref(TURN_SECONDS)
+let turnTimer: ReturnType<typeof setInterval> | null = null
+
+function clearTurnTimer() {
+  if (turnTimer != null) {
+    clearInterval(turnTimer)
+    turnTimer = null
+  }
+}
+
+function runAutoPlayOrPass() {
+  clearTurnTimer()
+  const cards = getPlayableCards(myHand.value, G.value.piles as Record<Suit, PileLike>)
+  if (cards.length > 0) {
+    moves.value.playCard(cards[0])
+  } else {
+    moves.value.pass()
+  }
+}
+
+watch(
+  [isMyTurn, currentPlayerIndex],
+  () => {
+    clearTurnTimer()
+    if (!isMyTurn.value) {
+      timeLeft.value = TURN_SECONDS
+      return
+    }
+    timeLeft.value = TURN_SECONDS
+    turnTimer = setInterval(() => {
+      timeLeft.value -= 1
+      if (timeLeft.value <= 0) {
+        runAutoPlayOrPass()
+      }
+    }, 1000)
+  },
+  { immediate: true },
+)
+
+onUnmounted(clearTurnTimer)
 
 const suitSymbols: Record<Suit, string> = {
   spades: '♠',
@@ -35,179 +134,292 @@ const suitSymbols: Record<Suit, string> = {
 const ranks = Array.from({ length: 13 }, (_, i) => i + 1)
 
 const getCardImageSrc = (card: { suit: Suit; rank: number }) =>
-  `/cards/${card.suit}-${card.rank}.png`
+  new URL(`../assets/images/cards/${card.suit}-${card.rank}.png`, import.meta.url).href
 
-const lastPlayedCards = computed(() => G.value.playedCards.slice(-5))
+const lastPlayedCards = computed(() => (G.value.playedCards ?? []).slice(-5))
+
+const mobileSuitCards = computed(() => {
+  const suits: Suit[] = ['spades', 'hearts', 'diamonds', 'clubs']
+  return suits.map((suit) => {
+    const pile = G.value.piles[suit] as PileLike
+    const started = pile.started ?? (pile.low != null || pile.high != null)
+    const ranksOut: number[] = []
+    if (started && pile.low != null && pile.high != null) {
+      for (let r = pile.low; r <= pile.high; r++) ranksOut.push(r)
+    }
+    return {
+      suit,
+      ranks: ranksOut,
+      low: pile.low,
+      high: pile.high,
+    }
+  })
+})
+
+function getPlayerDisplay(index: number) {
+  const list = props.players
+  const p = list?.find((x) => x.id === index) ?? list?.[index]
+  return {
+    name: p?.name ?? `Player ${index}`,
+    avatar: p?.avatar ?? '👤',
+  }
+}
+
+const isMobile = ref(false)
+let mobileMql: MediaQueryList | null = null
+let onMobileMqlChange: ((e: MediaQueryListEvent) => void) | null = null
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  mobileMql = window.matchMedia('(max-width: 640px)')
+  const set = (v: boolean) => (isMobile.value = v)
+  set(mobileMql.matches)
+  onMobileMqlChange = (e) => set(e.matches)
+  mobileMql.addEventListener?.('change', onMobileMqlChange)
+})
+
+onUnmounted(() => {
+  if (mobileMql && onMobileMqlChange) {
+    mobileMql.removeEventListener?.('change', onMobileMqlChange)
+  }
+})
 </script>
 
 <template>
   <div
-    class="fixed inset-0 bg-cover bg-center p-2 sm:p-4 font-sans flex flex-col min-h-[100dvh] safe-area-padding overflow-hidden"
-    style="
-      background-image: url('https://assets.sevens.game/wood-bg.jpg');
-      background-size: cover;
-      background-position: center;
-    "
+    class="fixed inset-0 bg-cover bg-center p-2 sm:p-4 font-sans flex flex-col"
+    :style="{
+      backgroundImage: `url(${backgroundGame})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }"
   >
-    <!-- Top Banner -->
-    <div class="bg-white/90 text-center py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow mb-3 sm:mb-6 text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-slate-800 flex items-center justify-center gap-2 sm:gap-4 flex-wrap shrink-0">
-      {{ playerIndex === currentPlayerIndex ? '🕒 You must play a card' : 'Waiting for player...' }}
-      <div v-if="playerIndex === currentPlayerIndex" class="text-xl sm:text-2xl md:text-3xl font-mono text-red-500">
-        29s
+    <!-- Top bar: on mobile = banner + players side by side; on desktop = toast centered + widget top-right -->
+    <div class="top-bar">
+      <div
+        class="turn-toast"
+        :class="{ 'turn-toast--myturn': isMyTurn }"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="turn-toast__inner">
+          <div class="turn-toast__text">
+            {{
+              isMyTurn
+                ? 'Your turn — play a card'
+                : `Waiting for ${currentPlayerDisplay.name}...`
+            }}
+          </div>
+          <div v-if="isMyTurn" class="turn-toast__timer">
+            {{ timeLeft }}s
+          </div>
+        </div>
+      </div>
+
+      <!-- Right sidebar widget: collapsible; on mobile opens as popup below bar -->
+      <div class="sidebar-widget">
+        <button
+          v-if="!sidebarOpen"
+          type="button"
+          class="sidebar-widget__toggle"
+          aria-label="Open players"
+          @click="sidebarOpen = true"
+        >
+          <span class="text-xl">👥</span>
+          <span class="text-xs font-semibold text-slate-600">Players</span>
+        </button>
+        <Transition name="sidebar-panel">
+          <div
+            v-if="sidebarOpen"
+            class="sidebar-widget__panel"
+            :class="{ 'sidebar-widget__panel--mobile': isMobile }"
+          >
+            <div class="sidebar-widget__header">
+              <span class="font-bold text-slate-800">Players</span>
+              <button
+                type="button"
+                class="sidebar-widget__close"
+                aria-label="Collapse"
+                @click="sidebarOpen = false"
+              >
+                ×
+              </button>
+            </div>
+            <div class="sidebar-widget__body">
+              <div class="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
+                <div
+                  v-for="(hand, i) in G.hands"
+                  :key="i"
+                  :class="[
+                    'flex items-center gap-3 p-3 rounded-2xl',
+                    i === currentPlayerIndex ? 'ring-4 ring-yellow-400 bg-yellow-50' : 'bg-gray-50',
+                  ]"
+                >
+                  <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-2xl shadow overflow-hidden">
+                    {{ getPlayerDisplay(i).avatar }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold truncate">
+                      {{ i === playerIndex ? 'You' : getPlayerDisplay(i).name }}
+                    </div>
+                    <div v-if="!isMobile" class="text-sm text-gray-500">
+                      0 ★ • {{ hand.length }} cards
+                    </div>
+                  </div>
+                  <div v-if="!isMobile" class="text-2xl">👋</div>
+                </div>
+              </div>
+              <div
+                v-if="!isMobile"
+                class="mt-4 border-t pt-4 text-xs text-gray-600 max-h-40 overflow-y-auto"
+              >
+                <div class="font-bold mb-2">Game Log</div>
+                <div
+                  v-for="(c, i) in lastPlayedCards"
+                  :key="i"
+                  class="mb-1"
+                >
+                  {{ getPlayerDisplay(i % G.hands.length).name }} played {{ (c as Card).rank }}{{ suitSymbols[(c as Card).suit] }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-3 sm:gap-6 max-w-7xl mx-auto flex-1 min-h-0 overflow-hidden">
-      <!-- Central Table -->
-      <div class="flex-1 relative min-h-[280px] sm:min-h-[340px] md:min-h-[400px] lg:min-h-[460px] overflow-auto shrink-0">
-        <!-- Hearts vertical column -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div class="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-2">
-            <div
-              v-for="rank in ranks"
-              :key="`hearts-${rank}`"
-              class="card-slot rounded flex items-center justify-center"
-            >
-              <Motion
-                v-if="rank >= G.piles.hearts.low && rank <= G.piles.hearts.high"
-                is="img"
-                :src="getCardImageSrc({ suit: 'hearts', rank })"
-                :alt="`${rank} of hearts`"
-                class="w-full h-full rounded shadow-lg bg-white object-contain"
-                :initial="{ scale: 0.92, y: -6 }"
-                :enter="{ scale: 1, y: 0 }"
-              />
-              <div
-                v-else
-                class="w-full h-full rounded bg-white/10 shadow-inner"
-              />
-            </div>
+    <div class="w-full flex-1 pt-16 sm:pt-20 relative">
+      <!-- Central Table (full width; sidebar is a floating widget) -->
+      <div class="w-full relative min-h-[720px]">
+        <div
+          v-if="!isMobile"
+          class="absolute inset-0 flex items-center justify-center overflow-auto p-2 sm:p-4"
+        >
+          <!-- Suit lanes (top-to-bottom): spades, hearts, diamonds, clubs -->
+          <div class="flex flex-col gap-6 max-w-full">
+            <SuitesLane
+              suit="spades"
+              :pile="G.piles.spades"
+              :ranks="ranks"
+              :getCardImageSrc="getCardImageSrc"
+            />
+            <SuitesLane
+              suit="hearts"
+              :pile="G.piles.hearts"
+              :ranks="ranks"
+              :getCardImageSrc="getCardImageSrc"
+            />
+            <SuitesLane
+              suit="diamonds"
+              :pile="G.piles.diamonds"
+              :ranks="ranks"
+              :getCardImageSrc="getCardImageSrc"
+            />
+            <SuitesLane
+              suit="clubs"
+              :pile="G.piles.clubs"
+              :ranks="ranks"
+              :getCardImageSrc="getCardImageSrc"
+            />
           </div>
         </div>
 
-        <!-- Spades lane -->
-        <div class="absolute left-1/2 -translate-x-1/2 top-2 sm:top-6 md:top-10">
-          <div class="flex gap-0.5 sm:gap-1 md:gap-2">
+        <div v-else class="absolute inset-0 flex items-center justify-center">
+          <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
             <div
-              v-for="rank in ranks"
-              :key="`spades-${rank}`"
-              class="card-slot rounded flex items-center justify-center"
+              v-for="p in mobileSuitCards"
+              :key="p.suit"
+              class="rounded-2xl bg-white/10 border border-white/15 p-3 shadow-inner"
             >
-              <Motion
-                v-if="rank >= G.piles.spades.low && rank <= G.piles.spades.high"
-                is="img"
-                :src="getCardImageSrc({ suit: 'spades', rank })"
-                :alt="`${rank} of spades`"
-                class="w-full h-full rounded shadow-lg bg-white object-contain"
-                :initial="{ scale: 0.92, y: -6 }"
-                :enter="{ scale: 1, y: 0 }"
-              />
-              <div v-else class="w-full h-full rounded bg-white/10 shadow-inner" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Diamonds lane -->
-        <div class="absolute left-1/2 -translate-x-1/2 top-1/2 translate-y-8 sm:translate-y-14 md:translate-y-20">
-          <div class="flex gap-0.5 sm:gap-1 md:gap-2">
-            <div
-              v-for="rank in ranks"
-              :key="`diamonds-${rank}`"
-              class="card-slot rounded flex items-center justify-center"
-            >
-              <Motion
-                v-if="rank >= G.piles.diamonds.low && rank <= G.piles.diamonds.high"
-                is="img"
-                :src="getCardImageSrc({ suit: 'diamonds', rank })"
-                :alt="`${rank} of diamonds`"
-                class="w-full h-full rounded shadow-lg bg-white object-contain"
-                :initial="{ scale: 0.92, y: -6 }"
-                :enter="{ scale: 1, y: 0 }"
-              />
-              <div v-else class="w-full h-full rounded bg-white/10 shadow-inner" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Clubs lane -->
-        <div class="absolute left-1/2 -translate-x-1/2 bottom-1 sm:bottom-2 md:bottom-4">
-          <div class="flex gap-0.5 sm:gap-1 md:gap-2">
-            <div
-              v-for="rank in ranks"
-              :key="`clubs-${rank}`"
-              class="card-slot rounded flex items-center justify-center"
-            >
-              <Motion
-                v-if="rank >= G.piles.clubs.low && rank <= G.piles.clubs.high"
-                is="img"
-                :src="getCardImageSrc({ suit: 'clubs', rank })"
-                :alt="`${rank} of clubs`"
-                class="w-full h-full rounded shadow-lg bg-white object-contain"
-                :initial="{ scale: 0.92, y: -6 }"
-                :enter="{ scale: 1, y: 0 }"
-              />
-              <div v-else class="w-full h-full rounded bg-white/10 shadow-inner" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Sidebar -->
-      <div class="w-full lg:w-80 bg-white/95 rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-xl p-3 sm:p-4 flex flex-col h-[200px] sm:h-[280px] lg:h-[520px] shrink-0">
-        <div class="space-y-2 sm:space-y-4 flex-1 overflow-y-auto min-h-0">
-          <div
-            v-for="(hand, i) in G.hands"
-            :key="i"
-            :class="[
-              'flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl sm:rounded-2xl',
-              i === currentPlayerIndex ? 'ring-2 sm:ring-4 ring-yellow-400 bg-yellow-50' : 'bg-gray-50',
-            ]"
-          >
-            <div class="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-lg sm:text-xl lg:text-2xl shadow shrink-0">
-              👤
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-sm sm:text-base truncate">
-                {{ i === 0 ? 'You' : `Player ${i}` }}
+              <div class="flex items-center justify-between mb-2">
+                <div
+                  class="font-extrabold text-lg tracking-wide"
+                  :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-red-200' : 'text-slate-100'"
+                >
+                  {{ suitSymbols[p.suit] }}
+                </div>
+                <div class="text-xs text-slate-100/80 tabular-nums">
+                  <span v-if="p.ranks.length">
+                    {{ p.ranks[0] }}–{{ p.ranks[p.ranks.length - 1] }}
+                  </span>
+                  <span v-else>—</span>
+                </div>
               </div>
-              <div class="text-xs sm:text-sm text-gray-500">
-                0 ★ • {{ hand.length }} cards
+
+              <div class="mobile-pile">
+                <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
+                <div v-else class="mobile-pile__stack" aria-hidden="true">
+                  <div
+                    v-for="(rank, idx) in p.ranks"
+                    :key="`${p.suit}-${rank}`"
+                    class="mobile-pile__card"
+                    :style="{
+                      transform: `translateX(${idx * 10}px) rotate(${Math.min(6, idx) * 0.8}deg)`,
+                      zIndex: 10 + idx,
+                    }"
+                  >
+                    <img
+                      :src="getCardImageSrc({ suit: p.suit, rank })"
+                      :alt="`${rank} of ${p.suit}`"
+                      class="mobile-pile__img"
+                    >
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="text-lg sm:text-xl lg:text-2xl shrink-0">👋</div>
-          </div>
-        </div>
-
-        <div class="mt-2 sm:mt-4 border-t pt-2 sm:pt-4 text-xs text-gray-600 max-h-24 sm:max-h-40 overflow-y-auto shrink-0">
-          <div class="font-bold mb-2">Game Log</div>
-          <div
-            v-for="(c, i) in lastPlayedCards"
-            :key="i"
-            class="mb-1"
-          >
-            Player {{ i % 3 }} played {{ (c as Card).rank }}{{ suitSymbols[(c as Card).suit] }}
           </div>
         </div>
       </div>
     </div>
 
     <!-- Bottom Hand -->
-    <div class="mt-4 sm:mt-6 lg:mt-10 bg-white/70 rounded-lg sm:rounded-xl px-3 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto shrink-0">
-      <div class="flex justify-between mb-2 sm:mb-4 text-sm sm:text-base lg:text-lg font-bold text-slate-700 gap-2">
+    <div class="mt-6 sm:mt-10 bg-white/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto w-full">
+      <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-700 flex-wrap gap-2">
         <span>My hand</span>
-        <span class="text-blue-600 cursor-pointer text-xs sm:text-base shrink-0">Sort cards ↓</span>
+        <div class="flex gap-2 text-base font-semibold">
+          <button
+            type="button"
+            :class="[
+              'px-4 py-2 rounded-xl transition',
+              sortMode === 'byRank'
+                ? 'bg-slate-700 text-white shadow'
+                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+            ]"
+            @click="sortMode = 'byRank'"
+          >
+            By rank
+          </button>
+          <button
+            type="button"
+            :class="[
+              'px-4 py-2 rounded-xl transition',
+              sortMode === 'bySuit'
+                ? 'bg-slate-700 text-white shadow'
+                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+            ]"
+            @click="sortMode = 'bySuit'"
+          >
+            By suit
+          </button>
+        </div>
       </div>
-      <div class="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-4 snap-x snap-mandatory -mx-1 sm:mx-0">
+      <div
+        :class="
+          isMobile
+            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto pb-3'
+            : 'flex gap-3 overflow-x-auto pb-4 snap-x'
+        "
+      >
         <div
-          v-for="card in myHand"
+          v-for="card in sortedHand"
           :key="card.id"
-          class="hand-card w-14 h-20 sm:w-16 sm:h-24 lg:w-20 lg:h-28 bg-transparent rounded-xl sm:rounded-2xl shadow-2xl flex-shrink-0 flex items-center justify-center border-2 sm:border-4 border-transparent cursor-grab active:cursor-grabbing snap-center hover:scale-110 hover:rotate-3 hover:z-50 active:scale-95 touch-manipulation"
+          class="w-22 h-28 sm:w-20 sm:h-28 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
           @click="playerIndex === currentPlayerIndex && moves.playCard(card)"
         >
           <img
             :src="getCardImageSrc(card)"
             :alt="`${card.rank} of ${card.suit}`"
-            class="w-full h-full rounded-xl sm:rounded-2xl shadow-xl object-contain"
+            class="w-full h-full rounded-l shadow-xl object-contain"
           >
         </div>
       </div>
@@ -217,8 +429,7 @@ const lastPlayedCards = computed(() => G.value.playedCards.slice(-5))
     <button
       v-if="playerIndex === currentPlayerIndex"
       type="button"
-      class="fixed bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-6 py-3 sm:px-10 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-xl font-bold shadow-2xl transition touch-manipulation"
-      style="bottom: calc(1rem + env(safe-area-inset-bottom, 0)); right: calc(1rem + env(safe-area-inset-right, 0));"
+      class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 bg-red-500 hover:bg-red-600 text-white px-7 py-3 sm:px-10 sm:py-4 rounded-2xl text-lg sm:text-xl font-bold shadow-2xl transition"
       @click="moves.pass()"
     >
       PASS
@@ -227,39 +438,314 @@ const lastPlayedCards = computed(() => G.value.playedCards.slice(-5))
 </template>
 
 <style scoped>
-/* Responsive card slot sizes for table piles */
-.card-slot {
-  width: 24px;
-  height: 36px;
+/* Top bar: on mobile contains banner + players side by side; on desktop children are fixed */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
 }
-@media (min-width: 640px) {
-  .card-slot {
-    width: 32px;
-    height: 48px;
+.top-bar > * {
+  pointer-events: auto;
+}
+
+@media (min-width: 641px) {
+  .top-bar {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+  .top-bar .turn-toast {
+    position: fixed;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(92vw, 42rem);
+    flex: none;
+  }
+  .top-bar .sidebar-widget {
+    position: fixed;
+    top: 0.75rem;
+    right: 0.75rem;
   }
 }
-@media (min-width: 768px) {
-  .card-slot {
-    width: 40px;
-    height: 60px;
+
+@media (max-width: 640px) {
+  .top-bar {
+    min-height: 3.5rem;
+  }
+  .top-bar .turn-toast {
+    position: static;
+    transform: none;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    left: auto;
+  }
+  .top-bar .turn-toast__inner {
+    justify-content: flex-start;
+    padding: 0.5rem 0.75rem;
+  }
+  .top-bar .turn-toast__text {
+    font-size: 0.9rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-bar .sidebar-widget {
+    position: static;
+    top: auto;
+    right: auto;
+    flex-shrink: 0;
   }
 }
-@media (min-width: 1024px) {
-  .card-slot {
-    width: 48px;
-    height: 72px;
+
+.turn-toast {
+  pointer-events: none;
+}
+.turn-toast__inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.18),
+    0 2px 10px rgba(0, 0, 0, 0.12);
+  color: #0f172a;
+}
+
+.turn-toast__text {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.turn-toast__timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  color: #dc2626;
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.turn-toast--myturn .turn-toast__inner {
+  animation: turn-bounce 900ms ease-in-out 0ms 2;
+}
+
+@keyframes turn-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-6px);
+  }
+  65% {
+    transform: translateY(0);
   }
 }
-@media (min-width: 1280px) {
-  .card-slot {
-    width: 56px;
-    height: 84px;
+
+.mobile-pile {
+  min-height: 84px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-pile__empty {
+  width: 54px;
+  height: 78px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-pile__stack {
+  position: relative;
+  width: 153px;
+  height: 167px;
+}
+
+.mobile-pile__card {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 90px;
+  height: 126px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mobile-pile__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Sidebar widget: top-right on desktop; in top bar on mobile */
+.sidebar-widget {
+  z-index: 50;
+}
+
+.sidebar-widget__toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.sidebar-widget__toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+}
+
+.sidebar-widget__panel {
+  width: 17rem;
+  max-width: calc(100vw - 2rem);
+  max-height: min(520px, calc(100dvh - 6rem));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Mobile: slim popup below top bar, right-aligned, smaller type */
+@media (max-width: 640px) {
+  .sidebar-widget__panel--mobile {
+    position: fixed;
+    top: 3.5rem;
+    right: 0.5rem;
+    left: auto;
+    width: 10.5rem;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100dvh - 4rem);
+    border-radius: 0 0 0.875rem 0.875rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__header {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__header .font-bold {
+    font-size: 0.8125rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__close {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1.25rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__body {
+    padding: 0.5rem 0.625rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__body .space-y-3 > div,
+  .sidebar-widget__panel--mobile .sidebar-widget__body .space-y-4 > div {
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.75rem;
+    gap: 0.5rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__body [class*="w-12"] {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__body .font-bold {
+    font-size: 0.75rem;
+  }
+  .sidebar-widget__panel--mobile .sidebar-widget__body .text-sm {
+    font-size: 0.6875rem;
   }
 }
-@media (min-width: 1536px) {
-  .card-slot {
-    width: 64px;
-    height: 96px;
+
+/* Vue transition: slide down from top */
+.sidebar-panel-enter-active,
+.sidebar-panel-leave-active {
+  transition: transform 0.25s ease-out, opacity 0.2s ease-out;
+}
+.sidebar-panel-enter-from,
+.sidebar-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+.sidebar-panel-enter-to,
+.sidebar-panel-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (min-width: 641px) {
+  .sidebar-panel-enter-from,
+  .sidebar-panel-leave-to {
+    transform: translateY(0);
+    opacity: 0;
   }
+}
+
+.sidebar-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.sidebar-widget__close {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-widget__close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #0f172a;
+}
+
+.sidebar-widget__body {
+  padding: 0.75rem 1rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 </style>

@@ -3,30 +3,40 @@ import { SocketIO } from 'boardgame.io/multiplayer'
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import { Sevens } from '@server/game'
+import type { Card, Suit } from '@shared/types'
 
 export interface GameState {
   G: {
-    piles: Record<string, { low: number; high: number }>
-    hands: unknown[][]
-    playedCards: unknown[]
+    piles: Record<Suit, { low: number | null; high: number | null }>
+    hands: Card[][]
+    passedPlayers: number[]
+    firstPlayer: number
+    playedCards?: Card[]
   }
-  ctx: { currentPlayer: string }
+  ctx: { currentPlayer: string; gameover?: { winner?: number } }
   moves: Record<string, (...args: unknown[]) => void>
   playerID: string | null
   isActive?: boolean
   isConnected?: boolean
 }
 
-export function useSevensClient(matchID: string, playerID: string = '0') {
+export function useSevensClient(
+  matchID: string,
+  playerId: string = '0',
+  credentials?: string,
+) {
   const state: Ref<GameState | null> = ref(null)
 
   const client = Client({
     game: Sevens,
     multiplayer: SocketIO({ server: 'http://localhost:8000' }),
     debug: false,
+    matchID,
+    playerID: playerId,
+    credentials,
   })
 
-  client.start({ matchID, playerID })
+  client.start()
 
   const unsubscribe = client.subscribe((s) => {
     if (s) {

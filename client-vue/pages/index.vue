@@ -2,17 +2,29 @@
 import cardsSymbols from '~/assets/images/cards_symbols.webp'
 import backgroundLobby from '~/assets/images/background_lobby.png'
 
-const roomCode = ref('')
 const router = useRouter()
+const { setSession, session } = usePlayerSession()
 
-const createRoom = () => {
-  router.push('/room/' + Math.random().toString(36).substring(2, 10))
+const showJoinModal = ref(false)
+const name = ref('')
+const avatar = ref('🐶')
+
+function openJoinGame() {
+  name.value = session.value?.name ?? ''
+  avatar.value = session.value?.avatar ?? '🐶'
+  showJoinModal.value = true
 }
 
-const joinRoom = () => {
-  if (roomCode.value) {
-    router.push(`/room/${roomCode.value}`)
-  }
+function closeJoinModal() {
+  showJoinModal.value = false
+}
+
+function joinTheTable() {
+  const trimmed = name.value?.trim()
+  if (!trimmed) return
+  setSession(trimmed, avatar.value)
+  closeJoinModal()
+  router.push('/lobby')
 }
 </script>
 
@@ -32,28 +44,55 @@ const joinRoom = () => {
       <button
         type="button"
         class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 w-full py-4 sm:py-5 md:py-6 text-xl sm:text-2xl md:text-3xl font-bold rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 touch-manipulation"
-        @click="createRoom"
+        @click="openJoinGame"
       >
-        Create New Room
+        Join a game
       </button>
-      <div class="flex flex-col sm:flex-row gap-3">
+    </div>
+  </div>
+
+  <!-- Enter name + avatar modal -->
+  <Teleport to="body">
+    <div
+      v-if="showJoinModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+      @click.self="closeJoinModal"
+    >
+      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-white">
+            Enter Your Name
+          </h2>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-white p-1"
+            aria-label="Close"
+            @click="closeJoinModal"
+          >
+            ×
+          </button>
+        </div>
         <input
-          :value="roomCode"
+          v-model="name"
           type="text"
-          placeholder="Room code"
-          class="bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl flex-1 text-lg sm:text-xl min-w-0"
-          @input="roomCode = ($event.target as HTMLInputElement).value.toUpperCase()"
+          placeholder="Your display name"
+          class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          @keydown.enter="joinTheTable"
         >
+        <div class="mb-2 text-sm text-slate-400">
+          Avatar
+        </div>
+        <AvatarPicker v-model="avatar" class="mb-6" />
         <button
           type="button"
-          class="bg-white text-slate-900 px-8 sm:px-10 py-3 sm:py-4 rounded-2xl sm:rounded-3xl font-bold touch-manipulation shrink-0"
-          @click="joinRoom"
+          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
+          @click="joinTheTable"
         >
-          Join
+          Join the Table
         </button>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <style scoped>
