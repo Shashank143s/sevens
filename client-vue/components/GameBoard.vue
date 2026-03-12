@@ -406,14 +406,14 @@ onUnmounted(() => {
       <div
         :class="
           isMobile
-            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto pb-3'
-            : 'flex gap-3 overflow-x-auto pb-4 snap-x'
+            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-1 overflow-x-auto pb-3'
+            : 'flex gap-1 overflow-x-auto pb-4 snap-x'
         "
       >
         <div
           v-for="card in sortedHand"
           :key="card.id"
-          class="w-18 h-24 sm:w-22 sm:h-28 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
+          class="w-24 h-24 sm:w-24 sm:h-24 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
           @click="playerIndex === currentPlayerIndex && moves.playCard(card)"
         >
           <img
