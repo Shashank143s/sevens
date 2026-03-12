@@ -413,7 +413,7 @@ onUnmounted(() => {
         <div
           v-for="card in sortedHand"
           :key="card.id"
-          class="w-22 h-28 sm:w-20 sm:h-28 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
+          class="w-18 h-24 sm:w-22 sm:h-28 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
           @click="playerIndex === currentPlayerIndex && moves.playCard(card)"
         >
           <img
