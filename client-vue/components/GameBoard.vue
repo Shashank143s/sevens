@@ -290,7 +290,7 @@ onUnmounted(() => {
 
     <div class="w-full flex-1 pt-16 sm:pt-20 relative">
       <!-- Central Table (full width; sidebar is a floating widget) -->
-      <div class="w-full relative min-h-[720px] sm:min-h-[720px] min-h-[480px]">
+      <div class="w-full relative sm:min-h-[720px] min-h-[480px]">
         <div
           v-if="!isMobile"
           class="absolute inset-0 flex items-center justify-center overflow-auto p-2 sm:p-4"
@@ -564,7 +564,6 @@ onUnmounted(() => {
   min-height: 84px;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
 }
 
 .mobile-pile__empty {
