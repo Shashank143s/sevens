@@ -290,7 +290,7 @@ onUnmounted(() => {
 
     <div class="w-full flex-1 pt-16 sm:pt-20 relative">
       <!-- Central Table (full width; sidebar is a floating widget) -->
-      <div class="w-full relative min-h-[720px]">
+      <div class="w-full relative min-h-[720px] sm:min-h-[720px] min-h-[480px]">
         <div
           v-if="!isMobile"
           class="absolute inset-0 flex items-center justify-center overflow-auto p-2 sm:p-4"
@@ -354,7 +354,7 @@ onUnmounted(() => {
                     :key="`${p.suit}-${rank}`"
                     class="mobile-pile__card"
                     :style="{
-                      transform: `translateX(${idx * 10}px) rotate(${Math.min(6, idx) * 0.8}deg)`,
+                      transform: `translateX(${idx * 8}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
                       zIndex: 10 + idx,
                     }"
                   >
@@ -373,9 +373,9 @@ onUnmounted(() => {
     </div>
 
     <!-- Bottom Hand -->
-    <div class="mt-6 sm:mt-10 bg-white/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto w-full">
+    <div class="fixed bottom-0 left-0 right-0 bg-white/30 rounded-t-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto w-full">
       <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-700 flex-wrap gap-2">
-        <span>My hand</span>
+        <span style="color:white">Your hand</span>
         <div class="flex gap-2 text-base font-semibold">
           <button
             type="button"
@@ -568,9 +568,9 @@ onUnmounted(() => {
 }
 
 .mobile-pile__empty {
-  width: 54px;
-  height: 78px;
-  border-radius: 14px;
+  width: 61px;
+  height: 84px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -578,17 +578,17 @@ onUnmounted(() => {
 
 .mobile-pile__stack {
   position: relative;
-  width: 153px;
-  height: 167px;
+  width: 80px;
+  height: 90px;
 }
 
 .mobile-pile__card {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 90px;
-  height: 126px;
-  border-radius: 14px;
+  width: 69px;
+  height: 99px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
