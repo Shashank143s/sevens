@@ -226,7 +226,7 @@ onUnmounted(() => {
           @click="sidebarOpen = true"
         >
           <span class="text-xl">👥</span>
-          <span class="text-xs font-semibold text-slate-600">Players</span>
+          <!-- <span class="text-xs font-semibold text-slate-600">Players</span> -->
         </button>
         <Transition name="sidebar-panel">
           <div
@@ -413,7 +413,7 @@ onUnmounted(() => {
         <div
           v-for="card in sortedHand"
           :key="card.id"
-          class="w-24 h-24 sm:w-24 sm:h-24 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
+          class="w-16 h-24 sm:w-28 sm:h-36 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
           @click="playerIndex === currentPlayerIndex && moves.playCard(card)"
         >
           <img
@@ -567,8 +567,8 @@ onUnmounted(() => {
 }
 
 .mobile-pile__empty {
-  width: 61px;
-  height: 84px;
+  width: 56px;
+  height: 81px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -577,16 +577,16 @@ onUnmounted(() => {
 
 .mobile-pile__stack {
   position: relative;
-  width: 80px;
-  height: 90px;
+  width: 72px;
+  height: 82px;
 }
 
 .mobile-pile__card {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 69px;
-  height: 99px;
+  width: 56px;
+  height: 81px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
@@ -613,10 +613,10 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  width: 3.5rem;
-  height: 3.5rem;
+  /* width: 3.5rem;
+  height: 3.5rem; */
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.95);
+  /* background: rgba(255, 255, 255, 0.95); */
   border: none;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
