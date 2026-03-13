@@ -215,6 +215,7 @@ onMounted(() => {
         >
           <option :value="0">None</option>
           <option :value="1">1 Bot</option>
+          <option :value="2">2 Bots</option>
         </select>
 
         <button
