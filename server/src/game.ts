@@ -1,95 +1,305 @@
-import { INVALID_MOVE } from 'boardgame.io/core';
-import { Card, Suit, Pile, GameState } from './types';
+import { INVALID_MOVE, TurnOrder } from 'boardgame.io/core';
+import type { Ctx, DefaultPluginAPIs, FnContext, Game } from 'boardgame.io';
 
-const suits: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
+/**
+ * -----------------------------
+ * Types
+ * -----------------------------
+ */
 
-const createDeck = (): Card[] => {
-  const deck: Card[] = [];
-  suits.forEach(suit => {
-    for (let r = 1; r <= 13; r++) deck.push({ suit, rank: r, id: `${suit}-${r}` });
-  });
-  return deck.sort(() => Math.random() - 0.5);
-};
+/**
+ * Card rank:
+ * 1  -> Ace
+ * 11 -> Jack
+ * 12 -> Queen
+ * 13 -> King
+ */
+export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
 
-const initialPiles = (): Record<Suit, Pile> => ({
-  hearts: { low: 7, high: 7 },
-  diamonds: { low: 7, high: 7 },
-  clubs: { low: 7, high: 7 },
-  spades: { low: 7, high: 7 }
-});
-
-interface CtxLike {
-  numPlayers: number;
-  currentPlayer: string;
+export interface Card {
+  suit: Suit;
+  rank: number;
+  id: string; // unique identifier (suit-rank)
 }
 
-export const Sevens = {
+/**
+ * Each suit pile starts "locked".
+ * Once the 7 is played, it expands both directions.
+ *
+ * Example:
+ *  - After playing 7♥ → low=7, high=7
+ *  - Then 6♥ → low=6
+ *  - Then 8♥ → high=8
+ */
+export interface Pile {
+  started: boolean;
+  low: number | null;
+  high: number | null;
+}
+
+/**
+ * Game state (G)
+ * This is the single source of truth shared by all players.
+ */
+export interface GameState {
+  piles: Record<Suit, Pile>;
+  hands: Card[][];
+  passedPlayers: number[];
+  firstPlayer: number;
+}
+
+/**
+ * -----------------------------
+ * Helpers
+ * -----------------------------
+ */
+
+const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
+
+/**
+ * Create a standard 52-card deck.
+ * NOTE: No shuffling here — boardgame.io handles randomness.
+ */
+function createDeck(): Card[] {
+  const deck: Card[] = [];
+  for (const suit of SUITS) {
+    for (let rank = 1; rank <= 13; rank++) {
+      deck.push({ suit, rank, id: `${suit}-${rank}` });
+    }
+  }
+  return deck;
+}
+
+/**
+ * Initialize piles.
+ * All suits are locked until their 7 is played.
+ */
+function initialPiles(): Record<Suit, Pile> {
+  return {
+    hearts:   { started: false, low: null, high: null },
+    diamonds:{ started: false, low: null, high: null },
+    clubs:   { started: false, low: null, high: null },
+    spades:  { started: false, low: null, high: null },
+  };
+}
+
+/**
+ * Deal cards round-robin so ALL 52 cards are used.
+ *
+ * Example with 3 players:
+ * P0: 18 cards
+ * P1: 17 cards
+ * P2: 17 cards
+ */
+function dealCards(deck: Card[], numPlayers: number): Card[][] {
+  const hands: Card[][] = Array.from({ length: numPlayers }, () => []);
+  deck.forEach((card, i) => {
+    hands[i % numPlayers].push(card);
+  });
+  return hands;
+}
+
+/**
+ * Check if a card is playable according to Sevens rules.
+ */
+export function isPlayable(card: Card, pile: Pile): boolean {
+  // Suit not started → ONLY 7 allowed
+  if (!pile.started) {
+    return card.rank === 7;
+  }
+
+  // Suit started → extend low or high
+  return (
+    card.rank === (pile.low! - 1) ||
+    card.rank === (pile.high! + 1)
+  );
+}
+
+/**
+ * Check if a player has ANY legal move.
+ * Used to determine if passing is allowed.
+ */
+export function hasPlayableMove(hand: Card[], piles: GameState['piles']): boolean {
+  return hand.some(card => isPlayable(card, piles[card.suit]));
+}
+
+/**
+ * Enumerate all legal moves for a player. Used by the AI bot.
+ */
+export function enumerateSevensMoves(G: GameState, ctx: { currentPlayer: string }, playerID: string): Array<{ move: string; args: unknown[] }> {
+  const pid = Number(playerID);
+  const hand = G.hands[pid];
+  if (!hand || !Array.isArray(hand)) return [];
+  // Hand may contain { hidden: true } for other players; bot only sees own hand as full cards
+  const realHand = hand.filter((c): c is Card => c && typeof c === 'object' && 'suit' in c && 'rank' in c);
+  const moves: Array<{ move: string; args: unknown[] }> = [];
+  for (const card of realHand) {
+    const pile = G.piles[card.suit];
+    if (pile && isPlayable(card, pile)) {
+      moves.push({ move: 'playCard', args: [card] });
+    }
+  }
+  if (moves.length === 0 && hasPlayableMove(realHand, G.piles) === false) {
+    moves.push({ move: 'pass', args: [] });
+  }
+  return moves;
+}
+
+/**
+ * -----------------------------
+ * The Sevens Game
+ * -----------------------------
+ */
+
+export const Sevens: Game<GameState> = {
   name: 'sevens',
+
   minPlayers: 2,
   maxPlayers: 6,
 
-  setup: (ctx: CtxLike) => {
-    const numPlayers = typeof ctx.numPlayers === 'number' ? ctx.numPlayers : 2;
-    const deck = createDeck();
-    const handSize = Math.floor(52 / numPlayers);
-    const hands: Card[][] = Array.from({ length: numPlayers }, (_, i) =>
-      deck.slice(i * handSize, (i + 1) * handSize)
-    );
+  /**
+   * SETUP
+   * Runs ONCE when a match is created.
+   */
+  setup: ({ ctx, random }: DefaultPluginAPIs & { ctx: Ctx }): GameState => {
+    // Create and shuffle deck using boardgame.io RNG plugin
+    const deck = random.Shuffle(createDeck());
 
+    // Deal cards fairly
+    const hands = dealCards(deck, ctx.numPlayers);
+
+    // Initialize piles
     const piles = initialPiles();
 
-    hands.forEach((hand: Card[]) => {
-      const idx = hand.findIndex((c: Card) => c.suit === 'spades' && c.rank === 7);
-      if (idx !== -1) {
-        hand.splice(idx, 1);
-        piles.spades = { low: 7, high: 7 };
+    // Find who has 7♠ — they MUST start
+    let firstPlayer = 0;
+    hands.forEach((hand, pid) => {
+      if (hand.some(c => c.suit === 'spades' && c.rank === 7)) {
+        firstPlayer = pid;
+
+        // Remove 7♠ from their hand
+        hands[pid] = hand.filter(c => !(c.suit === 'spades' && c.rank === 7));
+
+        // Play 7♠ to the spades pile
+        piles.spades = { started: true, low: 7, high: 7 };
       }
     });
 
     return {
       piles,
       hands,
-      playedCards: [],
-      players: Array.from({ length: numPlayers }, (_, i) => ({
-        name: `Player ${i + 1}`,
-        avatar: '🐶',
-      }))
+      passedPlayers: [],
+      firstPlayer,
     };
   },
 
-  turn: { minMoves: 1, maxMoves: 1 },
-
-  moves: {
-    playCard: (G: GameState, ctx: CtxLike, card: Card) => {
-      const pid = parseInt(ctx.currentPlayer);
-      const pile = G.piles[card.suit];
-      const hand = G.hands[pid];
-      if (!hand.some((c: Card) => c.id === card.id)) return INVALID_MOVE;
-      if (card.rank !== pile.low - 1 && card.rank !== pile.high + 1) return INVALID_MOVE;
-
-      const idx = hand.findIndex((c: Card) => c.id === card.id);
-      hand.splice(idx, 1);
-      G.playedCards.push(card);
-
-      if (card.rank < pile.low) pile.low = card.rank;
-      else pile.high = card.rank;
+  /**
+   * TURN CONFIGURATION
+   */
+  turn: {
+    // Ensure the first turn starts with the 7♠ holder.
+    // (Using `setActivePlayers` does not change `ctx.currentPlayer`, so bots/clients can get stuck.)
+    order: {
+      ...TurnOrder.DEFAULT,
+      first: ({ G, ctx }) =>
+        ctx.turn === 0
+          ? G.firstPlayer
+          : (ctx.playOrderPos + 1) % ctx.playOrder.length,
     },
-    pass: () => {},
-    autoPlay: (G: GameState, ctx: CtxLike) => {
-      const pid = parseInt(ctx.currentPlayer);
+
+    minMoves: 1,
+    maxMoves: 1,
+  },
+
+  /**
+   * MOVES
+   * Only these can mutate game state.
+   */
+  moves: {
+    /**
+     * Play a card from hand onto the table.
+     */
+    playCard({ G, ctx }: FnContext<GameState> & { playerID: string }, card: Card) {
+      const pid = Number(ctx.currentPlayer);
       const hand = G.hands[pid];
-      for (const card of hand) {
-        const pile = G.piles[card.suit];
-        if (card.rank === pile.low - 1 || card.rank === pile.high + 1) return { playCard: card };
+      const pile = G.piles[card.suit];
+
+      // Anti-cheat: card must be in player's hand
+      if (!hand.some(c => c.id === card.id)) {
+        return INVALID_MOVE;
       }
-      return { pass: true };
+
+      // Validate Sevens rules
+      if (!isPlayable(card, pile)) {
+        return INVALID_MOVE;
+      }
+
+      // Remove card from hand
+      G.hands[pid] = hand.filter(c => c.id !== card.id);
+
+      // Apply card to pile
+      if (!pile.started) {
+        // First card of a suit MUST be 7
+        pile.started = true;
+        pile.low = 7;
+        pile.high = 7;
+      } else if (card.rank < pile.low!) {
+        pile.low = card.rank;
+      } else {
+        pile.high = card.rank;
+      }
+
+      // Clear pass history since game progressed
+      G.passedPlayers = [];
+    },
+
+    /**
+     * Pass turn (ONLY allowed if no legal moves exist).
+     */
+    pass({ G, ctx }: FnContext<GameState> & { playerID: string }) {
+      const pid = Number(ctx.currentPlayer);
+      const hand = G.hands[pid];
+
+      if (hasPlayableMove(hand, G.piles)) {
+        // You had a move → passing is illegal
+        return INVALID_MOVE;
+      }
+
+      if (!G.passedPlayers.includes(pid)) {
+        G.passedPlayers.push(pid);
+      }
+    },
+  },
+
+  /**
+   * GAME END CONDITION
+   */
+  endIf: ({ G }: FnContext<GameState>) => {
+    const winner = G.hands.findIndex(hand => hand.length === 0);
+    if (winner !== -1) {
+      return { winner };
     }
   },
 
-  endIf: (ctx: any) => {
-    const G: GameState | undefined = ctx?.G;
-    if (!G || !Array.isArray(G.hands)) return;
-    const winner = G.hands.findIndex((h: Card[]) => h.length === 0);
-    if (winner !== -1) return { winner };
-  }
-} as any;
+  /**
+   * Hide other players' hands from each client.
+   */
+  playerView: ({ G, playerID }: { G: GameState; ctx: Ctx; playerID: string | null }) => {
+    if (playerID === null) return G;
+
+    return {
+      ...G,
+      hands: G.hands.map((hand, i) =>
+        i === Number(playerID) ? hand : hand.map(() => ({ hidden: true }))
+      ),
+    };
+  },
+
+  /**
+   * AI: enumerate legal moves for bot players.
+   */
+  ai: {
+    enumerate: (G: GameState, ctx: { currentPlayer: string }, playerID: string) =>
+      enumerateSevensMoves(G, ctx, playerID),
+  },
+};

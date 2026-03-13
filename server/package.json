@@ -2,7 +2,9 @@
   "name": "sevens-server",
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "slice-cards": "node scripts/slice-cards.mjs"
+    "slice-cards": "node scripts/slice-cards.mjs",
+    "build": "tsc",
+    "start": "node dist/server/src/server.js"
   },
   "dependencies": {
     "boardgame.io": "^0.50.2",
