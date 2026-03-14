@@ -4,10 +4,13 @@ import backgroundLobby from '~/assets/images/background_lobby.png'
 
 const router = useRouter()
 const { setSession, session } = usePlayerSession()
+const { openAuth } = useGoogleLogin()
 
 const showJoinModal = ref(false)
 const name = ref('')
 const avatar = ref('🐶')
+
+const isLoggedIn = computed(() => !!session.value?.name?.trim())
 
 function openJoinGame() {
   name.value = session.value?.name ?? ''
@@ -30,9 +33,21 @@ function joinTheTable() {
 
 <template>
   <div
-    class="min-h-screen min-h-[100dvh] text-white flex items-center justify-center lg:justify-end bg-cover bg-center bg-no-repeat py-8 safe-area-padding"
+    class="min-h-screen min-h-[100dvh] text-white flex items-center justify-center lg:justify-end bg-cover bg-center bg-no-repeat py-8 safe-area-padding relative"
     :style="{ backgroundImage: `url(${backgroundLobby})` }"
   >
+    <!-- Login button: top right when not logged in -->
+    <div class="absolute top-0 right-0 p-4 sm:p-6 safe-area-padding">
+      <button
+        v-if="!isLoggedIn"
+        type="button"
+        class="px-4 py-2 rounded-xl bg-slate-700/80 hover:bg-slate-600/90 border border-slate-500/50 text-white font-medium touch-manipulation"
+        @click="openAuth"
+      >
+        Login
+      </button>
+    </div>
+
     <div class="text-center w-full max-w-md px-4 sm:px-6 lg:px-0 lg:mr-16 xl:mr-24">
       <h1
         class="title-text-clip text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-3 sm:mb-4 tracking-tighter"
@@ -42,6 +57,7 @@ function joinTheTable() {
       </h1>
       <p class="text-base sm:text-lg md:text-xl mb-8 sm:mb-12 text-slate-400">First to empty hand wins!</p>
       <button
+        v-if="isLoggedIn"
         type="button"
         class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 w-full py-4 sm:py-5 md:py-6 text-xl sm:text-2xl md:text-3xl font-bold rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 touch-manipulation"
         @click="openJoinGame"
@@ -50,6 +66,8 @@ function joinTheTable() {
       </button>
     </div>
   </div>
+
+  <GoogleLoginModal />
 
   <!-- Enter name + avatar modal -->
   <Teleport to="body">

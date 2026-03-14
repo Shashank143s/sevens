@@ -2,8 +2,7 @@ import { Client } from 'boardgame.io/client';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { RandomBot } from 'boardgame.io/ai';
 import { Sevens } from './game';
-
-const SERVER_URL = 'https://sevens-ukxv.onrender.com';
+import { SERVER_URL } from './config';
 
 function createSevensBot() {
   const enumerate = (Sevens as { ai?: { enumerate: (G: unknown, ctx: { currentPlayer: string }, playerID: string) => unknown[] } }).ai?.enumerate;

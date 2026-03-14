@@ -4,6 +4,7 @@ import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import { Sevens } from '@server/game'
 import type { Card, Suit } from '@shared/types'
+import { useRuntimeConfig } from 'nuxt/app'
 
 export interface GameState {
   G: {
@@ -27,9 +28,10 @@ export function useSevensClient(
 ) {
   const state: Ref<GameState | null> = ref(null)
 
+  const config = useRuntimeConfig()
   const client = Client({
     game: Sevens,
-    multiplayer: SocketIO({ server: 'https://sevens-ukxv.onrender.com' }),
+    multiplayer: SocketIO({ server: config.public.socketServer as string }),
     debug: false,
     matchID,
     playerID: playerId,

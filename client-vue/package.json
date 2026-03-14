@@ -10,10 +10,11 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "@vueuse/motion": "^2.2.0",
     "boardgame.io": "^0.50.2",
     "nuxt": "^3.14.0",
-    "vue": "^3.5.0",
-    "@vueuse/motion": "^2.2.0"
+    "nuxt-google-auth": "^0.1.7",
+    "vue": "^3.5.0"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.12.0",
