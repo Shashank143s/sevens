@@ -4,6 +4,19 @@
  */
 const AUTH_OPEN_KEY = 'sevens-google-auth-open'
 
+function decodeJwtPayload<T>(token: string): T | null {
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) return null
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=')
+    const json = atob(padded)
+    return JSON.parse(json) as T
+  } catch {
+    return null
+  }
+}
+
 export function useGoogleLogin() {
   const isOpen = useState<boolean>(AUTH_OPEN_KEY, () => false)
   const { setSession } = usePlayerSession()
@@ -17,10 +30,11 @@ export function useGoogleLogin() {
   }
 
   function handleGoogleSuccess(e: { credential: string; claims: Record<string, unknown> }) {
-    // console.log("Google login success=====>", e);
+    const tokenClaims = decodeJwtPayload<{ name?: string; email?: string; picture?: string }>(e.credential)
     const claims = e.claims as { name?: string; email?: string; picture?: string }
-    const name = (claims.name || claims.email || 'Player').trim()
-    setSession(name, '🐶')
+    const name = (claims.name || tokenClaims?.name || claims.email || tokenClaims?.email || 'Player').trim()
+    const picture = claims.picture || tokenClaims?.picture
+    setSession(name, '🐶', picture)
     closeAuth()
   }
 

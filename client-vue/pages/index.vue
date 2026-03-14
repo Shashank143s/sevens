@@ -1,126 +1,202 @@
 <script setup lang="ts">
-import cardsSymbols from '~/assets/images/cards_symbols.webp'
-import backgroundLobby from '~/assets/images/background_lobby.png'
+import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
-const { setSession, session } = usePlayerSession()
+const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
 
-const showJoinModal = ref(false)
-const name = ref('')
-const avatar = ref('🐶')
-
 const isLoggedIn = computed(() => !!session.value?.name?.trim())
+const homeCtaLabel = computed(() => (isLoggedIn.value ? 'Get Started' : 'Login to Play'))
 
-function openJoinGame() {
-  name.value = session.value?.name ?? ''
-  avatar.value = session.value?.avatar ?? '🐶'
-  showJoinModal.value = true
-}
-
-function closeJoinModal() {
-  showJoinModal.value = false
-}
-
-function joinTheTable() {
-  const trimmed = name.value?.trim()
-  if (!trimmed) return
-  setSession(trimmed, avatar.value)
-  closeJoinModal()
-  router.push('/lobby')
+function handleHomeCta() {
+  if (isLoggedIn.value) {
+    router.push('/lobby')
+    return
+  }
+  openAuth()
 }
 </script>
 
 <template>
   <div
-    class="min-h-screen min-h-[100dvh] text-white flex items-center justify-center lg:justify-end bg-cover bg-center bg-no-repeat py-8 safe-area-padding relative"
-    :style="{ backgroundImage: `url(${backgroundLobby})` }"
+    class="home-shell h-screen min-h-[100dvh] overflow-hidden text-white relative bg-cover bg-center bg-no-repeat"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <!-- Login button: top right when not logged in -->
-    <div class="absolute top-0 right-0 p-4 sm:p-6 safe-area-padding">
-      <button
-        v-if="!isLoggedIn"
-        type="button"
-        class="px-4 py-2 rounded-xl bg-slate-700/80 hover:bg-slate-600/90 border border-slate-500/50 text-white font-medium touch-manipulation"
-        @click="openAuth"
-      >
-        Login
-      </button>
+    <div class="absolute top-0 right-0 z-10 p-4 sm:p-6">
+      <AppUserMenu />
     </div>
 
-    <div class="text-center w-full max-w-md px-4 sm:px-6 lg:px-0 lg:mr-16 xl:mr-24">
-      <h1
-        class="title-text-clip text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-3 sm:mb-4 tracking-tighter"
-        :style="{ '--cards-bg': `url(${cardsSymbols})` }"
-      >
-        SEVƎИƧ
-      </h1>
-      <p class="text-base sm:text-lg md:text-xl mb-8 sm:mb-12 text-slate-400">First to empty hand wins!</p>
-      <button
-        v-if="isLoggedIn"
-        type="button"
-        class="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 w-full py-4 sm:py-5 md:py-6 text-xl sm:text-2xl md:text-3xl font-bold rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 touch-manipulation"
-        @click="openJoinGame"
-      >
-        Join a game
-      </button>
-    </div>
+    <section class="mobile-home">
+      <div class="mobile-home__content">
+        <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
+        <h1 class="mobile-home__title">Sevens Royale</h1>
+        <p class="mobile-home__description">
+          Play the timeless card game of Sevens online. Create a room, invite friends,
+          and be the first to play all your cards.
+        </p>
+        <div class="mobile-home__divider" aria-hidden="true">
+          <span class="mobile-home__line" />
+          <span class="mobile-home__suits">♠ ♥ ♦ ♣</span>
+          <span class="mobile-home__line" />
+        </div>
+        <button
+          type="button"
+          class="mobile-home__cta"
+          @click="handleHomeCta"
+        >
+          <span class="mobile-home__cta-label">{{ homeCtaLabel }}</span>
+          <span class="mobile-home__cta-arrow">›</span>
+        </button>
+      </div>
+      <p class="mobile-home__footnote">2-4 Players · Build sequences from 7 · First to empty hand wins</p>
+    </section>
   </div>
 
   <GoogleLoginModal />
-
-  <!-- Enter name + avatar modal -->
-  <Teleport to="body">
-    <div
-      v-if="showJoinModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      @click.self="closeJoinModal"
-    >
-      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-white">
-            Enter Your Name
-          </h2>
-          <button
-            type="button"
-            class="text-slate-400 hover:text-white p-1"
-            aria-label="Close"
-            @click="closeJoinModal"
-          >
-            ×
-          </button>
-        </div>
-        <input
-          v-model="name"
-          type="text"
-          placeholder="Your display name"
-          class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          @keydown.enter="joinTheTable"
-        >
-        <div class="mb-2 text-sm text-slate-400">
-          Avatar
-        </div>
-        <AvatarPicker v-model="avatar" class="mb-6" />
-        <button
-          type="button"
-          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
-          @click="joinTheTable"
-        >
-          Join the Table
-        </button>
-      </div>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
-.title-text-clip {
-  background-image: var(--cards-bg);
-  background-size: contain;
-  background-position: center;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+.home-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.mobile-home {
+  position: relative;
+  z-index: 1;
+  height: 100dvh;
+  width: 100%;
+  padding:
+    max(2rem, env(safe-area-inset-top))
+    max(1.5rem, env(safe-area-inset-right))
+    max(2.5rem, env(safe-area-inset-bottom))
+    max(1.5rem, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.mobile-home__content {
+  width: 100%;
+  max-width: 46rem;
+}
+
+.mobile-home__eyebrow {
+  margin: 0 0 1.5rem;
+  color: #d4af37;
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.mobile-home__title {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(3.4rem, 9vw, 7rem);
+  line-height: 0.95;
+  font-weight: 600;
+  color: #f8f4ec;
+}
+
+.mobile-home__description {
+  margin: 1.75rem auto 0;
+  max-width: 38rem;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: clamp(1rem, 2vw, 1.45rem);
+  line-height: 1.65;
+}
+
+.mobile-home__divider {
+  margin: 2.25rem auto 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.mobile-home__line {
+  width: 4.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.9), transparent);
+}
+
+.mobile-home__suits {
+  color: #a88a2b;
+  font-size: clamp(1.5rem, 2vw, 1.85rem);
+  letter-spacing: 0.28em;
+}
+
+.mobile-home__cta {
+  width: min(100%, 22rem);
+  min-height: 4.25rem;
+  padding: 0.95rem 1.4rem;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e0bd39, #d1a728);
+  color: #17120a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 18px 40px rgba(209, 167, 40, 0.18);
+}
+
+.mobile-home__cta-label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.mobile-home__cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.mobile-home__footnote {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  margin: 0;
+  color: rgba(148, 163, 184, 0.45);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .mobile-home {
+    padding:
+      max(3rem, env(safe-area-inset-top))
+      max(2rem, env(safe-area-inset-right))
+      max(3rem, env(safe-area-inset-bottom))
+      max(2rem, env(safe-area-inset-left));
+  }
+
+  .mobile-home__divider {
+    margin: 2.75rem auto 3rem;
+  }
+
+  .mobile-home__cta {
+    width: min(100%, 25rem);
+    min-height: 4.5rem;
+    font-size: 1.1rem;
+  }
+
+  .mobile-home__footnote {
+    position: static;
+    margin-top: 7rem;
+    max-width: 42rem;
+    font-size: 1rem;
+  }
 }
 </style>

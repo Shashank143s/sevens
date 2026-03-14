@@ -10,6 +10,7 @@ const { session } = usePlayerSession()
 const { getCredentials, setCredentials } = useRoomCredentials()
 
 const joined = ref(false)
+const rejoining = ref(false)
 const playerName = ref('')
 const avatar = ref('🐶')
 const playerID = ref<string | null>(null)
@@ -57,10 +58,10 @@ onMounted(async () => {
   }
   const stored = getCredentials(matchID.value)
   if (stored) {
+    rejoining.value = true
     playerID.value = stored.playerID
     playerCredentials.value = stored.credentials
     joined.value = true
-    await fetchMatchMeta()
     startPolling()
   }
 })
@@ -127,51 +128,19 @@ const totalPlayers = computed(() => matchMeta.value?.players?.length ?? 0)
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <Motion preset="slideTop">
-      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-white">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-white">
-            Join Room {{ matchID }}
-          </h2>
-          <NuxtLink
-            to="/lobby"
-            class="text-slate-400 hover:text-white p-1 text-2xl leading-none"
-            aria-label="Back to Lobby"
-          >
-            ×
-          </NuxtLink>
-        </div>
-        <input
-          v-model="playerName"
-          type="text"
-          placeholder="Your alias"
-          class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          @keydown.enter="enterGame"
-        >
-        <div class="mb-2 text-sm text-slate-400">
-          Avatar
-        </div>
-        <AvatarPicker :model-value="avatar" class="mb-4" @update:model-value="avatar = $event" />
-        <div class="text-sm text-slate-400 mb-6">
-          Selected avatar: <span class="text-2xl align-middle ml-2">{{ avatar }}</span>
-        </div>
-        <button
-          type="button"
-          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
-          @click="enterGame"
-        >
-          Join the Table
-        </button>
-        <NuxtLink to="/lobby" class="block mt-4 text-center text-slate-400 hover:text-white text-sm">
-          ← Back to Lobby
-        </NuxtLink>
-      </div>
-    </Motion>
+    <JoinTableModal
+      :match-id="matchID"
+      :player-name="playerName"
+      :avatar="avatar"
+      @update:player-name="playerName = $event"
+      @update:avatar="avatar = $event"
+      @submit="enterGame"
+    />
   </div>
 
   <!-- Joined but waiting for other players -->
   <div
-    v-else-if="joined && !allPlayersJoined"
+    v-else-if="joined && !rejoining && !allPlayersJoined"
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >

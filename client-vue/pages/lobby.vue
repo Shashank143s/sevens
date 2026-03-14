@@ -28,6 +28,10 @@ function totalPlayers(m: LobbyMatch): number {
   return m.players?.length ?? 0
 }
 
+function isRoomFull(m: LobbyMatch): boolean {
+  return joinedCount(m) >= totalPlayers(m)
+}
+
 function roomStatus(m: LobbyMatch): string {
   const joined = joinedCount(m)
   const total = totalPlayers(m)
@@ -101,9 +105,7 @@ onMounted(() => {
       <NuxtLink to="/" class="flex items-center gap-2 text-slate-400 hover:text-white">
         ← Back
       </NuxtLink>
-      <span class="text-slate-400 text-sm sm:text-base">
-        Playing as <span class="text-white font-medium">{{ session?.name }}</span>
-      </span>
+      <AppUserMenu />
     </header>
 
     <h1 class="text-2xl sm:text-3xl font-bold mb-4">Game Lobby</h1>
@@ -111,18 +113,18 @@ onMounted(() => {
     <div class="flex flex-wrap gap-3 mb-4">
       <button
         type="button"
-        class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-sm font-medium flex items-center gap-2"
+        class="px-4 py-2 rounded-xl border border-white/10 bg-slate-900/70 hover:bg-slate-800/85 text-sm text-slate-100 font-medium backdrop-blur-sm"
         :disabled="loading"
         @click="fetchRooms"
       >
-        ↻ Refresh
+        Refresh
       </button>
       <button
         type="button"
-        class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold flex items-center gap-2"
+        class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-sm text-slate-900 font-bold"
         @click="openCreateModal"
       >
-        + Create Room
+        Create Room
       </button>
     </div>
 
@@ -130,8 +132,8 @@ onMounted(() => {
       {{ error }}
     </p>
 
-    <section class="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden">
-      <h2 class="px-4 py-3 font-semibold border-b border-slate-700">Available Rooms</h2>
+    <section class="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
+      <h2 class="px-4 py-3 font-semibold border-b border-white/10 text-slate-100">Available Rooms</h2>
       <div v-if="loading" class="p-8 text-center text-slate-400">
         Loading rooms…
       </div>
@@ -141,7 +143,7 @@ onMounted(() => {
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
-            <tr class="border-b border-slate-700 text-slate-400 text-sm">
+            <tr class="border-b border-white/10 text-slate-300 text-sm">
               <th class="px-4 py-3 font-medium">Room ID</th>
               <th class="px-4 py-3 font-medium text-center">Players</th>
               <th class="px-4 py-3 font-medium text-center">Status</th>
@@ -152,7 +154,7 @@ onMounted(() => {
             <tr
               v-for="room in rooms"
               :key="room.matchID"
-              class="border-b border-slate-700/50 hover:bg-slate-800/50"
+              class="border-b border-white/5 hover:bg-slate-800/45"
             >
               <td class="px-4 py-3 font-mono text-sm">{{ displayRoomID(room.matchID) }}</td>
               <td class="px-4 py-3 text-center">
@@ -165,7 +167,8 @@ onMounted(() => {
                 <button
                   v-if="!hasJoinedRoom(room.matchID)"
                   type="button"
-                  class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-medium"
+                  class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
+                  :disabled="isRoomFull(room)"
                   @click="joinRoom(room.matchID)"
                 >
                   Join
@@ -231,7 +234,7 @@ onMounted(() => {
           :disabled="creating"
           @click="doCreateRoom"
         >
-          + Create Room
+          Create Room
         </button>
       </div>
     </div>

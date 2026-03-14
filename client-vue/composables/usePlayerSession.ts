@@ -3,6 +3,7 @@ const STORAGE_KEY = 'sevens-player-session'
 export interface PlayerSession {
   name: string
   avatar: string
+  image?: string
 }
 
 function loadFromStorage(): PlayerSession | null {
@@ -31,8 +32,8 @@ function saveToStorage(session: PlayerSession | null) {
 export function usePlayerSession() {
   const session = useState<PlayerSession | null>('player-session', () => loadFromStorage())
 
-  function setSession(name: string, avatar: string) {
-    const next: PlayerSession = { name: name.trim(), avatar }
+  function setSession(name: string, avatar: string, image?: string) {
+    const next: PlayerSession = { name: name.trim(), avatar, image }
     session.value = next
     saveToStorage(next)
   }

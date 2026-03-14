@@ -41,5 +41,9 @@ export function useRoomCredentials() {
     saveAll(all)
   }
 
-  return { getCredentials, setCredentials, clearCredentials }
+  function clearAllCredentials() {
+    saveAll({})
+  }
+
+  return { getCredentials, setCredentials, clearCredentials, clearAllCredentials }
 }
