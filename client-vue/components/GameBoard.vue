@@ -203,82 +203,79 @@ onUnmounted(() => {
       backgroundPosition: 'center',
     }"
   >
-    <div class="w-full flex-1 pt-12 sm:pt-14 relative">
-      <!-- Central Table (full width; sidebar is a floating widget) -->
-      <div class="w-full relative sm:min-h-[720px] min-h-[330px]">
-        <div
-          v-if="!isMobile"
-          class="absolute inset-0 flex items-center justify-center overflow-auto p-2 sm:p-4"
-        >
-          <!-- Suit lanes (top-to-bottom): spades, hearts, diamonds, clubs -->
-          <div class="flex flex-col gap-6 max-w-full">
-            <SuitesLane
-              suit="spades"
-              :pile="G.piles.spades"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="hearts"
-              :pile="G.piles.hearts"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="diamonds"
-              :pile="G.piles.diamonds"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="clubs"
-              :pile="G.piles.clubs"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-          </div>
+    <div class="board-stage w-full flex-1 relative">
+      <div
+        v-if="!isMobile"
+        class="board-stage__desktop absolute inset-0 flex items-center justify-center overflow-auto"
+      >
+        <!-- Suit lanes (top-to-bottom): spades, hearts, diamonds, clubs -->
+        <div class="desktop-table flex flex-col max-w-full">
+          <SuitesLane
+            suit="spades"
+            :pile="G.piles.spades"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="hearts"
+            :pile="G.piles.hearts"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="diamonds"
+            :pile="G.piles.diamonds"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="clubs"
+            :pile="G.piles.clubs"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
         </div>
+      </div>
 
-        <div v-else class="absolute inset-0 flex items-center justify-center">
-          <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
-            <div
-              v-for="p in mobileSuitCards"
-              :key="p.suit"
-              class="rounded-2xl border border-amber-200/10 bg-slate-900/38 p-3 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur-sm"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <div
-                  class="font-extrabold text-lg tracking-wide"
-                  :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-rose-200' : 'text-slate-100'"
-                >
-                  {{ suitSymbols[p.suit] }}
-                </div>
-                <div class="text-xs text-slate-300 tabular-nums">
-                  <span v-if="p.ranks.length">
-                    {{ p.ranks[0] }}–{{ p.ranks[p.ranks.length - 1] }}
-                  </span>
-                  <span v-else>—</span>
-                </div>
+      <div v-else class="board-stage__mobile absolute inset-0 flex items-center justify-center">
+        <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
+          <div
+            v-for="p in mobileSuitCards"
+            :key="p.suit"
+            class="rounded-2xl border border-amber-200/10 bg-slate-900/38 p-3 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur-sm"
+          >
+            <div class="flex items-center justify-between mb-2">
+              <div
+                class="font-extrabold text-lg tracking-wide"
+                :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-rose-200' : 'text-slate-100'"
+              >
+                {{ suitSymbols[p.suit] }}
               </div>
+              <div class="text-xs text-slate-300 tabular-nums">
+                <span v-if="p.ranks.length">
+                  {{ p.ranks[0] }}–{{ p.ranks[p.ranks.length - 1] }}
+                </span>
+                <span v-else>—</span>
+              </div>
+            </div>
 
-              <div class="mobile-pile">
-                <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
-                <div v-else class="mobile-pile__stack" aria-hidden="true">
-                  <div
-                    v-for="(rank, idx) in p.ranks"
-                    :key="`${p.suit}-${rank}`"
-                    class="mobile-pile__card"
-                    :style="{
-                      transform: `translateX(${idx * 8}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
-                      zIndex: 10 + idx,
-                    }"
+            <div class="mobile-pile">
+              <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
+              <div v-else class="mobile-pile__stack" aria-hidden="true">
+                <div
+                  v-for="(rank, idx) in p.ranks"
+                  :key="`${p.suit}-${rank}`"
+                  class="mobile-pile__card"
+                  :style="{
+                    transform: `translateX(${idx * 8}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
+                    zIndex: 10 + idx,
+                  }"
+                >
+                  <img
+                    :src="getCardImageSrc({ suit: p.suit, rank })"
+                    :alt="`${rank} of ${p.suit}`"
+                    class="mobile-pile__img"
                   >
-                    <img
-                      :src="getCardImageSrc({ suit: p.suit, rank })"
-                      :alt="`${rank} of ${p.suit}`"
-                      class="mobile-pile__img"
-                    >
-                  </div>
                 </div>
               </div>
             </div>
@@ -456,6 +453,15 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.board-stage__mobile {
+  padding: 4.75rem 0.75rem 13.5rem;
+  overflow-y: auto;
+}
+
+.desktop-table {
+  gap: 1.25rem;
+}
+
 .top-bar {
   position: fixed;
   top: max(0.35rem, env(safe-area-inset-top));
@@ -682,6 +688,22 @@ onUnmounted(() => {
 }
 
 @media (min-width: 641px) {
+  .board-stage {
+    padding: 0.75rem 0 14.5rem;
+  }
+
+  .board-stage__desktop {
+    padding: 0.75rem 1.25rem 1rem;
+  }
+
+  .desktop-table {
+    width: fit-content;
+    min-width: max-content;
+    max-width: 100%;
+    margin: 0 auto;
+    gap: 1.5rem;
+  }
+
   .top-bar {
     left: 0;
     right: 0;
@@ -704,6 +726,15 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
+  .board-stage {
+    padding-top: 0;
+  }
+
+  .board-stage__mobile {
+    align-items: flex-start;
+    justify-content: center;
+  }
+
   .top-bar {
     left: 0.5rem;
     right: 0.5rem;
