@@ -54,6 +54,8 @@ const myHand = computed(() => {
   return idx >= 0 ? (G.value.hands[idx] || []) : []
 })
 
+const isPlayableCardAvailable = computed(() => getPlayableCards(myHand.value, G.value.piles).length > 0)
+
 type SortMode = 'byRank' | 'bySuit'
 const sortMode = ref<SortMode>('byRank')
 const sidebarOpen = ref(true)
@@ -426,14 +428,17 @@ onUnmounted(() => {
     </div>
 
     <!-- Pass Button -->
-    <button
-      v-if="playerIndex === currentPlayerIndex"
-      type="button"
-      class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 bg-red-500 hover:bg-red-600 text-white px-7 py-3 sm:px-10 sm:py-4 rounded-2xl text-lg sm:text-xl font-bold shadow-2xl transition"
-      @click="moves.pass()"
-    >
-      PASS
-    </button>
+     <Motion preset="slideTop">
+        <button
+          is="button"
+          v-if="playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
+          type="button"
+          class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
+          @click="moves.pass()"
+        >
+          PASS
+      </button>
+     </Motion>  
   </div>
 </template>
 
