@@ -2,6 +2,7 @@
 import { getMatchUrl } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
@@ -123,48 +124,72 @@ const totalPlayers = computed(() => matchMeta.value?.players?.length ?? 0)
   <!-- Not yet joined: show join form (pre-filled from session) -->
   <div
     v-if="!joined"
-    class="min-h-screen min-h-[100dvh] bg-slate-900 flex items-center justify-center p-4 sm:p-6 safe-area-padding"
+    class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <div class="bg-white p-6 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl shadow-2xl text-slate-900 max-w-sm w-full">
-      <h2 class="text-2xl sm:text-3xl mb-4 sm:mb-6">
-        Join Room {{ matchID }}
-      </h2>
-      <input
-        v-model="playerName"
-        type="text"
-        placeholder="Your alias"
-        class="w-full border-2 border-slate-300 p-3 sm:p-4 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 text-base"
-      >
-      <AvatarPicker :model-value="avatar" @update:model-value="avatar = $event" />
-      <div class="mt-4 text-base sm:text-lg">
-        Selected avatar: <span class="text-2xl sm:text-3xl">{{ avatar }}</span>
+    <Motion preset="slideTop">
+      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-white">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-white">
+            Join Room {{ matchID }}
+          </h2>
+          <NuxtLink
+            to="/lobby"
+            class="text-slate-400 hover:text-white p-1 text-2xl leading-none"
+            aria-label="Back to Lobby"
+          >
+            ×
+          </NuxtLink>
+        </div>
+        <input
+          v-model="playerName"
+          type="text"
+          placeholder="Your alias"
+          class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          @keydown.enter="enterGame"
+        >
+        <div class="mb-2 text-sm text-slate-400">
+          Avatar
+        </div>
+        <AvatarPicker :model-value="avatar" class="mb-4" @update:model-value="avatar = $event" />
+        <div class="text-sm text-slate-400 mb-6">
+          Selected avatar: <span class="text-2xl align-middle ml-2">{{ avatar }}</span>
+        </div>
+        <button
+          type="button"
+          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
+          @click="enterGame"
+        >
+          Join the Table
+        </button>
+        <NuxtLink to="/lobby" class="block mt-4 text-center text-slate-400 hover:text-white text-sm">
+          ← Back to Lobby
+        </NuxtLink>
       </div>
-      <button
-        type="button"
-        class="mt-6 sm:mt-8 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white w-full py-4 sm:py-6 rounded-2xl sm:rounded-3xl text-lg sm:text-xl font-bold touch-manipulation"
-        @click="enterGame"
-      >
-        ENTER GAME
-      </button>
-      <NuxtLink to="/lobby" class="block mt-4 text-center text-slate-500 hover:text-slate-700 text-sm">
-        ← Back to Lobby
-      </NuxtLink>
-    </div>
+    </Motion>
   </div>
 
   <!-- Joined but waiting for other players -->
   <div
     v-else-if="joined && !allPlayersJoined"
-    class="min-h-screen min-h-[100dvh] bg-slate-900 flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
+    class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <h2 class="text-xl sm:text-2xl font-bold mb-2">Waiting for players</h2>
-    <p class="text-slate-400 mb-6">
-      {{ joinedCount }} / {{ totalPlayers }} players have joined
-    </p>
-    <p class="text-slate-500 text-sm">The game will start when all players have joined.</p>
-    <NuxtLink to="/lobby" class="mt-8 text-amber-400 hover:text-amber-300 text-sm">
-      ← Back to Lobby
-    </NuxtLink>
+    <Motion preset="slideTop">
+      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
+        <h2 class="text-xl font-bold text-white mb-2">Waiting for players</h2>
+        <p class="text-slate-400 mb-4">
+          {{ joinedCount }} / {{ totalPlayers }} players have joined
+        </p>
+        <p class="text-sm text-slate-500 mb-6">The game will start when all players have joined.</p>
+        <NuxtLink
+          to="/lobby"
+          class="inline-flex items-center justify-center w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
+        >
+          Back to Lobby
+        </NuxtLink>
+      </div>
+    </Motion>
   </div>
 
   <!-- All players joined: show game -->
@@ -176,8 +201,16 @@ const totalPlayers = computed(() => matchMeta.value?.players?.length ?? 0)
       :credentials="playerCredentials"
     />
     <template #fallback>
-      <div class="min-h-screen bg-slate-900 flex items-center justify-center text-white">
-        Loading...
+      <div
+        class="min-h-screen bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center text-white p-4 sm:p-6 safe-area-padding"
+        :style="{ backgroundImage: `url(${backgroundGame})` }"
+      >
+        <Motion preset="slideTop">
+          <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
+            <h2 class="text-xl font-bold text-white mb-2">Preparing the table</h2>
+            <p class="text-slate-400 text-sm">Loading the game board...</p>
+          </div>
+        </Motion>
       </div>
     </template>
   </ClientOnly>

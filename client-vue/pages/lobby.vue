@@ -2,6 +2,7 @@
 import { listMatches, createMatch, joinBots } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
 const { session } = usePlayerSession()
@@ -30,9 +31,12 @@ function totalPlayers(m: LobbyMatch): number {
 function roomStatus(m: LobbyMatch): string {
   const joined = joinedCount(m)
   const total = totalPlayers(m)
-  if (joined === 0) return 'Empty'
-  if (joined < total) return 'Waiting for players'
-  return 'Ready'
+  if (joined < total) return '🟢'
+  return '🔴'
+}
+
+function displayRoomID(matchID: string): string {
+  return matchID.length > 6 ? `${matchID.slice(0, 4)}...` : matchID
 }
 
 async function fetchRooms() {
@@ -89,7 +93,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen min-h-[100dvh] bg-slate-900 text-white p-4 sm:p-6 safe-area-padding">
+  <div
+    class="min-h-screen min-h-[100dvh] bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
+  >
     <header class="flex items-center justify-between mb-6">
       <NuxtLink to="/" class="flex items-center gap-2 text-slate-400 hover:text-white">
         ← Back
@@ -136,8 +143,8 @@ onMounted(() => {
           <thead>
             <tr class="border-b border-slate-700 text-slate-400 text-sm">
               <th class="px-4 py-3 font-medium">Room ID</th>
-              <th class="px-4 py-3 font-medium">Players</th>
-              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 font-medium text-center">Players</th>
+              <th class="px-4 py-3 font-medium text-center">Status</th>
               <th class="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
@@ -147,11 +154,11 @@ onMounted(() => {
               :key="room.matchID"
               class="border-b border-slate-700/50 hover:bg-slate-800/50"
             >
-              <td class="px-4 py-3 font-mono text-sm">{{ room.matchID }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 font-mono text-sm">{{ displayRoomID(room.matchID) }}</td>
+              <td class="px-4 py-3 text-center">
                 {{ joinedCount(room) }} / {{ totalPlayers(room) }}
               </td>
-              <td class="px-4 py-3 text-slate-400 text-sm">
+              <td class="px-4 py-3 text-slate-400 text-sm text-center">
                 {{ roomStatus(room) }}
               </td>
               <td class="px-4 py-3">
