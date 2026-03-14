@@ -17,6 +17,7 @@ export function useGoogleLogin() {
   }
 
   function handleGoogleSuccess(e: { credential: string; claims: Record<string, unknown> }) {
+    // console.log("Google login success=====>", e);
     const claims = e.claims as { name?: string; email?: string; picture?: string }
     const name = (claims.name || claims.email || 'Player').trim()
     setSession(name, '🐶')

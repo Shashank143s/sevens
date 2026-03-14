@@ -376,14 +376,14 @@ onUnmounted(() => {
     <div class="fixed bottom-0 left-0 right-0 bg-white/30 rounded-t-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto w-full">
       <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-700 flex-wrap gap-2">
         <span style="color:white">Your hand</span>
-        <div class="flex gap-2 text-base font-semibold">
+        <div class="flex gap-2 text-sm font-semibold">
           <button
             type="button"
             :class="[
-              'px-4 py-2 rounded-xl transition',
+              'px-3 py-1 rounded-lg transition',
               sortMode === 'byRank'
-                ? 'bg-slate-700 text-white shadow'
-                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+                ? 'bg-slate-700 bg-opacity-30 text-white shadow'
+                : 'bg-slate-200 bg-opacity-30 text-slate-600 hover:bg-slate-300',
             ]"
             @click="sortMode = 'byRank'"
           >
@@ -392,10 +392,10 @@ onUnmounted(() => {
           <button
             type="button"
             :class="[
-              'px-4 py-2 rounded-xl transition',
+              'px-3 py-1 rounded-lg transition',
               sortMode === 'bySuit'
-                ? 'bg-slate-700 text-white shadow'
-                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+                ? 'bg-slate-700 bg-opacity-70 text-white shadow'
+                : 'bg-slate-200 bg-opacity-70 text-slate-600 hover:bg-slate-300',
             ]"
             @click="sortMode = 'bySuit'"
           >
@@ -406,7 +406,7 @@ onUnmounted(() => {
       <div
         :class="
           isMobile
-            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-1 overflow-x-auto pb-3'
+            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-1 overflow-x-auto'
             : 'flex gap-1 overflow-x-auto pb-4 snap-x'
         "
       >
