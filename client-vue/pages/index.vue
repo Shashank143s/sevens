@@ -31,8 +31,8 @@ function handleHomeCta() {
         <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
         <h1 class="mobile-home__title">Sevens Royale</h1>
         <p class="mobile-home__description">
-          Play the timeless card game of Sevens online. Create a room, invite friends,
-          and be the first to play all your cards.
+          Play the timeless card game of Sevens online. Create a room, invite friends
+          or add AI bots, and be the first to play all your cards.
         </p>
         <div class="mobile-home__divider" aria-hidden="true">
           <span class="mobile-home__line" />
