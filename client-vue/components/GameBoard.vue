@@ -165,6 +165,17 @@ const mobileSuitCards = computed(() => {
   })
 })
 
+function getMobilePileCardStyle(idx: number, count: number) {
+  const cardWidth = 52
+  const stackWidth = 138
+  const maxOffset = Math.max(0, stackWidth - cardWidth)
+  const step = count > 1 ? Math.min(8, maxOffset / (count - 1)) : 0
+  return {
+    transform: `translateX(${idx * step}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
+    zIndex: 10 + idx,
+  }
+}
+
 function getPlayerDisplay(index: number) {
   const list = props.players
   const p = list?.find((x) => x.id === index) ?? list?.[index]
@@ -262,15 +273,12 @@ onUnmounted(() => {
             <div class="mobile-pile">
               <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
               <div v-else class="mobile-pile__stack" aria-hidden="true">
-                <div
-                  v-for="(rank, idx) in p.ranks"
-                  :key="`${p.suit}-${rank}`"
-                  class="mobile-pile__card"
-                  :style="{
-                    transform: `translateX(${idx * 8}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
-                    zIndex: 10 + idx,
-                  }"
-                >
+                  <div
+                    v-for="(rank, idx) in p.ranks"
+                    :key="`${p.suit}-${rank}`"
+                    class="mobile-pile__card"
+                    :style="getMobilePileCardStyle(idx, p.ranks.length)"
+                  >
                   <img
                     :src="getCardImageSrc({ suit: p.suit, rank })"
                     :alt="`${rank} of ${p.suit}`"
@@ -573,11 +581,13 @@ onUnmounted(() => {
   min-height: 84px;
   display: flex;
   align-items: flex-end;
+  width: 100%;
+  justify-content: center;
 }
 
 .mobile-pile__empty {
-  width: 56px;
-  height: 81px;
+  width: 52px;
+  height: 75px;
   border-radius: 4px;
   background: rgba(15, 23, 42, 0.34);
   border: 1px solid rgba(255, 236, 179, 0.12);
@@ -588,16 +598,17 @@ onUnmounted(() => {
 
 .mobile-pile__stack {
   position: relative;
-  width: 72px;
-  height: 82px;
+  width: min(100%, 138px);
+  height: 76px;
+  overflow: hidden;
 }
 
 .mobile-pile__card {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 56px;
-  height: 81px;
+  width: 52px;
+  height: 75px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.98);
   box-shadow:
