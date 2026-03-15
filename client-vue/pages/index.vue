@@ -89,9 +89,10 @@ function handleHomeCta() {
 .mobile-home__eyebrow {
   margin: 0 0 1.5rem;
   color: #d4af37;
-  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
-  letter-spacing: 0.28em;
+  font-size: clamp(0.66rem, 2.4vw, 1.1rem);
+  letter-spacing: clamp(0.12em, 0.55vw, 0.28em);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .mobile-home__title {
@@ -116,19 +117,25 @@ function handleHomeCta() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: clamp(0.45rem, 2vw, 1rem);
+  flex-wrap: nowrap;
 }
 
 .mobile-home__line {
-  width: 4.5rem;
+  width: clamp(2.5rem, 14vw, 4.5rem);
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.9), transparent);
+  flex: 0 0 auto;
 }
 
 .mobile-home__suits {
   color: #a88a2b;
-  font-size: clamp(1.5rem, 2vw, 1.85rem);
-  letter-spacing: 0.28em;
+  display: inline-flex;
+  align-items: center;
+  font-size: clamp(1.05rem, 4.2vw, 1.85rem);
+  letter-spacing: clamp(0.08em, 0.8vw, 0.28em);
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .mobile-home__cta {
