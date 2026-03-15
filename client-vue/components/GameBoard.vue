@@ -166,12 +166,23 @@ const mobileSuitCards = computed(() => {
 })
 
 function getMobilePileCardStyle(idx: number, count: number) {
-  const cardWidth = 52
-  const stackWidth = 138
-  const maxOffset = Math.max(0, stackWidth - cardWidth)
-  const step = count > 1 ? Math.min(8, maxOffset / (count - 1)) : 0
+  const cardWidthPercent = 40
+
+  if (count <= 1) {
+    return {
+      left: '50%',
+      width: `${cardWidthPercent}%`,
+      transform: 'translateX(-50%)',
+      zIndex: 10,
+    }
+  }
+
+  const maxLeftPercent = 100 - cardWidthPercent
+  const leftPercent = count > 1 ? (idx * maxLeftPercent) / (count - 1) : 0
   return {
-    transform: `translateX(${idx * step}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
+    left: `${leftPercent}%`,
+    width: `${cardWidthPercent}%`,
+    transform: `rotate(${Math.min(4, idx) * 0.6}deg)`,
     zIndex: 10 + idx,
   }
 }
@@ -578,7 +589,7 @@ onUnmounted(() => {
 }
 
 .mobile-pile {
-  min-height: 84px;
+  min-height: clamp(86px, 24vw, 108px);
   display: flex;
   align-items: flex-end;
   width: 100%;
@@ -587,7 +598,7 @@ onUnmounted(() => {
 
 .mobile-pile__empty {
   width: 52px;
-  height: 75px;
+  aspect-ratio: 500 / 726;
   border-radius: 4px;
   background: rgba(15, 23, 42, 0.34);
   border: 1px solid rgba(255, 236, 179, 0.12);
@@ -598,17 +609,16 @@ onUnmounted(() => {
 
 .mobile-pile__stack {
   position: relative;
-  width: min(100%, 138px);
-  height: 76px;
+  width: 100%;
+  height: clamp(86px, 24vw, 108px);
   overflow: hidden;
 }
 
 .mobile-pile__card {
   position: absolute;
-  left: 0;
   bottom: 0;
-  width: 52px;
-  height: 75px;
+  width: 40%;
+  aspect-ratio: 500 / 726;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.98);
   box-shadow:
