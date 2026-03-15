@@ -54,6 +54,8 @@ const myHand = computed(() => {
   return idx >= 0 ? (G.value.hands[idx] || []) : []
 })
 
+const isPlayableCardAvailable = computed(() => getPlayableCards(myHand.value, G.value.piles).length > 0)
+
 type SortMode = 'byRank' | 'bySuit'
 const sortMode = ref<SortMode>('byRank')
 const sidebarOpen = ref(true)
@@ -81,6 +83,13 @@ const isMyTurn = computed(
 )
 
 const currentPlayerDisplay = computed(() => getPlayerDisplay(currentPlayerIndex.value))
+const topBarMessage = computed(() =>
+  isMyTurn.value
+    ? 'Your turn - play a card'
+    : `Waiting for ${currentPlayerDisplay.value.name}...`,
+)
+const isLowTime = computed(() => isMyTurn.value && timeLeft.value <= 7)
+const isCriticalTime = computed(() => isMyTurn.value && timeLeft.value <= 3)
 
 const TURN_SECONDS = 30
 const timeLeft = ref(TURN_SECONDS)
@@ -156,6 +165,28 @@ const mobileSuitCards = computed(() => {
   })
 })
 
+function getMobilePileCardStyle(idx: number, count: number) {
+  const cardWidthPercent = 40
+
+  if (count <= 1) {
+    return {
+      left: '50%',
+      width: `${cardWidthPercent}%`,
+      transform: 'translateX(-50%)',
+      zIndex: 10,
+    }
+  }
+
+  const maxLeftPercent = 100 - cardWidthPercent
+  const leftPercent = count > 1 ? (idx * maxLeftPercent) / (count - 1) : 0
+  return {
+    left: `${leftPercent}%`,
+    width: `${cardWidthPercent}%`,
+    transform: `rotate(${Math.min(4, idx) * 0.6}deg)`,
+    zIndex: 10 + idx,
+  }
+}
+
 function getPlayerDisplay(index: number) {
   const list = props.players
   const p = list?.find((x) => x.id === index) ?? list?.[index]
@@ -194,176 +225,76 @@ onUnmounted(() => {
       backgroundPosition: 'center',
     }"
   >
-    <!-- Top bar: on mobile = banner + players side by side; on desktop = toast centered + widget top-right -->
-    <div class="top-bar">
+    <div class="board-stage w-full flex-1 relative">
       <div
-        class="turn-toast"
-        :class="{ 'turn-toast--myturn': isMyTurn }"
-        role="status"
-        aria-live="polite"
+        v-if="!isMobile"
+        class="board-stage__desktop absolute inset-0 flex items-center justify-center overflow-auto"
       >
-        <div class="turn-toast__inner">
-          <div class="turn-toast__text">
-            {{
-              isMyTurn
-                ? 'Your turn — play a card'
-                : `Waiting for ${currentPlayerDisplay.name}...`
-            }}
-          </div>
-          <div v-if="isMyTurn" class="turn-toast__timer">
-            {{ timeLeft }}s
-          </div>
+        <!-- Suit lanes (top-to-bottom): spades, hearts, diamonds, clubs -->
+        <div class="desktop-table flex flex-col max-w-full">
+          <SuitesLane
+            suit="spades"
+            :pile="G.piles.spades"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="hearts"
+            :pile="G.piles.hearts"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="diamonds"
+            :pile="G.piles.diamonds"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
+          <SuitesLane
+            suit="clubs"
+            :pile="G.piles.clubs"
+            :ranks="ranks"
+            :getCardImageSrc="getCardImageSrc"
+          />
         </div>
       </div>
 
-      <!-- Right sidebar widget: collapsible; on mobile opens as popup below bar -->
-      <div class="sidebar-widget">
-        <button
-          v-if="!sidebarOpen"
-          type="button"
-          class="sidebar-widget__toggle"
-          aria-label="Open players"
-          @click="sidebarOpen = true"
-        >
-          <span class="text-xl">👥</span>
-          <!-- <span class="text-xs font-semibold text-slate-600">Players</span> -->
-        </button>
-        <Transition name="sidebar-panel">
+      <div v-else class="board-stage__mobile absolute inset-0 flex items-center justify-center">
+        <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
           <div
-            v-if="sidebarOpen"
-            class="sidebar-widget__panel"
-            :class="{ 'sidebar-widget__panel--mobile': isMobile }"
+            v-for="p in mobileSuitCards"
+            :key="p.suit"
+            class="rounded-2xl border border-amber-200/10 bg-slate-900/38 p-3 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur-sm"
           >
-            <div class="sidebar-widget__header">
-              <span class="font-bold text-slate-800">Players</span>
-              <button
-                type="button"
-                class="sidebar-widget__close"
-                aria-label="Collapse"
-                @click="sidebarOpen = false"
-              >
-                ×
-              </button>
-            </div>
-            <div class="sidebar-widget__body">
-              <div class="space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
-                <div
-                  v-for="(hand, i) in G.hands"
-                  :key="i"
-                  :class="[
-                    'flex items-center gap-3 p-3 rounded-2xl',
-                    i === currentPlayerIndex ? 'ring-4 ring-yellow-400 bg-yellow-50' : 'bg-gray-50',
-                  ]"
-                >
-                  <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-2xl shadow overflow-hidden">
-                    {{ getPlayerDisplay(i).avatar }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">
-                      {{ i === playerIndex ? 'You' : getPlayerDisplay(i).name }}
-                    </div>
-                    <div v-if="!isMobile" class="text-sm text-gray-500">
-                      0 ★ • {{ hand.length }} cards
-                    </div>
-                  </div>
-                  <div v-if="!isMobile" class="text-2xl">👋</div>
-                </div>
-              </div>
+            <div class="flex items-center justify-between mb-2">
               <div
-                v-if="!isMobile"
-                class="mt-4 border-t pt-4 text-xs text-gray-600 max-h-40 overflow-y-auto"
+                class="font-extrabold text-lg tracking-wide"
+                :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-rose-200' : 'text-slate-100'"
               >
-                <div class="font-bold mb-2">Game Log</div>
-                <div
-                  v-for="(c, i) in lastPlayedCards"
-                  :key="i"
-                  class="mb-1"
-                >
-                  {{ getPlayerDisplay(i % G.hands.length).name }} played {{ (c as Card).rank }}{{ suitSymbols[(c as Card).suit] }}
-                </div>
+                {{ suitSymbols[p.suit] }}
+              </div>
+              <div class="text-xs text-slate-300 tabular-nums">
+                <span v-if="p.ranks.length">
+                  {{ p.ranks[0] }}–{{ p.ranks[p.ranks.length - 1] }}
+                </span>
+                <span v-else>—</span>
               </div>
             </div>
-          </div>
-        </Transition>
-      </div>
-    </div>
 
-    <div class="w-full flex-1 pt-16 sm:pt-20 relative">
-      <!-- Central Table (full width; sidebar is a floating widget) -->
-      <div class="w-full relative sm:min-h-[720px] min-h-[330px]">
-        <div
-          v-if="!isMobile"
-          class="absolute inset-0 flex items-center justify-center overflow-auto p-2 sm:p-4"
-        >
-          <!-- Suit lanes (top-to-bottom): spades, hearts, diamonds, clubs -->
-          <div class="flex flex-col gap-6 max-w-full">
-            <SuitesLane
-              suit="spades"
-              :pile="G.piles.spades"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="hearts"
-              :pile="G.piles.hearts"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="diamonds"
-              :pile="G.piles.diamonds"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-            <SuitesLane
-              suit="clubs"
-              :pile="G.piles.clubs"
-              :ranks="ranks"
-              :getCardImageSrc="getCardImageSrc"
-            />
-          </div>
-        </div>
-
-        <div v-else class="absolute inset-0 flex items-center justify-center">
-          <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
-            <div
-              v-for="p in mobileSuitCards"
-              :key="p.suit"
-              class="rounded-2xl bg-white/10 border border-white/15 p-3 shadow-inner"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <div
-                  class="font-extrabold text-lg tracking-wide"
-                  :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-red-200' : 'text-slate-100'"
-                >
-                  {{ suitSymbols[p.suit] }}
-                </div>
-                <div class="text-xs text-slate-100/80 tabular-nums">
-                  <span v-if="p.ranks.length">
-                    {{ p.ranks[0] }}–{{ p.ranks[p.ranks.length - 1] }}
-                  </span>
-                  <span v-else>—</span>
-                </div>
-              </div>
-
-              <div class="mobile-pile">
-                <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
-                <div v-else class="mobile-pile__stack" aria-hidden="true">
+            <div class="mobile-pile">
+              <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
+              <div v-else class="mobile-pile__stack" aria-hidden="true">
                   <div
                     v-for="(rank, idx) in p.ranks"
                     :key="`${p.suit}-${rank}`"
                     class="mobile-pile__card"
-                    :style="{
-                      transform: `translateX(${idx * 8}px) rotate(${Math.min(4, idx) * 0.6}deg)`,
-                      zIndex: 10 + idx,
-                    }"
+                    :style="getMobilePileCardStyle(idx, p.ranks.length)"
                   >
-                    <img
-                      :src="getCardImageSrc({ suit: p.suit, rank })"
-                      :alt="`${rank} of ${p.suit}`"
-                      class="mobile-pile__img"
-                    >
-                  </div>
+                  <img
+                    :src="getCardImageSrc({ suit: p.suit, rank })"
+                    :alt="`${rank} of ${p.suit}`"
+                    class="mobile-pile__img"
+                  >
                 </div>
               </div>
             </div>
@@ -373,17 +304,17 @@ onUnmounted(() => {
     </div>
 
     <!-- Bottom Hand -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white/30 rounded-t-xl px-4 sm:px-6 py-3 sm:py-4 shadow-lg border border-white/40 max-w-6xl mx-auto w-full">
-      <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-700 flex-wrap gap-2">
-        <span style="color:white">Your hand</span>
-        <div class="flex gap-2 text-base font-semibold">
+    <div class="fixed bottom-0 left-0 right-0 max-w-6xl mx-auto w-full rounded-t-[1.75rem] border border-amber-200/15 bg-slate-900/72 px-4 sm:px-6 py-3 sm:py-4 shadow-[0_-18px_45px_rgba(2,6,23,0.42)] backdrop-blur-xl">
+      <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-100 flex-wrap gap-2">
+        <span class="text-white">Your hand</span>
+        <div class="flex gap-2 text-sm font-semibold">
           <button
             type="button"
             :class="[
-              'px-4 py-2 rounded-xl transition',
+              'px-3 py-1 rounded-lg border transition',
               sortMode === 'byRank'
-                ? 'bg-slate-700 text-white shadow'
-                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+                ? 'border-amber-300/30 bg-amber-400/20 text-amber-50 shadow-[0_8px_22px_rgba(245,158,11,0.16)]'
+                : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
             ]"
             @click="sortMode = 'byRank'"
           >
@@ -392,10 +323,10 @@ onUnmounted(() => {
           <button
             type="button"
             :class="[
-              'px-4 py-2 rounded-xl transition',
+              'px-3 py-1 rounded-lg border transition',
               sortMode === 'bySuit'
-                ? 'bg-slate-700 text-white shadow'
-                : 'bg-slate-200 text-slate-600 hover:bg-slate-300',
+                ? 'border-amber-300/30 bg-amber-400/20 text-amber-50 shadow-[0_8px_22px_rgba(245,158,11,0.16)]'
+                : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
             ]"
             @click="sortMode = 'bySuit'"
           >
@@ -406,7 +337,7 @@ onUnmounted(() => {
       <div
         :class="
           isMobile
-            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-1 overflow-x-auto pb-3'
+            ? 'grid grid-rows-2 grid-flow-col auto-cols-max gap-1 overflow-x-auto'
             : 'flex gap-1 overflow-x-auto pb-4 snap-x'
         "
       >
@@ -426,125 +357,208 @@ onUnmounted(() => {
     </div>
 
     <!-- Pass Button -->
-    <button
-      v-if="playerIndex === currentPlayerIndex"
-      type="button"
-      class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 bg-red-500 hover:bg-red-600 text-white px-7 py-3 sm:px-10 sm:py-4 rounded-2xl text-lg sm:text-xl font-bold shadow-2xl transition"
-      @click="moves.pass()"
-    >
-      PASS
-    </button>
+     <Motion preset="slideTop">
+        <button
+          is="button"
+          v-if="playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
+          type="button"
+          class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
+          @click="moves.pass()"
+        >
+          PASS
+      </button>
+     </Motion>  
   </div>
+
+  <Teleport to="body">
+    <div class="top-bar">
+      <div
+        class="turn-toast"
+        :class="{
+          'turn-toast--myturn': isMyTurn,
+          'turn-toast--low': isLowTime,
+          'turn-toast--critical': isCriticalTime,
+        }"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="turn-toast__inner">
+          <div class="turn-toast__text">
+            {{ topBarMessage }}
+          </div>
+          <div v-if="isMyTurn" class="turn-toast__timer">
+            {{ timeLeft }}s
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-widget">
+        <button
+          type="button"
+          class="sidebar-widget__toggle"
+          :class="{ 'sidebar-widget__toggle--open': sidebarOpen }"
+          aria-label="Open players"
+          :aria-expanded="sidebarOpen ? 'true' : 'false'"
+          @click="sidebarOpen = !sidebarOpen"
+        >
+          <span class="sidebar-widget__toggle-icon">👥</span>
+          <span class="sidebar-widget__toggle-label">Players</span>
+          <span class="sidebar-widget__toggle-count">{{ G.hands.length }}</span>
+        </button>
+        <Transition name="sidebar-panel">
+          <div
+            v-if="sidebarOpen"
+            class="sidebar-widget__panel"
+            :class="{ 'sidebar-widget__panel--mobile': isMobile }"
+          >
+            <div class="sidebar-widget__header">
+              <div>
+                <div class="sidebar-widget__eyebrow">Table</div>
+                <span class="sidebar-widget__title">Players</span>
+              </div>
+              <button
+                type="button"
+                class="sidebar-widget__close"
+                aria-label="Collapse"
+                @click="sidebarOpen = false"
+              >
+                ×
+              </button>
+            </div>
+            <div class="sidebar-widget__body">
+              <div class="sidebar-widget__list">
+                <div
+                  v-for="(hand, i) in G.hands"
+                  :key="i"
+                  class="player-chip"
+                  :class="{
+                    'player-chip--active': i === currentPlayerIndex,
+                    'player-chip--self': i === playerIndex,
+                  }"
+                >
+                  <div class="player-chip__avatar">
+                    {{ getPlayerDisplay(i).avatar }}
+                  </div>
+                  <div class="player-chip__content">
+                    <div class="player-chip__name">
+                      {{ i === playerIndex ? 'You' : getPlayerDisplay(i).name }}
+                    </div>
+                    <div class="player-chip__meta">
+                      <span>{{ hand.length }} cards</span>
+                      <span v-if="i === currentPlayerIndex">On turn</span>
+                    </div>
+                  </div>
+                  <div class="player-chip__status">
+                    {{ i === currentPlayerIndex ? '●' : '○' }}
+                  </div>
+                </div>
+              </div>
+              <div v-if="!isMobile && lastPlayedCards.length" class="sidebar-widget__log">
+                <div class="sidebar-widget__log-title">Recent Plays</div>
+                <div
+                  v-for="(c, i) in lastPlayedCards"
+                  :key="i"
+                  class="sidebar-widget__log-item"
+                >
+                  {{ getPlayerDisplay(i % G.hands.length).name }} played {{ (c as Card).rank }}{{ suitSymbols[(c as Card).suit] }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
-/* Top bar: on mobile contains banner + players side by side; on desktop children are fixed */
+.board-stage__mobile {
+  padding: 4.75rem 0.75rem 13.5rem;
+  overflow-y: auto;
+}
+
+.desktop-table {
+  gap: 1.25rem;
+}
+
 .top-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 60;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  pointer-events: none;
-}
-.top-bar > * {
-  pointer-events: auto;
-}
-
-@media (min-width: 641px) {
-  .top-bar {
-    display: block;
-    padding: 0;
-    background: transparent;
-  }
-  .top-bar .turn-toast {
-    position: fixed;
-    top: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(92vw, 42rem);
-    flex: none;
-  }
-  .top-bar .sidebar-widget {
-    position: fixed;
-    top: 0.75rem;
-    right: 0.75rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .top-bar {
-    min-height: 3.5rem;
-  }
-  .top-bar .turn-toast {
-    position: static;
-    transform: none;
-    flex: 1;
-    min-width: 0;
-    width: auto;
-    left: auto;
-  }
-  .top-bar .turn-toast__inner {
-    justify-content: flex-start;
-    padding: 0.5rem 0.75rem;
-  }
-  .top-bar .turn-toast__text {
-    font-size: 0.9rem;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .top-bar .sidebar-widget {
-    position: static;
-    top: auto;
-    right: auto;
-    flex-shrink: 0;
-  }
-}
-
-.turn-toast {
-  pointer-events: none;
-}
-.turn-toast__inner {
-  pointer-events: auto;
+  top: max(0.35rem, env(safe-area-inset-top));
+  left: 0.75rem;
+  right: 0.75rem;
+  z-index: 80;
+  width: min(calc(100vw - 1.5rem), 42rem);
+  margin: 0 auto;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.top-bar > * {
+  pointer-events: auto;
+}
+
+.turn-toast {
+  width: min(calc(100% - 5.75rem), 34rem);
+  flex: 0 1 auto;
+}
+
+.turn-toast__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  min-height: 3.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 236, 179, 0.18);
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82)),
+    rgba(15, 23, 42, 0.86);
+  backdrop-filter: blur(16px);
   box-shadow:
-    0 18px 45px rgba(0, 0, 0, 0.18),
-    0 2px 10px rgba(0, 0, 0, 0.12);
-  color: #0f172a;
+    0 20px 45px rgba(2, 6, 23, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
 }
 
 .turn-toast__text {
   font-weight: 800;
-  letter-spacing: -0.01em;
-  font-size: 1.05rem;
-  line-height: 1.2;
-  text-align: center;
+  letter-spacing: -0.02em;
+  font-size: 0.96rem;
+  line-height: 1.15;
+  text-align: left;
 }
 
 .turn-toast__timer {
   font-variant-numeric: tabular-nums;
   font-weight: 900;
-  color: #dc2626;
-  min-width: 3.5rem;
+  color: #fef3c7;
+  min-width: 3.2rem;
   text-align: right;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
 }
 
 .turn-toast--myturn .turn-toast__inner {
   animation: turn-bounce 900ms ease-in-out 0ms 2;
+}
+
+.turn-toast--low .turn-toast__inner {
+  border-color: rgba(248, 113, 113, 0.5);
+  background:
+    linear-gradient(135deg, rgba(69, 10, 10, 0.95), rgba(127, 29, 29, 0.84)),
+    rgba(69, 10, 10, 0.86);
+  box-shadow:
+    0 22px 48px rgba(127, 29, 29, 0.34),
+    0 0 0 1px rgba(252, 165, 165, 0.15);
+}
+
+.turn-toast--critical .turn-toast__inner {
+  animation: turn-critical-pulse 850ms ease-in-out infinite;
 }
 
 @keyframes turn-bounce {
@@ -560,36 +574,56 @@ onUnmounted(() => {
   }
 }
 
+@keyframes turn-critical-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 22px 48px rgba(127, 29, 29, 0.34),
+      0 0 0 0 rgba(248, 113, 113, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 24px 54px rgba(153, 27, 27, 0.45),
+      0 0 0 8px rgba(248, 113, 113, 0.05);
+  }
+}
+
 .mobile-pile {
-  min-height: 84px;
+  min-height: clamp(86px, 24vw, 108px);
   display: flex;
   align-items: flex-end;
+  width: 100%;
+  justify-content: center;
 }
 
 .mobile-pile__empty {
-  width: 56px;
-  height: 81px;
+  width: 52px;
+  aspect-ratio: 500 / 726;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  background: rgba(15, 23, 42, 0.34);
+  border: 1px solid rgba(255, 236, 179, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 8px 18px rgba(2, 6, 23, 0.14);
 }
 
 .mobile-pile__stack {
   position: relative;
-  width: 72px;
-  height: 82px;
+  width: 100%;
+  height: clamp(86px, 24vw, 108px);
+  overflow: hidden;
 }
 
 .mobile-pile__card {
   position: absolute;
-  left: 0;
   bottom: 0;
-  width: 56px;
-  height: 81px;
+  width: 40%;
+  aspect-ratio: 500 / 726;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 14px 34px rgba(2, 6, 23, 0.28),
+    0 0 0 1px rgba(15, 23, 42, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -604,62 +638,174 @@ onUnmounted(() => {
 
 /* Sidebar widget: top-right on desktop; in top bar on mobile */
 .sidebar-widget {
-  z-index: 50;
+  position: relative;
+  z-index: 85;
+  flex-shrink: 0;
 }
 
 .sidebar-widget__toggle {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  /* width: 3.5rem;
-  height: 3.5rem; */
-  padding: 0.5rem;
-  /* background: rgba(255, 255, 255, 0.95); */
-  border: none;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  gap: 0.55rem;
+  min-height: 3.5rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(255, 236, 179, 0.16);
+  border-radius: 1.1rem;
+  background: rgba(15, 23, 42, 0.84);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.3);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  color: #f8fafc;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
 }
 .sidebar-widget__toggle:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+  background: rgba(30, 41, 59, 0.92);
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.36);
+}
+
+.sidebar-widget__toggle--open {
+  background: rgba(30, 41, 59, 0.96);
+  box-shadow: 0 22px 44px rgba(2, 6, 23, 0.36);
+}
+
+.sidebar-widget__toggle-icon {
+  font-size: 1rem;
+}
+
+.sidebar-widget__toggle-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.sidebar-widget__toggle-count {
+  min-width: 1.6rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .sidebar-widget__panel {
-  width: 17rem;
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  width: 18rem;
   max-width: calc(100vw - 2rem);
-  max-height: min(520px, calc(100dvh - 6rem));
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 1.25rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  max-height: min(520px, calc(100dvh - 5.5rem));
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 236, 179, 0.12);
+  border-radius: 1.3rem;
+  box-shadow: 0 24px 54px rgba(2, 6, 23, 0.38);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* Mobile: slim popup below top bar, right-aligned, smaller type */
-@media (max-width: 640px) {
-  .sidebar-widget__panel--mobile {
+@media (min-width: 641px) {
+  .board-stage {
+    padding: 0.75rem 0 14.5rem;
+  }
+
+  .board-stage__desktop {
+    padding: 0.75rem 1.25rem 1rem;
+  }
+
+  .desktop-table {
+    width: fit-content;
+    min-width: max-content;
+    max-width: 100%;
+    margin: 0 auto;
+    gap: 1.5rem;
+  }
+
+  .top-bar {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0 0.75rem;
+    justify-content: center;
+  }
+
+  .turn-toast {
+    width: min(34rem, calc(100vw - 22rem));
+    flex: 0 1 auto;
+  }
+
+  .sidebar-widget {
     position: fixed;
-    top: 3.5rem;
+    top: max(0.35rem, env(safe-area-inset-top));
+    right: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .board-stage {
+    padding-top: 0;
+  }
+
+  .board-stage__mobile {
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .top-bar {
+    left: 0.5rem;
     right: 0.5rem;
+    width: calc(100vw - 1rem);
+    align-items: center;
+  }
+  .turn-toast {
+    width: calc(100% - 4.85rem);
+    flex: 0 1 auto;
+  }
+  .turn-toast__inner {
+    gap: 0.6rem;
+    min-height: 3rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 1rem;
+  }
+  .turn-toast__text {
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .turn-toast__timer {
+    min-width: 2.5rem;
+    font-size: 0.95rem;
+  }
+  .sidebar-widget {
+    position: relative;
+  }
+  .sidebar-widget__toggle {
+    gap: 0.4rem;
+    min-height: 3rem;
+    padding: 0.55rem 0.7rem;
+  }
+  .sidebar-widget__toggle-label {
+    display: none;
+  }
+  .sidebar-widget__panel--mobile {
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    right: 0;
     left: auto;
-    width: 10.5rem;
+    width: 15rem;
     max-width: calc(100vw - 2rem);
-    max-height: calc(100dvh - 4rem);
-    border-radius: 0 0 0.875rem 0.875rem;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+    max-height: calc(100dvh - 5rem);
+    border-radius: 1rem;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.34);
   }
   .sidebar-widget__panel--mobile .sidebar-widget__header {
-    padding: 0.5rem 0.625rem;
-    font-size: 0.8125rem;
-  }
-  .sidebar-widget__panel--mobile .sidebar-widget__header .font-bold {
-    font-size: 0.8125rem;
+    padding: 0.75rem 0.85rem 0.65rem;
   }
   .sidebar-widget__panel--mobile .sidebar-widget__close {
     width: 1.5rem;
@@ -667,57 +813,47 @@ onUnmounted(() => {
     font-size: 1.25rem;
   }
   .sidebar-widget__panel--mobile .sidebar-widget__body {
-    padding: 0.5rem 0.625rem;
-  }
-  .sidebar-widget__panel--mobile .sidebar-widget__body .space-y-3 > div,
-  .sidebar-widget__panel--mobile .sidebar-widget__body .space-y-4 > div {
-    padding: 0.375rem 0.5rem;
-    border-radius: 0.75rem;
-    gap: 0.5rem;
-  }
-  .sidebar-widget__panel--mobile .sidebar-widget__body [class*="w-12"] {
-    width: 2rem;
-    height: 2rem;
-    font-size: 1rem;
-  }
-  .sidebar-widget__panel--mobile .sidebar-widget__body .font-bold {
-    font-size: 0.75rem;
-  }
-  .sidebar-widget__panel--mobile .sidebar-widget__body .text-sm {
-    font-size: 0.6875rem;
+    padding: 0 0.85rem 0.85rem;
   }
 }
 
-/* Vue transition: slide down from top */
 .sidebar-panel-enter-active,
 .sidebar-panel-leave-active {
-  transition: transform 0.25s ease-out, opacity 0.2s ease-out;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+  transform-origin: top right;
 }
 .sidebar-panel-enter-from,
 .sidebar-panel-leave-to {
   opacity: 0;
-  transform: translateY(-100%);
+  transform: translateY(-10px) scale(0.96);
 }
 .sidebar-panel-enter-to,
 .sidebar-panel-leave-from {
   opacity: 1;
-  transform: translateY(0);
-}
-@media (min-width: 641px) {
-  .sidebar-panel-enter-from,
-  .sidebar-panel-leave-to {
-    transform: translateY(0);
-    opacity: 0;
-  }
+  transform: translateY(0) scale(1);
 }
 
 .sidebar-widget__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.95rem 1rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+}
+
+.sidebar-widget__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.72);
+}
+
+.sidebar-widget__title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f8fafc;
 }
 
 .sidebar-widget__close {
@@ -728,22 +864,111 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 1.5rem;
   line-height: 1;
-  color: #64748b;
-  background: transparent;
-  border: none;
-  border-radius: 0.5rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.7rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 .sidebar-widget__close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 .sidebar-widget__body {
-  padding: 0.75rem 1rem;
+  padding: 0 1rem 1rem;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+}
+
+.sidebar-widget__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.player-chip--active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(251, 191, 36, 0.08));
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(253, 224, 71, 0.1);
+}
+
+.player-chip--self {
+  border-color: rgba(148, 163, 184, 0.24);
+}
+
+.player-chip__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, rgba(71, 85, 105, 0.95), rgba(30, 41, 59, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.player-chip__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.player-chip__name {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-chip__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+  margin-top: 0.1rem;
+  font-size: 0.64rem;
+  color: #94a3b8;
+}
+
+.player-chip__status {
+  font-size: 0.82rem;
+  color: #f59e0b;
+}
+
+.sidebar-widget__log {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-widget__log-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(253, 230, 138, 0.72);
+}
+
+.sidebar-widget__log-item {
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #cbd5e1;
 }
 </style>

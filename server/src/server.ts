@@ -1,23 +1,12 @@
 import { Server, Origins } from 'boardgame.io/server';
 import { Sevens } from './game';
 import { runBot } from './botRunner';
-// import cors from 'cors';
+import { PORT, API_BASE, FRONTEND_ORIGIN_REGEX, FRONTEND_ORIGIN } from './config';
 
 const server = Server({
   games: [Sevens],
   origins: [Origins.LOCALHOST],
 });
-
-// Add CORS middleware
-// server.app.use(async (ctx, next) => {
-//   await cors({
-//     origin: 'https://sevens-frontend.onrender.com', // Frontend URL
-//     methods: ['GET', 'POST'], // Allowed HTTP methods
-//     credentials: true, // Allow cookies and authentication headers
-//   })(ctx.req, ctx.res, next);
-// });
-
-const API_BASE = 'https://sevens-ukxv.onrender.com';
 
 /** Read JSON body for a Koa request */
 async function readJsonBody(ctx: { request: { body?: unknown; req: NodeJS.ReadableStream } }): Promise<Record<string, unknown>> {
@@ -40,9 +29,8 @@ async function readJsonBody(ctx: { request: { body?: unknown; req: NodeJS.Readab
 /** CORS for custom API routes (boardgame.io CORS runs only after configureApp in run(); our route runs before that) */
 server.app.use(async (ctx: any, next: () => Promise<void>) => {
   const origin = ctx.get('Origin');
-  const allowOrigin = origin && /^https?:\/\/(localhost(:\d+)?|sevens-frontend\.onrender\.com)$/.test(origin)
-    ? origin
-    : 'https://sevens-frontend.onrender.com';
+  const originRegex = new RegExp(FRONTEND_ORIGIN_REGEX);
+  const allowOrigin = origin && originRegex.test(origin) ? origin : FRONTEND_ORIGIN;
   ctx.set('Access-Control-Allow-Origin', allowOrigin);
   ctx.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   ctx.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -181,8 +169,8 @@ server.app.use(async (ctx, next) => {
   }
 });
 
-server.run(8000, () => {
-  console.log('🌟 Sevens server running on http://localhost:8000');
+server.run(PORT, () => {
+  console.log(`🌟 Sevens server running on http://localhost:${PORT}`);
 
   // Log websocket clients when they sync (connect) with matchID & playerID
   const appAny = server.app as any;

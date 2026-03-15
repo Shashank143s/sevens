@@ -1,4 +1,5 @@
-const API_BASE = 'https://sevens-ukxv.onrender.com'
+import { useRuntimeConfig } from 'nuxt/app'
+
 const GAME_NAME = 'sevens'
 
 export interface MatchPlayer {
@@ -14,14 +15,16 @@ export interface LobbyMatch {
 }
 
 export async function listMatches(): Promise<LobbyMatch[]> {
-  const res = await fetch(`${API_BASE}/games/${GAME_NAME}`)
+  const config = useRuntimeConfig()
+  const res = await fetch(`${config.public.apiBase}/games/${GAME_NAME}`)
   if (!res.ok) throw new Error('Failed to list rooms')
   const data = await res.json()
   return Array.isArray(data) ? data as LobbyMatch[] : (data as { matches?: LobbyMatch[] }).matches ?? []
 }
 
 export async function createMatch(numPlayers: number, aiBots: number = 0): Promise<{ matchID: string }> {
-  const res = await fetch(`${API_BASE}/games/${GAME_NAME}/create`, {
+  const config = useRuntimeConfig()
+  const res = await fetch(`${config.public.apiBase}/games/${GAME_NAME}/create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -34,12 +37,14 @@ export async function createMatch(numPlayers: number, aiBots: number = 0): Promi
 }
 
 export function getMatchUrl(matchID: string): string {
-  return `${API_BASE}/games/${GAME_NAME}/${matchID}`
+  const config = useRuntimeConfig()
+  return `${config.public.apiBase}/games/${GAME_NAME}/${matchID}`
 }
 
 /** Ask the server to join bot players to a match (call after creating a room with aiBots). */
 export async function joinBots(matchID: string, aiBots: number): Promise<{ joined: number }> {
-  const res = await fetch(`${API_BASE}/api/bot/join/${matchID}`, {
+  const config = useRuntimeConfig()
+  const res = await fetch(`${config.public.apiBase}/api/bot/join/${matchID}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ aiBots }),

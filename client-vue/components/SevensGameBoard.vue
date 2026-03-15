@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSevensClient } from '~/composables/useSevensClient'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 export interface PlayerInfo {
   id: number
@@ -63,7 +64,7 @@ watch(
     // Best-effort: delete the room from the lobby once the game ends.
     if (!deleteRequested) {
       deleteRequested = true
-      fetch(`https://sevens-ukxv.onrender.com/api/match/delete/${props.matchId}`, {
+      fetch(`${useRuntimeConfig().public.apiBase}/api/match/delete/${props.matchId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       }).catch(() => {})
@@ -84,7 +85,7 @@ onUnmounted(clearRedirectTimer)
 async function fetchMatchPlayers() {
   if (!props.matchId) return
   try {
-    const res = await fetch(`https://sevens-ukxv.onrender.com/games/sevens/${props.matchId}`)
+    const res = await fetch(`${useRuntimeConfig().public.apiBase}/games/sevens/${props.matchId}`)
     if (!res.ok) return
     const data = await res.json() as {
       players?: Array<{ id?: number; name?: string | null; data?: { avatar?: string } }>
@@ -142,7 +143,15 @@ watch(() => state.value?.G, fetchMatchPlayers)
       :players="players"
     />
   </div>
-  <div v-else class="min-h-screen min-h-[100dvh] bg-slate-900 flex items-center justify-center text-white text-lg sm:text-2xl safe-area-padding">
-    Connecting...
+  <div
+    v-else
+    class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center text-white safe-area-padding p-4 sm:p-6"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
+  >
+    <div class="w-full max-w-sm rounded-2xl border border-slate-600 bg-slate-800/92 backdrop-blur-sm shadow-2xl p-6 text-center">
+      <div class="text-xs uppercase tracking-[0.28em] text-amber-300/80 mb-3">Sevens Royale</div>
+      <div class="text-2xl sm:text-3xl font-bold text-white mb-2">Connecting to table</div>
+      <p class="text-sm sm:text-base text-slate-400">Syncing your seat and loading the room...</p>
+    </div>
   </div>
 </template>
