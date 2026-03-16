@@ -7,6 +7,14 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getCredentials } = useRoomCredentials()
+const { isOnline } = useOnlineStatus()
+const {
+  isSupported: notificationsSupported,
+  isGranted: notificationsGranted,
+  canRequest: canRequestNotifications,
+  statusLabel: notificationsStatusLabel,
+  requestPermission,
+} = useNotifications()
 
 function hasJoinedRoom(matchID: string): boolean {
   return getCredentials(matchID) != null
@@ -19,6 +27,14 @@ const showCreateModal = ref(false)
 const createNumPlayers = ref(2)
 const createAiBots = ref(0)
 const creating = ref(false)
+const reconnecting = ref(false)
+
+const lobbyStatus = computed(() => {
+  if (!isOnline.value) return 'You are offline. Reconnect to refresh rooms or create a new table.'
+  if (error.value) return error.value
+  if (reconnecting.value) return 'Connection restored. Refreshing available rooms...'
+  return null
+})
 
 function joinedCount(m: LobbyMatch): number {
   return m.players?.filter(p => p.name != null && p.name !== '')?.length ?? 0
@@ -44,6 +60,12 @@ function displayRoomID(matchID: string): string {
 }
 
 async function fetchRooms() {
+  if (!isOnline.value) {
+    loading.value = false
+    error.value = 'You are offline. Rooms will refresh when your connection returns.'
+    return
+  }
+
   loading.value = true
   error.value = null
   try {
@@ -70,6 +92,11 @@ function closeCreateModal() {
 }
 
 async function doCreateRoom() {
+  if (!isOnline.value) {
+    error.value = 'Reconnect before creating a room.'
+    return
+  }
+
   creating.value = true
   try {
     const aiCount = createAiBots.value
@@ -85,6 +112,19 @@ async function doCreateRoom() {
     creating.value = false
   }
 }
+
+async function enableNotifications() {
+  await requestPermission()
+}
+
+watch(isOnline, async (online, wasOnline) => {
+  if (!online) return
+  if (wasOnline === false) {
+    reconnecting.value = true
+    await fetchRooms()
+    reconnecting.value = false
+  }
+})
 
 // Redirect if no session
 onMounted(() => {
@@ -110,11 +150,19 @@ onMounted(() => {
 
     <h1 class="text-2xl sm:text-3xl font-bold mb-4">Game Lobby</h1>
 
+    <div
+      v-if="lobbyStatus"
+      class="mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
+      :class="isOnline ? 'border-amber-400/20 bg-slate-900/70 text-slate-200' : 'border-red-400/20 bg-red-950/40 text-red-100'"
+    >
+      {{ lobbyStatus }}
+    </div>
+
     <div class="flex flex-wrap gap-3 mb-4">
       <button
         type="button"
         class="px-4 py-2 rounded-xl border border-white/10 bg-slate-900/70 hover:bg-slate-800/85 text-sm text-slate-100 font-medium backdrop-blur-sm"
-        :disabled="loading"
+        :disabled="loading || !isOnline"
         @click="fetchRooms"
       >
         Refresh
@@ -122,15 +170,40 @@ onMounted(() => {
       <button
         type="button"
         class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-sm text-slate-900 font-bold"
+        :disabled="!isOnline"
         @click="openCreateModal"
       >
         Create Room
       </button>
     </div>
 
-    <p v-if="error" class="text-red-400 text-sm mb-4">
-      {{ error }}
-    </p>
+    <section
+      v-if="notificationsSupported"
+      class="mb-4 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm p-4"
+    >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-100">Turn Alerts</h2>
+          <p class="text-sm text-slate-400">
+            {{ notificationsStatusLabel }}
+          </p>
+        </div>
+        <button
+          v-if="canRequestNotifications"
+          type="button"
+          class="rounded-xl bg-sky-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-sky-400"
+          @click="enableNotifications"
+        >
+          Enable Alerts
+        </button>
+        <span
+          v-else-if="notificationsGranted"
+          class="inline-flex items-center rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200"
+        >
+          Enabled
+        </span>
+      </div>
+    </section>
 
     <section class="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
       <h2 class="px-4 py-3 font-semibold border-b border-white/10 text-slate-100">Available Rooms</h2>

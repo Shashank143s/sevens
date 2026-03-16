@@ -4,9 +4,15 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const router = useRouter()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
+const pwa = import.meta.client ? usePWA() : undefined
 
 const isLoggedIn = computed(() => !!session.value?.name?.trim())
 const homeCtaLabel = computed(() => (isLoggedIn.value ? 'Get Started' : 'Login to Play'))
+const canInstallApp = computed(() =>
+  import.meta.client
+  && !!pwa?.showInstallPrompt
+  && !pwa?.isPWAInstalled,
+)
 
 function handleHomeCta() {
   if (isLoggedIn.value) {
@@ -14,6 +20,10 @@ function handleHomeCta() {
     return
   }
   openAuth()
+}
+
+async function handleInstallApp() {
+  await pwa?.install()
 }
 </script>
 
@@ -46,6 +56,14 @@ function handleHomeCta() {
         >
           <span class="mobile-home__cta-label">{{ homeCtaLabel }}</span>
           <span class="mobile-home__cta-arrow">›</span>
+        </button>
+        <button
+          v-if="canInstallApp"
+          type="button"
+          class="mobile-home__secondary-cta"
+          @click="handleInstallApp"
+        >
+          Install App
         </button>
       </div>
       <p class="mobile-home__footnote">2-4 Players · Build sequences from 7 · First to empty hand wins</p>
@@ -180,6 +198,23 @@ function handleHomeCta() {
   text-align: center;
 }
 
+.mobile-home__secondary-cta {
+  margin-top: 0.85rem;
+  width: min(100%, 22rem);
+  min-height: 3.5rem;
+  padding: 0.85rem 1.4rem;
+  border: 1px solid rgba(248, 244, 236, 0.28);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #f8f4ec;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.98rem;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
 @media (min-width: 640px) {
   .mobile-home {
     padding:
@@ -197,6 +232,10 @@ function handleHomeCta() {
     width: min(100%, 25rem);
     min-height: 4.5rem;
     font-size: 1.1rem;
+  }
+
+  .mobile-home__secondary-cta {
+    width: min(100%, 25rem);
   }
 
   .mobile-home__footnote {

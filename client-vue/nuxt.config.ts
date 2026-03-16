@@ -8,7 +8,7 @@ const clientVueDir = fileURLToPath(new URL('.', import.meta.url))
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-google-auth'],
+  modules: ['@nuxtjs/tailwindcss', 'nuxt-google-auth', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
   // Define runtime config here; access with useRuntimeConfig().public in app. Localhost-only defaults for dev.
   runtimeConfig: {
@@ -39,11 +39,86 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Sevens',
+      title: 'Sevens Royale',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1.0, viewport-fit=cover',
+        },
+        { name: 'theme-color', content: '#0f172a' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-title', content: 'Sevens Royale' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        {
+          name: 'description',
+          content: 'Play Sevens online, create rooms, invite friends, and jump back into the table from your home screen.',
+        },
       ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#d1a728' },
+        { rel: 'apple-touch-icon', href: '/pwa-192.png' },
+      ],
+    },
+  },
+  pwa: {
+    registerType: 'autoUpdate',
+    client: {
+      installPrompt: true,
+      periodicSyncForUpdates: 3600,
+    },
+    includeAssets: ['favicon.svg', 'safari-pinned-tab.svg', 'pwa-192.png', 'pwa-512.png'],
+    manifest: {
+      id: '/',
+      name: 'Sevens Royale',
+      short_name: 'Sevens',
+      description: 'A mobile-friendly Sevens card game with live multiplayer rooms and quick rejoin support.',
+      theme_color: '#0f172a',
+      background_color: '#020617',
+      display: 'standalone',
+      orientation: 'portrait',
+      start_url: '/',
+      scope: '/',
+      categories: ['games', 'entertainment'],
+      icons: [
+        {
+          src: '/pwa-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: '/pwa-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+        {
+          src: '/pwa-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable',
+        },
+      ],
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+      navigateFallback: '/',
+      navigateFallbackDenylist: [/^\/api\//, /^\/games\//],
+      runtimeCaching: [
+        {
+          urlPattern: /^https?:.*(?:\/_nuxt\/|\/.*\.(?:png|svg|webp|jpg|jpeg|gif|ico))$/i,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'sevens-static-assets',
+          },
+        },
+      ],
+    },
+    devOptions: {
+      enabled: true,
+      suppressWarnings: true,
+      navigateFallback: '/',
     },
   },
 })

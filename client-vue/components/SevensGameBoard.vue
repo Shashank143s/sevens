@@ -24,9 +24,16 @@ const { state } = useSevensClient(
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
 const { clearCredentials } = useRoomCredentials()
+const { isOnline } = useOnlineStatus()
 
 const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
+const isSocketConnected = computed(() => state.value?.isConnected !== false)
+const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
+const reconnectLabel = computed(() => {
+  if (!isOnline.value) return 'You are offline. The table will sync when your network returns.'
+  return 'Reconnecting to the game server...'
+})
 const winnerDisplay = computed(() => {
   const id = winnerID.value
   if (id == null) return { name: 'Unknown', avatar: '🏆' }
@@ -84,6 +91,7 @@ onUnmounted(clearRedirectTimer)
 
 async function fetchMatchPlayers() {
   if (!props.matchId) return
+  if (!isOnline.value) return
   try {
     const res = await fetch(`${useRuntimeConfig().public.apiBase}/games/sevens/${props.matchId}`)
     if (!res.ok) return
@@ -105,10 +113,35 @@ async function fetchMatchPlayers() {
 watch(() => props.matchId, fetchMatchPlayers, { immediate: true })
 // Refresh players when game state appears (e.g. after join)
 watch(() => state.value?.G, fetchMatchPlayers)
+watch(isOnline, (online, wasOnline) => {
+  if (online && wasOnline === false) {
+    fetchMatchPlayers()
+  }
+})
 </script>
 
 <template>
   <div v-if="state" class="sevens-game-wrapper">
+    <div
+      v-if="showReconnectNotice"
+      class="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 z-[9998] mx-auto max-w-xl rounded-2xl border border-white/10 bg-slate-900/88 px-4 py-3 text-white shadow-2xl backdrop-blur-sm"
+    >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div class="text-sm font-semibold">Connection paused</div>
+          <p class="text-sm text-slate-300">
+            {{ reconnectLabel }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white hover:bg-white/10"
+          @click="fetchMatchPlayers"
+        >
+          Retry Sync
+        </button>
+      </div>
+    </div>
     <div
       v-if="isGameOver"
       class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 safe-area-padding"

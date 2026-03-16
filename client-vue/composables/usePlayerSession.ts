@@ -9,7 +9,7 @@ export interface PlayerSession {
 function loadFromStorage(): PlayerSession | null {
   if (import.meta.server) return null
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const data = JSON.parse(raw) as PlayerSession
     return data.name?.trim() ? data : null
@@ -22,9 +22,9 @@ function saveToStorage(session: PlayerSession | null) {
   if (import.meta.server) return
   try {
     if (session?.name?.trim()) {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     } else {
-      sessionStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEY)
     }
   } catch {}
 }

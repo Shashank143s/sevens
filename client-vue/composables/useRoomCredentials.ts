@@ -8,7 +8,7 @@ export interface RoomCredentials {
 function loadAll(): Record<string, RoomCredentials> {
   if (import.meta.server) return {}
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return {}
     return JSON.parse(raw) as Record<string, RoomCredentials>
   } catch {
@@ -19,7 +19,7 @@ function loadAll(): Record<string, RoomCredentials> {
 function saveAll(data: Record<string, RoomCredentials>) {
   if (import.meta.server) return
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch {}
 }
 
