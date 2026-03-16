@@ -48,6 +48,8 @@ onUnmounted(() => {
 
 <template>
   <div class="app-shell">
+    <NuxtPwaAssets />
+
     <Transition name="status-banner">
       <div v-if="showOfflineBanner" class="status-banner status-banner--offline">
         <p>Offline mode: cached screens are available, but live multiplayer needs a connection.</p>
