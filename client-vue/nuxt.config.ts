@@ -77,7 +77,7 @@ export default defineNuxtConfig({
       description: 'A mobile-friendly Sevens card game with live multiplayer rooms and quick rejoin support.',
       theme_color: '#0f172a',
       background_color: '#020617',
-      display: 'standalone',
+      display: 'fullscreen',
       orientation: 'portrait',
       start_url: '/',
       scope: '/',
