@@ -178,7 +178,7 @@ onMounted(() => {
     </div>
 
     <section
-      v-if="notificationsSupported"
+      v-if="false"
       class="mb-4 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm p-4"
     >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
