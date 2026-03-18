@@ -44,7 +44,7 @@ onMounted(() => {
   if (window.matchMedia('(max-width: 640px)').matches) {
     window.setTimeout(() => {
       splashDismissed.value = true
-    }, 5000)
+    }, 2000)
   } else {
     splashDismissed.value = true
   }
