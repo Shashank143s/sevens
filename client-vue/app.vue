@@ -2,6 +2,8 @@
 const isOnline = ref(true)
 const pwa = import.meta.client ? usePWA() : undefined
 const splashDismissed = ref(false)
+const config = useRuntimeConfig()
+const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
 
 const showInstallBanner = computed(() =>
   import.meta.client
@@ -69,7 +71,7 @@ onUnmounted(() => {
         <div class="launch-splash__card">
           <div class="launch-splash__logo-wrap">
             <img
-              src="/branding/sevens-seven-suits-mark.svg"
+              :src="splashLogoSrc"
               alt="Sevens Royale"
               class="launch-splash__logo"
             >
