@@ -19,6 +19,11 @@ function logout() {
   open.value = false
   router.push('/')
 }
+
+function goToInstructions() {
+  open.value = false
+  router.push('/instructions')
+}
 </script>
 
 <template>
@@ -44,6 +49,13 @@ function logout() {
 
     <Transition name="user-menu-panel">
       <div v-if="open" class="user-menu__panel">
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral"
+          @click="goToInstructions"
+        >
+          Instructions
+        </button>
         <button
           type="button"
           class="user-menu__action"
@@ -127,6 +139,19 @@ function logout() {
   text-align: left;
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+.user-menu__action + .user-menu__action {
+  margin-top: 0.4rem;
+}
+
+.user-menu__action--neutral {
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.user-menu__action--neutral:hover {
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .user-menu__action:hover {
