@@ -103,8 +103,6 @@ export default defineNuxtConfig({
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
-      navigateFallback: '/',
-      navigateFallbackDenylist: [/^\/api\//, /^\/games\//],
       runtimeCaching: [
         {
           urlPattern: /^https?:.*(?:\/_nuxt\/|\/.*\.(?:png|svg|webp|jpg|jpeg|gif|ico))$/i,
@@ -118,7 +116,6 @@ export default defineNuxtConfig({
     devOptions: {
       enabled: true,
       suppressWarnings: true,
-      navigateFallback: '/',
     },
   },
 })
