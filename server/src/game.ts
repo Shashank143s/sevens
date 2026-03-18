@@ -1,52 +1,6 @@
 import { INVALID_MOVE, TurnOrder } from 'boardgame.io/core';
 import type { Ctx, DefaultPluginAPIs, FnContext, Game } from 'boardgame.io';
-
-/**
- * -----------------------------
- * Types
- * -----------------------------
- */
-
-/**
- * Card rank:
- * 1  -> Ace
- * 11 -> Jack
- * 12 -> Queen
- * 13 -> King
- */
-export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
-
-export interface Card {
-  suit: Suit;
-  rank: number;
-  id: string; // unique identifier (suit-rank)
-}
-
-/**
- * Each suit pile starts "locked".
- * Once the 7 is played, it expands both directions.
- *
- * Example:
- *  - After playing 7♥ → low=7, high=7
- *  - Then 6♥ → low=6
- *  - Then 8♥ → high=8
- */
-export interface Pile {
-  started: boolean;
-  low: number | null;
-  high: number | null;
-}
-
-/**
- * Game state (G)
- * This is the single source of truth shared by all players.
- */
-export interface GameState {
-  piles: Record<Suit, Pile>;
-  hands: Card[][];
-  passedPlayers: number[];
-  firstPlayer: number;
-}
+import type { Card, GameState, Pile, Suit } from './types/game.types';
 
 /**
  * -----------------------------
