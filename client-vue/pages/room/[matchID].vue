@@ -8,6 +8,7 @@ const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
 const { getCredentials, setCredentials } = useRoomCredentials()
+const { registerJoinedPlayer, markGameInProgress } = useGameApi()
 const { isOnline } = useOnlineStatus()
 
 const joined = ref(false)
@@ -20,6 +21,7 @@ const joining = ref(false)
 const joinError = ref<string | null>(null)
 const roomStatusMessage = ref<string | null>(null)
 const checkingRoom = ref(false)
+const gameStarted = ref(false)
 
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
@@ -135,6 +137,7 @@ const enterGame = async () => {
     playerID.value = joinData.playerID
     playerCredentials.value = joinData.playerCredentials
     joined.value = true
+    await syncJoinedPlayer(joinData.playerID)
     setCredentials(matchID.value, {
       playerID: joinData.playerID,
       credentials: joinData.playerCredentials,
@@ -148,8 +151,32 @@ const enterGame = async () => {
   }
 }
 
+async function syncJoinedPlayer(joinedPlayerID: string) {
+  await registerJoinedPlayer(matchID.value, {
+    joined_player: {
+      user_id: session.value?.id,
+      player_id: joinedPlayerID,
+      display_name: playerName.value.trim(),
+      is_bot: false,
+      joined_at: new Date().toISOString(),
+    },
+  })
+}
+
 async function retryRoomFetch() {
   await fetchMatchMeta()
+}
+
+async function syncGameStart() {
+  if (gameStarted.value || !joined.value || !allPlayersJoined.value) return
+
+  gameStarted.value = true
+  try {
+    await markGameInProgress(matchID.value)
+  } catch (error) {
+    gameStarted.value = false
+    console.error('[room] Failed to mark game in progress:', error)
+  }
 }
 
 watch(isOnline, async (online, wasOnline) => {
@@ -165,6 +192,11 @@ watch(isOnline, async (online, wasOnline) => {
     await fetchMatchMeta()
     if (joined.value) startPolling()
   }
+})
+
+watch(allPlayersJoined, async (ready) => {
+  if (!ready) return
+  await syncGameStart()
 })
 
 const joinedCount = computed(() => {

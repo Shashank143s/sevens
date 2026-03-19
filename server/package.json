@@ -10,6 +10,7 @@
     "boardgame.io": "^0.50.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "mongoose": "^9.3.1.",
     "sharp": "^0.33.5"
   },
   "devDependencies": {

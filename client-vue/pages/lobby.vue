@@ -7,6 +7,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getCredentials } = useRoomCredentials()
+const { createGameRecord } = useGameApi()
 const { isOnline } = useOnlineStatus()
 const {
   isSupported: notificationsSupported,
@@ -101,6 +102,7 @@ async function doCreateRoom() {
   try {
     const aiCount = createAiBots.value
     const { matchID } = await createMatch(createNumPlayers.value, aiCount)
+    await createGameRecordEntry(matchID)
     if (aiCount > 0) {
       await joinBots(matchID, aiCount)
     }
@@ -111,6 +113,16 @@ async function doCreateRoom() {
   } finally {
     creating.value = false
   }
+}
+
+async function createGameRecordEntry(matchID: string) {
+  await createGameRecord(matchID, {
+    room_size: createNumPlayers.value,
+    creator_user_id: session.value?.id,
+    metadata: {
+      source: 'web',
+    },
+  })
 }
 
 async function enableNotifications() {

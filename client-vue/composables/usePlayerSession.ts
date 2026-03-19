@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'sevens-player-session'
 
 export interface PlayerSession {
+  id?: string
   name: string
   avatar: string
   image?: string

@@ -1,36 +1,48 @@
 import { Server, Origins } from 'boardgame.io/server';
 import { Sevens } from './game';
 import { PORT } from './config';
+import { connectToDatabase } from './database/mongoose';
 import { corsMiddleware } from './middleware/cors.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
+import { accountRoute } from './routes/account.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
+import { gameRoute } from './routes/game.router';
 
 const server = Server({
   games: [Sevens],
   origins: [Origins.LOCALHOST],
 });
 
-server.app.use(corsMiddleware);
+function registerRoutes() {
+  server.app.use(corsMiddleware);
+  server.app.use(accountRoute);
+  server.app.use(gameRoute);
+  server.app.use(joinRoute);
+  server.app.use(createDeleteRoute(server as any));
+  server.app.use(loggerMiddleware);
+}
 
-server.app.use(joinRoute);
-server.app.use(createDeleteRoute(server as any));
+function attachSocketLogging() {
+  const io = (server.app as any)._io;
+  if (!io) return;
 
-server.app.use(loggerMiddleware);
-
-server.run(PORT, () => {
-  console.log(`🌟 Sevens server running on http://localhost:${PORT}`);
-
-  // Log websocket clients when they sync (connect) with matchID & playerID
-  const appAny = server.app as any;
-  const io = appAny._io;
-
-  if (io) {
-    const nsp = io.of('sevens');
-    nsp.on('connection', (socket: any) => {
-      socket.on('sync', (matchID: string, playerID: string, credentials: string) => {
-        console.log('🔌 WS client synced:', { matchID, playerID });
-      });
+  io.of('sevens').on('connection', (socket: any) => {
+    socket.on('sync', (matchID: string, playerID: string) => {
+      console.log('🔌 WS client synced:', { matchID, playerID });
     });
-  }
-});
+  });
+}
+
+async function startServer() {
+  await connectToDatabase();
+  registerRoutes();
+  server.run(PORT, onServerStarted);
+}
+
+function onServerStarted() {
+  console.log(`🌟 Sevens server running on http://localhost:${PORT}`);
+  attachSocketLogging();
+}
+
+void startServer();

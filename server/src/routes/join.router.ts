@@ -1,4 +1,5 @@
 import { runBot } from '../botRunner';
+import { updateGameRecord } from '../services/game-record.service';
 import {
   fetchGameDetails,
   joinGame,
@@ -64,6 +65,14 @@ export async function joinRoute(ctx: JoinRouteContext, next: RouteNext): Promise
       }
 
       const joinData = (await joinRes.json()) as JoinGameResponse;
+      await updateGameRecord(matchID, {
+        joined_player: {
+          player_id: joinData.playerID,
+          display_name: `Bot ${index + 1}`,
+          is_bot: true,
+          joined_at: new Date().toISOString(),
+        },
+      });
 
       runBot(matchID, joinData.playerID, joinData.playerCredentials);
     }
