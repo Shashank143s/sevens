@@ -20,6 +20,7 @@ const { state } = useSevensClient(
   props.playerId ?? '0',
   props.credentials ?? undefined,
 )
+const { completeGameRecord } = useGameApi()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -52,6 +53,7 @@ const didIWin = computed(() => {
 const redirectSeconds = ref(30)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
 let deleteRequested = false
+let completionSynced = false
 
 function clearRedirectTimer() {
   if (redirectTimer != null) {
@@ -68,6 +70,7 @@ watch(
     redirectSeconds.value = 30
     // Clear stored creds so user can re-join next game cleanly.
     clearCredentials(props.matchId)
+    await syncCompletedGame()
     // Best-effort: delete the room from the lobby once the game ends.
     if (!deleteRequested) {
       deleteRequested = true
@@ -86,6 +89,17 @@ watch(
   },
   { immediate: true },
 )
+
+async function syncCompletedGame() {
+  if (completionSynced || winnerID.value == null) return
+  completionSynced = true
+  try {
+    await completeGameRecord(props.matchId, String(winnerID.value))
+  } catch (error) {
+    completionSynced = false
+    console.error('[game-board] Failed to finalize game record:', error)
+  }
+}
 
 onUnmounted(clearRedirectTimer)
 

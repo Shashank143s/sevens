@@ -7,7 +7,8 @@ export async function corsMiddleware(ctx: CorsContext, next: MiddlewareNext): Pr
   const allowOrigin = origin && originRegex.test(origin) ? origin : FRONTEND_ORIGIN;
 
   ctx.set('Access-Control-Allow-Origin', allowOrigin);
-  ctx.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  // Allow the full set of methods used by the frontend account/game sync flows.
+  ctx.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   ctx.set('Access-Control-Allow-Headers', 'Content-Type');
   ctx.set('Access-Control-Allow-Credentials', 'true');
 
