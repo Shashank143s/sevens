@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { useRoomCredentials } from '~/composables/useRoomCredentials'
-
 const router = useRouter()
-const { session, clearSession } = usePlayerSession()
-const { clearAllCredentials } = useRoomCredentials()
+const { session } = usePlayerSession()
 
 const open = ref(false)
 
@@ -13,16 +10,14 @@ const displayName = computed(() => {
   return `Welcome, ${first}`
 })
 
-function logout() {
-  clearSession()
-  clearAllCredentials()
-  open.value = false
-  router.push('/')
-}
-
 function goToInstructions() {
   open.value = false
   router.push('/instructions')
+}
+
+function goToAccount() {
+  open.value = false
+  router.push('/account')
 }
 </script>
 
@@ -52,16 +47,16 @@ function goToInstructions() {
         <button
           type="button"
           class="user-menu__action user-menu__action--neutral"
-          @click="goToInstructions"
+          @click="goToAccount"
         >
-          Instructions
+          Account
         </button>
         <button
           type="button"
-          class="user-menu__action"
-          @click="logout"
+          class="user-menu__action user-menu__action--neutral"
+          @click="goToInstructions"
         >
-          Logout
+          Instructions
         </button>
       </div>
     </Transition>
@@ -134,8 +129,8 @@ function goToInstructions() {
   width: 100%;
   padding: 0.6rem 0.8rem;
   border-radius: 0.7rem;
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.18);
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.12);
   text-align: left;
   font-size: 0.88rem;
   font-weight: 700;
@@ -145,17 +140,8 @@ function goToInstructions() {
   margin-top: 0.4rem;
 }
 
-.user-menu__action--neutral {
-  color: #e2e8f0;
-  background: rgba(148, 163, 184, 0.12);
-}
-
-.user-menu__action--neutral:hover {
-  background: rgba(148, 163, 184, 0.2);
-}
-
 .user-menu__action:hover {
-  background: rgba(127, 29, 29, 0.28);
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .user-menu-panel-enter-active,

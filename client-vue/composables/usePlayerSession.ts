@@ -4,6 +4,8 @@ export interface PlayerSession {
   name: string
   avatar: string
   image?: string
+  email?: string
+  lastLoginAt?: number
 }
 
 function loadFromStorage(): PlayerSession | null {
@@ -32,8 +34,11 @@ function saveToStorage(session: PlayerSession | null) {
 export function usePlayerSession() {
   const session = useState<PlayerSession | null>('player-session', () => loadFromStorage())
 
-  function setSession(name: string, avatar: string, image?: string) {
-    const next: PlayerSession = { name: name.trim(), avatar, image }
+  function setSession(sessionData: PlayerSession) {
+    const next: PlayerSession = {
+      ...sessionData,
+      name: sessionData.name.trim(),
+    }
     session.value = next
     saveToStorage(next)
   }

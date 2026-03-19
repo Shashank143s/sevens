@@ -30,11 +30,25 @@ export function useGoogleLogin() {
   }
 
   function handleGoogleSuccess(e: { credential: string; claims: Record<string, unknown> }) {
-    const tokenClaims = decodeJwtPayload<{ name?: string; email?: string; picture?: string }>(e.credential)
+    const tokenClaims = decodeJwtPayload<{
+      name?: string
+      email?: string
+      picture?: string
+      iat?: number
+    }>(e.credential)
     const claims = e.claims as { name?: string; email?: string; picture?: string }
     const name = (claims.name || tokenClaims?.name || claims.email || tokenClaims?.email || 'Player').trim()
+    const email = (claims.email || tokenClaims?.email || '').trim() || undefined
     const picture = claims.picture || tokenClaims?.picture
-    setSession(name, '🐶', picture)
+    const issuedAt = typeof tokenClaims?.iat === 'number' ? tokenClaims.iat * 1000 : Date.now()
+
+    setSession({
+      name,
+      avatar: '🐶',
+      image: picture,
+      email,
+      lastLoginAt: issuedAt,
+    })
     closeAuth()
   }
 
