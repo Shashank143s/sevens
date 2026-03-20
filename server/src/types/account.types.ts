@@ -18,3 +18,24 @@ export type RecentGameResult = {
   winner_is_bot?: boolean;
   ended_at?: Date;
 };
+
+export type AccountApiUserPayload = {
+  _id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  profile_image_url?: string;
+  avatar_emoji?: string;
+  last_login_at: Date;
+  is_active: boolean;
+  stats?: {
+    games_played: number;
+    wins: number;
+    losses: number;
+  };
+  daily_room_limit: number;
+  remaining_rooms: number;
+  created_at?: Date;
+  updated_at?: Date;
+};

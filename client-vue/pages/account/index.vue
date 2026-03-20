@@ -5,9 +5,10 @@ import { useRoomCredentials } from '~/composables/useRoomCredentials'
 const router = useRouter()
 const { session, clearSession } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
-const { deleteAccount } = useAccountApi()
+const { deleteAccount, getAccount } = useAccountApi()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
+const remainingRooms = ref<number | null>(null)
 
 const fullName = computed(() => session.value?.name?.trim() || 'Player')
 const email = computed(() => session.value?.email?.trim() || 'Not available')
@@ -54,10 +55,23 @@ function logout() {
   router.push('/')
 }
 
+async function loadAccountQuota() {
+  if (!accountIdentifier.value) return
+  try {
+    const response = await getAccount(accountIdentifier.value, 0, 0)
+    remainingRooms.value = response.user.remaining_rooms
+  } catch {
+    remainingRooms.value = null
+  }
+}
+
 onMounted(() => {
   if (!session.value?.name?.trim()) {
     router.replace('/')
+    return
   }
+
+  void loadAccountQuota()
 })
 </script>
 
@@ -96,6 +110,15 @@ onMounted(() => {
         <p class="account-card__last-login">
           Last login: <strong>{{ lastLoginLabel }}</strong>
         </p>
+        <section class="account-card__quota">
+          <div>
+            <p class="account-card__quota-label">Remaining games today</p>
+            <p class="account-card__quota-copy">Fresh room creations left in your UTC daily quota.</p>
+          </div>
+          <div class="account-card__quota-value">
+            {{ remainingRooms == null ? '—' : remainingRooms }}
+          </div>
+        </section>
 
         <section class="account-history">
           <button
@@ -265,6 +288,54 @@ onMounted(() => {
   color: #f8fafc;
 }
 
+.account-card__quota {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(250, 204, 21, 0.16);
+  background:
+    radial-gradient(circle at left center, rgba(250, 204, 21, 0.16), transparent 52%),
+    linear-gradient(135deg, rgba(120, 53, 15, 0.22), rgba(15, 23, 42, 0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px rgba(2, 6, 23, 0.22);
+}
+
+.account-card__quota-label {
+  margin: 0;
+  color: #fde68a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.account-card__quota-copy {
+  margin: 0.45rem 0 0;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  max-width: 20rem;
+}
+
+.account-card__quota-value {
+  min-width: 4.2rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  color: #fef3c7;
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.22);
+}
+
 .account-card__eyebrow {
   margin: 0;
   color: #d4af37;
@@ -417,6 +488,17 @@ onMounted(() => {
 
   .account-card {
     padding: 1.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-card__quota {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-card__quota-value {
+    min-width: 3.6rem;
   }
 }
 </style>

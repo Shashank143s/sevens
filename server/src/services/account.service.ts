@@ -1,6 +1,8 @@
 import { GameModel, UserModel } from '../models';
-import type { AccountPayload, RecentGameResult } from '../types/account.types';
+import { MAX_DAILY_GAMES_PER_USER } from '../config';
+import type { AccountApiUserPayload, AccountPayload, RecentGameResult } from '../types/account.types';
 import { syncUserStats } from './user-stats.service';
+import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
 import { createUserLookup, normalizeDate, normalizeEmail } from '../utils/user.util';
 
@@ -39,6 +41,16 @@ function normalizePaginationValue(value: number, fallback: number) {
   return Math.floor(value);
 }
 
+async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
+  const remainingRooms = await getRemainingRoomsForUser(String(user._id));
+  return {
+    ...user,
+    _id: String(user._id),
+    daily_room_limit: MAX_DAILY_GAMES_PER_USER,
+    remaining_rooms: remainingRooms,
+  };
+}
+
 function mapRecentGame(game: any, userId: string): RecentGameResult {
   const player = game.players.find((entry: any) => String(entry.user_id) === userId);
   const winner = game.players.find((entry: any) => entry.result === 'won');
@@ -58,7 +70,7 @@ function mapRecentGame(game: any, userId: string): RecentGameResult {
 
 async function findRecentGames(userId: string, offset = 0, limit = 5) {
   const safeOffset = normalizePaginationValue(offset, 0);
-  const safeLimit = normalizePaginationValue(limit, 5) || 5;
+  const safeLimit = Math.min(normalizePaginationValue(limit, 5), 25);
   const games = await GameModel.find({ 'players.user_id': userId })
     .sort({ ended_at: -1, updated_at: -1 })
     .skip(safeOffset)
@@ -81,7 +93,7 @@ export async function getAccountByIdentifier(identifier: string, offset = 0, lim
   await syncUserStats(userId);
   const refreshedUser = await findUserById(userId);
   const recent_games = await findRecentGames(userId, offset, limit);
-  return { user: refreshedUser ?? user, recent_games_page: recent_games };
+  return { user: await buildAccountUser(refreshedUser ?? user), recent_games_page: recent_games };
 }
 
 function resolveEmail(identifier: string, payload: AccountPayload) {

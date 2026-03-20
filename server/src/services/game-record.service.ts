@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { GameModel } from '../models';
 import type { CreateGamePayload, GamePlayerPayload, UpdateGamePayload } from '../types/game-record.types';
 import { syncUserStatsForPlayers } from './user-stats.service';
+import { ensureRoomQuotaAvailable } from './room-quota.service';
 import { normalizeDate } from '../utils/user.util';
 
 function toObjectId(value?: string) {
@@ -145,6 +146,7 @@ export async function getGameRecord(matchID: string) {
 }
 
 export async function createGameRecord(matchID: string, payload: CreateGamePayload) {
+  await ensureRoomQuotaAvailable(payload.creator_user_id);
   const game = new GameModel(buildCreateDocument(matchID, payload));
   return game.save();
 }

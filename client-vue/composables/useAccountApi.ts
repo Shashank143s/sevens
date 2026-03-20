@@ -22,6 +22,8 @@ export type AccountApiUser = {
     wins: number
     losses: number
   }
+  daily_room_limit: number
+  remaining_rooms: number
 }
 
 type UpsertAccountResponse = {

@@ -8,6 +8,7 @@ const router = useRouter()
 const { session } = usePlayerSession()
 const { getCredentials } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
+const { getAccount } = useAccountApi()
 const { isOnline } = useOnlineStatus()
 const {
   isSupported: notificationsSupported,
@@ -29,9 +30,29 @@ const createNumPlayers = ref(2)
 const createAiBots = ref(0)
 const creating = ref(false)
 const reconnecting = ref(false)
+const remainingRooms = ref<number | null>(null)
+const dailyRoomLimit = ref<number | null>(null)
+
+const createRoomDisabled = computed(() => !isOnline.value || remainingRooms.value === 0)
+const remainingRoomsLabel = computed(() => {
+  if (remainingRooms.value == null || dailyRoomLimit.value == null) return null
+  return `Games today: ${dailyRoomLimit.value - remainingRooms.value} / ${dailyRoomLimit.value}`
+})
+const remainingRoomsToneClass = computed(() => {
+  if (remainingRooms.value == null || dailyRoomLimit.value == null) return ''
+  const usedRooms = dailyRoomLimit.value - remainingRooms.value
+  if (usedRooms < 5) {
+    return 'border-emerald-300/25 bg-emerald-500/10 text-emerald-100 shadow-[0_10px_25px_rgba(16,185,129,0.12)]'
+  }
+  if (usedRooms <= 8) {
+    return 'border-amber-300/25 bg-amber-500/10 text-amber-100 shadow-[0_10px_25px_rgba(245,158,11,0.12)]'
+  }
+  return 'border-red-300/25 bg-red-500/10 text-red-100 shadow-[0_10px_25px_rgba(239,68,68,0.14)]'
+})
 
 const lobbyStatus = computed(() => {
   if (!isOnline.value) return 'You are offline. Reconnect to refresh rooms or create a new table.'
+  if (remainingRooms.value === 0) return 'You have reached today’s room creation limit. You can still join existing rooms.'
   if (error.value) return error.value
   if (reconnecting.value) return 'Connection restored. Refreshing available rooms...'
   return null
@@ -70,6 +91,7 @@ async function fetchRooms() {
   loading.value = true
   error.value = null
   try {
+    await refreshRemainingRooms().catch(() => {})
     rooms.value = await listMatches()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load rooms'
@@ -83,6 +105,7 @@ function joinRoom(matchID: string) {
 }
 
 async function openCreateModal() {
+  if (createRoomDisabled.value) return
   createNumPlayers.value = 2
   createAiBots.value = 0
   showCreateModal.value = true
@@ -97,6 +120,10 @@ async function doCreateRoom() {
     error.value = 'Reconnect before creating a room.'
     return
   }
+  if (remainingRooms.value === 0) {
+    error.value = 'You have reached today’s room creation limit. You can still join existing rooms.'
+    return
+  }
 
   creating.value = true
   try {
@@ -109,6 +136,7 @@ async function doCreateRoom() {
     closeCreateModal()
     router.push(`/room/${matchID}`)
   } catch (e) {
+    await refreshRemainingRooms()
     error.value = e instanceof Error ? e.message : 'Failed to create room'
   } finally {
     creating.value = false
@@ -116,13 +144,33 @@ async function doCreateRoom() {
 }
 
 async function createGameRecordEntry(matchID: string) {
-  await createGameRecord(matchID, {
-    room_size: createNumPlayers.value,
-    creator_user_id: session.value?.id,
-    metadata: {
-      source: 'web',
-    },
-  })
+  try {
+    await createGameRecord(matchID, {
+      room_size: createNumPlayers.value,
+      creator_user_id: session.value?.id,
+      metadata: {
+        source: 'web',
+      },
+    })
+  } catch (error) {
+    await deleteCreatedRoom(matchID)
+    throw error
+  }
+}
+
+async function deleteCreatedRoom(matchID: string) {
+  await fetch(`${useRuntimeConfig().public.apiBase}/api/match/delete/${matchID}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  }).catch(() => {})
+}
+
+async function refreshRemainingRooms() {
+  const identifier = session.value?.id || session.value?.email?.trim()
+  if (!identifier) return
+  const response = await getAccount(identifier, 0, 0)
+  dailyRoomLimit.value = response.user.daily_room_limit
+  remainingRooms.value = response.user.remaining_rooms
 }
 
 async function enableNotifications() {
@@ -160,7 +208,37 @@ onMounted(() => {
       <AppUserMenu />
     </header>
 
-    <h1 class="text-2xl sm:text-3xl font-bold mb-4">Game Lobby</h1>
+    <div class="mb-4 flex flex-col gap-3">
+      <div class="flex items-start justify-between gap-3">
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-50">Game Lobby</h1>
+        <div
+          v-if="remainingRoomsLabel"
+          class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"
+          :class="remainingRoomsToneClass"
+        >
+          {{ remainingRoomsLabel }}
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900/70 px-4 py-2 text-sm font-semibold text-slate-100 backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="loading || !isOnline"
+          @click="fetchRooms"
+        >
+          Refresh
+        </button>
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-300/20 bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_14px_30px_rgba(245,158,11,0.18)] transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="createRoomDisabled"
+          @click="openCreateModal"
+        >
+          Create Room
+        </button>
+      </div>
+    </div>
 
     <div
       v-if="lobbyStatus"
@@ -168,25 +246,6 @@ onMounted(() => {
       :class="isOnline ? 'border-amber-400/20 bg-slate-900/70 text-slate-200' : 'border-red-400/20 bg-red-950/40 text-red-100'"
     >
       {{ lobbyStatus }}
-    </div>
-
-    <div class="flex flex-wrap gap-3 mb-4">
-      <button
-        type="button"
-        class="px-4 py-2 rounded-xl border border-white/10 bg-slate-900/70 hover:bg-slate-800/85 text-sm text-slate-100 font-medium backdrop-blur-sm"
-        :disabled="loading || !isOnline"
-        @click="fetchRooms"
-      >
-        Refresh
-      </button>
-      <button
-        type="button"
-        class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-sm text-slate-900 font-bold"
-        :disabled="!isOnline"
-        @click="openCreateModal"
-      >
-        Create Room
-      </button>
     </div>
 
     <section

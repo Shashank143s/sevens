@@ -20,7 +20,7 @@ const primaryCta = computed(() => {
 const journeySteps = [
   {
     title: '1. Get to the lobby',
-    body: 'Sign in, open the lobby, and either create a room or join one that already has open seats.',
+    body: 'Sign in, open the lobby, and either create a room or join one that already has open seats. You can create up to 10 rooms per UTC day, but you can still join existing rooms anytime.',
   },
   {
     title: '2. Start with the seven of spades',
@@ -144,7 +144,7 @@ const tips = [
 
           <ul class="instructions-list">
             <li><strong>Home:</strong> sign in and enter the game.</li>
-            <li><strong>Lobby:</strong> create a room, join an existing room, or rejoin a game you were already in.</li>
+            <li><strong>Lobby:</strong> create a room, join an existing room, or rejoin a game you were already in. Room creation is limited to 10 per UTC day.</li>
             <li><strong>Room:</strong> wait for players, add bots, and then enter the live game board.</li>
             <li><strong>Game board:</strong> watch the suit lanes, choose a legal card, or pass when no move exists.</li>
           </ul>

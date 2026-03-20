@@ -41,6 +41,12 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
   try {
     await dispatchGameRoute(ctx, match[1]);
   } catch (error) {
+    if ((error as { status?: number }).status === 409) {
+      return setJson(ctx, 409, {
+        error: (error as Error).message,
+        reason: (error as { reason?: string }).reason ?? 'limit_breached',
+      });
+    }
     console.error('[game-route] Error:', error);
     setJson(ctx, 500, { error: 'Internal server error' });
   }
