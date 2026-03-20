@@ -81,7 +81,7 @@ export async function getAccountByIdentifier(identifier: string, offset = 0, lim
   await syncUserStats(userId);
   const refreshedUser = await findUserById(userId);
   const recent_games = await findRecentGames(userId, offset, limit);
-  return { user: refreshedUser ?? user, recent_games: recent_games.games, recent_games_page: recent_games };
+  return { user: refreshedUser ?? user, recent_games_page: recent_games };
 }
 
 function resolveEmail(identifier: string, payload: AccountPayload) {

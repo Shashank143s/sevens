@@ -66,6 +66,7 @@ function goToAccount() {
 <style scoped>
 .user-menu {
   position: relative;
+  z-index: 80;
 }
 
 .user-menu__toggle {
@@ -116,6 +117,7 @@ function goToAccount() {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
+  z-index: 81;
   min-width: 10rem;
   padding: 0.5rem;
   border-radius: 1rem;

@@ -31,13 +31,12 @@ function outcomeLabel(game: AccountRecentGame) {
   if (game.result === 'won') return 'You won'
   if (game.status !== 'completed') return 'In progress'
   if (game.winner_is_bot) return 'AI Bot Won'
-  if (game.winner_name) return `${game.winner_name} Won`
+  if (game.winner_name) return `${game.winner_name.split(/\s+/)[0]} Won`
   return 'Completed'
 }
 
 function resultTone(game: AccountRecentGame) {
   if (game.result === 'won') return 'games-page__badge--win'
-  if (game.winner_is_bot) return 'games-page__badge--bot'
   if (game.status === 'completed') return 'games-page__badge--loss'
   return 'games-page__badge--live'
 }
@@ -53,9 +52,10 @@ async function loadGames(reset = false) {
   try {
     const response = await fetchPage(nextOffset)
     account.value = response.user
-    games.value = reset ? response.recent_games : [...games.value, ...response.recent_games]
+    const nextGames = response.recent_games_page.games
+    games.value = reset ? nextGames : [...games.value, ...nextGames]
     hasMore.value = response.recent_games_page.has_more
-    offset.value = nextOffset + response.recent_games.length
+    offset.value = nextOffset + nextGames.length
     loadError.value = ''
   } catch {
     loadError.value = 'We could not load your match history right now.'
@@ -99,7 +99,7 @@ onMounted(async () => {
           <p class="games-page__eyebrow">Account Games</p>
           <h1>Match history</h1>
           <p class="games-page__subtitle">
-            Your latest tables, outcomes, and running totals in one place.
+            Your latest games, outcomes, and running totals in one place.
           </p>
         </div>
       </section>
@@ -128,7 +128,7 @@ onMounted(async () => {
       </p>
 
       <p v-else-if="games.length === 0" class="games-page__message">
-        No games recorded yet. Finish a table and your history will show up here.
+        No games recorded yet.
       </p>
 
       <section v-else class="games-page__list">
@@ -156,7 +156,7 @@ onMounted(async () => {
         :disabled="isLoadingMore"
         @click="loadMore"
       >
-        {{ isLoadingMore ? 'Loading...' : 'Load 5 More Games' }}
+        {{ isLoadingMore ? 'Loading...' : 'Load More' }}
       </button>
     </main>
   </div>
@@ -295,6 +295,7 @@ onMounted(async () => {
 .games-page__message {
   margin: 1.25rem 0 0;
   line-height: 1.7;
+  text-align: center;
 }
 
 .games-page__list {

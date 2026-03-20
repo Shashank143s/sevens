@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 // Defaults are localhost-only for dev. Set env vars in production (no secrets in code).
+const HOST = process.env.HOST ?? '0.0.0.0';
 const PORT = Number(process.env.PORT ?? 8000);
 const API_BASE = process.env.API_BASE ?? `http://localhost:${PORT}`;
 const SERVER_URL = process.env.SERVER_URL ?? API_BASE;
@@ -10,6 +11,7 @@ const FRONTEND_ORIGIN_REGEX =
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
 
 export {
+  HOST,
   PORT,
   API_BASE,
   SERVER_URL,

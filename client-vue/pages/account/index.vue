@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
-import { useAccountApi, type AccountApiUser } from '~/composables/useAccountApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 
 const router = useRouter()
 const { session, clearSession } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
-const { deleteAccount, getAccount } = useAccountApi()
-
-const account = ref<AccountApiUser | null>(null)
-const isLoading = ref(true)
+const { deleteAccount } = useAccountApi()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
-const loadError = ref('')
 
-const fullName = computed(() => account.value?.full_name || session.value?.name?.trim() || 'Player')
-const email = computed(() => account.value?.email || session.value?.email?.trim() || 'Not available')
-const profileImage = computed(() => account.value?.profile_image_url || session.value?.image)
+const fullName = computed(() => session.value?.name?.trim() || 'Player')
+const email = computed(() => session.value?.email?.trim() || 'Not available')
+const profileImage = computed(() => session.value?.image)
 const avatarLabel = computed(() => fullName.value.charAt(0).toUpperCase() || 'P')
 const accountIdentifier = computed(() => session.value?.id || session.value?.email?.trim() || '')
-const lastLoginLabel = computed(() => formatDate(account.value?.last_login_at ?? session.value?.lastLoginAt))
+const lastLoginLabel = computed(() => formatDate(session.value?.lastLoginAt))
 
 function formatDate(value?: string | number) {
   if (!value) return 'Not available'
@@ -27,19 +22,6 @@ function formatDate(value?: string | number) {
     dateStyle: 'long',
     timeStyle: 'short',
   }).format(new Date(value))
-}
-
-async function loadAccount() {
-  if (!accountIdentifier.value) return
-  try {
-    const response = await getAccount(accountIdentifier.value, 0, 5)
-    account.value = response.user
-    loadError.value = ''
-  } catch {
-    loadError.value = 'We could not load your latest account activity.'
-  } finally {
-    isLoading.value = false
-  }
 }
 
 function openDeleteDialog() {
@@ -75,10 +57,7 @@ function logout() {
 onMounted(() => {
   if (!session.value?.name?.trim()) {
     router.replace('/')
-    return
   }
-
-  void loadAccount()
 })
 </script>
 

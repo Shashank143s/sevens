@@ -1,6 +1,6 @@
 import { Server, Origins } from 'boardgame.io/server';
 import { Sevens } from './game';
-import { PORT } from './config';
+import { HOST, PORT } from './config';
 import { connectToDatabase } from './database/mongoose';
 import { corsMiddleware } from './middleware/cors.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
@@ -41,7 +41,7 @@ async function startServer() {
 }
 
 function onServerStarted() {
-  console.log(`🌟 Sevens server running on http://localhost:${PORT}`);
+  console.log(`🌟 Sevens server running on http://${HOST}:${PORT}`);
   attachSocketLogging();
 }
 
