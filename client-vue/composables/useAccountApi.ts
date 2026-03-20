@@ -41,8 +41,8 @@ export type AccountRecentGame = {
 
 type GetAccountResponse = {
   user: AccountApiUser
-  recent_games: AccountRecentGame[]
   recent_games_page: {
+    games: AccountRecentGame[]
     offset: number
     limit: number
     has_more: boolean
