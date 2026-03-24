@@ -10,8 +10,13 @@ export type GamePlayerPayload = {
 };
 
 export type CreateGamePayload = {
+  room_name: string;
   room_size: number;
   creator_user_id?: string;
+  access?: {
+    is_private?: boolean;
+    password?: string;
+  };
   players?: GamePlayerPayload[];
   metadata?: {
     source?: 'web' | 'pwa' | 'apk';
@@ -33,4 +38,8 @@ export type UpdateGamePayload = {
     source?: 'web' | 'pwa' | 'apk';
     notes?: string;
   };
+};
+
+export type JoinAuthorizationPayload = {
+  password?: string;
 };

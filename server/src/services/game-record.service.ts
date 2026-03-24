@@ -4,6 +4,8 @@ import type { CreateGamePayload, GamePlayerPayload, UpdateGamePayload } from '..
 import { syncUserStatsForPlayers } from './user-stats.service';
 import { ensureRoomQuotaAvailable } from './room-quota.service';
 import { normalizeDate } from '../utils/user.util';
+import { hashRoomPassword, normalizeRoomPassword, verifyRoomPassword } from '../utils/password.util';
+import { validateRoomName } from '../utils/room.util';
 
 function toObjectId(value?: string) {
   return value && Types.ObjectId.isValid(value) ? new Types.ObjectId(value) : undefined;
@@ -82,13 +84,24 @@ function buildCreateDocument(matchID: string, payload: CreateGamePayload) {
   const players = normalizePlayers(payload.players);
   return {
     match_id: matchID,
+    room_name: validateRoomName(payload.room_name),
     room_size: payload.room_size,
     creator_user_id: toObjectId(payload.creator_user_id),
     players,
     player_count: countPlayers(players),
     bot_count: countBots(players),
     status: 'created' as const,
+    access: buildAccessDocument(payload),
     metadata: payload.metadata,
+  };
+}
+
+function buildAccessDocument(payload: CreateGamePayload) {
+  const password = normalizeRoomPassword(payload.access?.password);
+  const isPrivate = Boolean(payload.access?.is_private && password);
+  return {
+    is_private: isPrivate,
+    password_hash: isPrivate ? hashRoomPassword(password) : undefined,
   };
 }
 
@@ -145,10 +158,31 @@ export async function getGameRecord(matchID: string) {
   return GameModel.findOne({ match_id: matchID }).lean();
 }
 
+export async function getPublicGameRecord(matchID: string) {
+  const game = await getGameRecord(matchID);
+  if (!game) return null;
+  return {
+    ...game,
+    access: {
+      is_private: Boolean(game.access?.is_private),
+    },
+  };
+}
+
 export async function createGameRecord(matchID: string, payload: CreateGamePayload) {
   await ensureRoomQuotaAvailable(payload.creator_user_id);
   const game = new GameModel(buildCreateDocument(matchID, payload));
   return game.save();
+}
+
+export async function authorizeGameJoin(matchID: string, password?: string) {
+  const game = await getGameRecord(matchID);
+  if (!game) return null;
+  if (!game.access?.is_private) return { allowed: true };
+  const normalizedPassword = normalizeRoomPassword(password);
+  const passwordHash = game.access.password_hash ?? '';
+  const allowed = normalizedPassword.length > 0 && verifyRoomPassword(normalizedPassword, passwordHash);
+  return { allowed, is_private: true };
 }
 
 export async function updateGameRecord(matchID: string, payload: UpdateGamePayload) {

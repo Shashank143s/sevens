@@ -34,6 +34,14 @@ function saveToStorage(session: PlayerSession | null) {
 
 export function usePlayerSession() {
   const session = useState<PlayerSession | null>('player-session', () => loadFromStorage())
+  const hydrated = useState<boolean>('player-session-hydrated', () => import.meta.server)
+
+  function hydrateSession() {
+    const stored = loadFromStorage()
+    session.value = stored
+    hydrated.value = true
+    return stored
+  }
 
   function setSession(sessionData: PlayerSession) {
     const next: PlayerSession = {
@@ -41,19 +49,26 @@ export function usePlayerSession() {
       name: sessionData.name.trim(),
     }
     session.value = next
+    hydrated.value = true
     saveToStorage(next)
   }
 
   function clearSession() {
     session.value = null
+    hydrated.value = true
     saveToStorage(null)
   }
 
   // Rehydrate from storage when client mounts (e.g. after nav)
   onMounted(() => {
-    const stored = loadFromStorage()
-    if (stored && !session.value) session.value = stored
+    hydrateSession()
   })
 
-  return { session: readonly(session), setSession, clearSession }
+  return {
+    session: readonly(session),
+    hydrated: readonly(hydrated),
+    hydrateSession,
+    setSession,
+    clearSession,
+  }
 }

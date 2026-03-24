@@ -3,12 +3,15 @@ const props = defineProps<{
   matchId: string
   playerName: string
   avatar: string
+  roomPassword?: string
+  requiresPassword?: boolean
   disabled?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:playerName': [value: string]
   'update:avatar': [value: string]
+  'update:roomPassword': [value: string]
   submit: []
 }>()
 </script>
@@ -33,6 +36,15 @@ const emit = defineEmits<{
       placeholder="Your alias"
       class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
       @input="emit('update:playerName', ($event.target as HTMLInputElement).value)"
+      @keydown.enter="!disabled && emit('submit')"
+    >
+    <input
+      v-if="requiresPassword"
+      :value="roomPassword"
+      type="password"
+      placeholder="Room password"
+      class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
+      @input="emit('update:roomPassword', ($event.target as HTMLInputElement).value)"
       @keydown.enter="!disabled && emit('submit')"
     >
     <div class="mb-2 text-sm text-slate-400">

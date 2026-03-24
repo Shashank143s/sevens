@@ -1,6 +1,11 @@
 type CreateGameRecordPayload = {
+  room_name: string
   room_size: number
   creator_user_id?: string
+  access?: {
+    is_private?: boolean
+    password?: string
+  }
   metadata?: {
     source?: 'web' | 'pwa' | 'apk'
     notes?: string
@@ -25,10 +30,29 @@ export function useGameApi() {
   }
 
   async function createGameRecord(matchID: string, payload: CreateGameRecordPayload) {
-    return $fetch(buildGameUrl(matchID), {
-      method: 'POST',
-      body: payload,
-    })
+    try {
+      return await $fetch(buildGameUrl(matchID), {
+        method: 'POST',
+        body: payload,
+      })
+    } catch (error: any) {
+      throw new Error(error?.data?.error ?? 'Failed to create room record')
+    }
+  }
+
+  async function getGameRecord(matchID: string) {
+    return $fetch<{ game: { access?: { is_private?: boolean } } }>(buildGameUrl(matchID))
+  }
+
+  async function authorizeJoin(matchID: string, password?: string) {
+    try {
+      return await $fetch(`${buildGameUrl(matchID)}/authorize-join`, {
+        method: 'POST',
+        body: { password },
+      })
+    } catch (error: any) {
+      throw new Error(error?.data?.error ?? 'Unable to join this room')
+    }
   }
 
   async function registerJoinedPlayer(matchID: string, payload: JoinGameRecordPayload) {
@@ -60,7 +84,9 @@ export function useGameApi() {
   }
 
   return {
+    authorizeJoin,
     createGameRecord,
+    getGameRecord,
     registerJoinedPlayer,
     markGameInProgress,
     completeGameRecord,

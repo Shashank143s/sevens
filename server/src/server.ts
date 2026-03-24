@@ -8,6 +8,7 @@ import { accountRoute } from './routes/account.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
 import { gameRoute } from './routes/game.router';
+import { roomsRoute } from './routes/rooms.router';
 
 const server = Server({
   games: [Sevens],
@@ -17,6 +18,7 @@ const server = Server({
 function registerRoutes() {
   server.app.use(corsMiddleware);
   server.app.use(accountRoute);
+  server.app.use(roomsRoute);
   server.app.use(gameRoute);
   server.app.use(joinRoute);
   server.app.use(createDeleteRoute(server as any));

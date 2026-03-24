@@ -10,16 +10,21 @@ export interface MatchPlayer {
 
 export interface LobbyMatch {
   matchID: string
+  room_name?: string
   players: MatchPlayer[]
   setupData?: { numPlayers?: number; aiBots?: number }
+  room_size?: number
+  joined_count?: number
+  game_status?: 'created' | 'in_progress' | 'completed' | 'abandoned' | 'open' | 'full'
+  is_private?: boolean
 }
 
 export async function listMatches(): Promise<LobbyMatch[]> {
   const config = useRuntimeConfig()
-  const res = await fetch(`${config.public.apiBase}/games/${GAME_NAME}`)
+  const res = await fetch(`${config.public.apiBase}/api/rooms`)
   if (!res.ok) throw new Error('Failed to list rooms')
   const data = await res.json()
-  return Array.isArray(data) ? data as LobbyMatch[] : (data as { matches?: LobbyMatch[] }).matches ?? []
+  return Array.isArray(data) ? data as LobbyMatch[] : (data as { rooms?: LobbyMatch[] }).rooms ?? []
 }
 
 export async function createMatch(numPlayers: number, aiBots: number = 0): Promise<{ matchID: string }> {

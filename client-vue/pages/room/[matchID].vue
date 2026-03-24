@@ -8,7 +8,7 @@ const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
 const { getCredentials, setCredentials } = useRoomCredentials()
-const { registerJoinedPlayer, markGameInProgress } = useGameApi()
+const { authorizeJoin, getGameRecord, registerJoinedPlayer, markGameInProgress } = useGameApi()
 const { isOnline } = useOnlineStatus()
 
 const joined = ref(false)
@@ -22,6 +22,8 @@ const joinError = ref<string | null>(null)
 const roomStatusMessage = ref<string | null>(null)
 const checkingRoom = ref(false)
 const gameStarted = ref(false)
+const roomPassword = ref('')
+const requiresPassword = ref(false)
 
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
@@ -53,6 +55,15 @@ async function fetchMatchMeta() {
     return false
   } finally {
     checkingRoom.value = false
+  }
+}
+
+async function fetchRoomAccess() {
+  try {
+    const response = await getGameRecord(matchID.value)
+    requiresPassword.value = Boolean(response.game.access?.is_private)
+  } catch {
+    requiresPassword.value = false
   }
 }
 
@@ -92,6 +103,7 @@ onMounted(async () => {
   }
 
   await fetchMatchMeta()
+  await fetchRoomAccess()
 })
 
 const enterGame = async () => {
@@ -104,6 +116,9 @@ const enterGame = async () => {
   try {
     joining.value = true
     joinError.value = null
+    if (requiresPassword.value) {
+      await authorizeJoin(matchID.value, roomPassword.value)
+    }
     const metaRes = await fetch(getMatchUrl(matchID.value))
     if (!metaRes.ok) {
       joinError.value = 'Could not load the room. Please try again.'
@@ -144,8 +159,10 @@ const enterGame = async () => {
     })
     await fetchMatchMeta()
     startPolling()
-  } catch {
-    joinError.value = 'Connection lost while joining. Try again when the network is back.'
+  } catch (error) {
+    joinError.value = error instanceof Error
+      ? error.message
+      : 'Connection lost while joining. Try again when the network is back.'
   } finally {
     joining.value = false
   }
@@ -239,8 +256,11 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
         :match-id="matchID"
         :player-name="playerName"
         :avatar="avatar"
+        :room-password="roomPassword"
+        :requires-password="requiresPassword"
         @update:player-name="playerName = $event"
         @update:avatar="avatar = $event"
+        @update:room-password="roomPassword = $event"
         @submit="enterGame"
       />
       <p class="mt-3 text-center text-sm text-slate-400">

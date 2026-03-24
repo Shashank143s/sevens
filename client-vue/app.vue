@@ -3,7 +3,14 @@ const isOnline = ref(true)
 const pwa = import.meta.client ? usePWA() : undefined
 const splashDismissed = ref(false)
 const config = useRuntimeConfig()
+const route = useRoute()
+const { hydrated: sessionHydrated } = usePlayerSession()
+const authRedirecting = useState<boolean>('auth-redirecting', () => false)
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
+const isProtectedRoute = computed(() => route.path !== '/')
+const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
+const appContentReady = computed(() => splashDismissed.value && desktopAuthReady.value && !authRedirecting.value)
+const router = useRouter()
 
 const showInstallBanner = computed(() =>
   import.meta.client
@@ -36,6 +43,25 @@ function syncOnlineState() {
   isOnline.value = navigator.onLine
 }
 
+function releaseAuthRedirect() {
+  if (!import.meta.client || route.path !== '/') return
+  window.requestAnimationFrame(() => {
+    authRedirecting.value = false
+  })
+}
+
+async function handleProtectedRouteRedirect() {
+  if (!import.meta.client) return
+  if (!sessionHydrated.value) return
+  if (!authRedirecting.value) return
+  if (!isProtectedRoute.value) {
+    releaseAuthRedirect()
+    return
+  }
+
+  await router.replace('/')
+}
+
 onMounted(() => {
   syncOnlineState()
   window.addEventListener('online', syncOnlineState)
@@ -48,6 +74,18 @@ onMounted(() => {
   } else {
     splashDismissed.value = true
   }
+
+  handleProtectedRouteRedirect()
+  releaseAuthRedirect()
+})
+
+watch(() => route.fullPath, () => {
+  handleProtectedRouteRedirect()
+  releaseAuthRedirect()
+})
+
+watch([sessionHydrated, isProtectedRoute, authRedirecting], () => {
+  handleProtectedRouteRedirect()
 })
 
 onUnmounted(() => {
@@ -92,7 +130,7 @@ onUnmounted(() => {
 
     <div
       class="app-shell__content"
-      :class="{ 'app-shell__content--ready': splashDismissed }"
+      :class="{ 'app-shell__content--ready': appContentReady }"
     >
       <Transition name="status-banner">
         <div v-if="showOfflineBanner" class="status-banner status-banner--offline">
@@ -153,12 +191,12 @@ onUnmounted(() => {
   min-height: 100dvh;
 }
 
-@media (max-width: 640px) {
-  .app-shell__content {
-    opacity: 0;
-    pointer-events: none;
-  }
+.app-shell__content:not(.app-shell__content--ready) {
+  opacity: 0;
+  pointer-events: none;
+}
 
+@media (max-width: 640px) {
   .app-shell__content--ready {
     opacity: 1;
     pointer-events: auto;
@@ -188,8 +226,7 @@ onUnmounted(() => {
   }
 
   .app-shell__content {
-    opacity: 1;
-    pointer-events: auto;
+    transition: opacity 0.18s ease;
   }
 }
 

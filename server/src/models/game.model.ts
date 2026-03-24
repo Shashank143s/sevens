@@ -61,6 +61,23 @@ const gameMetadataSchema = new Schema(
   },
 );
 
+const gameAccessSchema = new Schema(
+  {
+    is_private: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    password_hash: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const gameSchema = new Schema(
   {
     match_id: {
@@ -75,6 +92,13 @@ const gameSchema = new Schema(
       required: true,
       default: 'sevens',
       trim: true,
+    },
+    room_name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 40,
     },
     room_size: {
       type: Number,
@@ -124,6 +148,10 @@ const gameSchema = new Schema(
     },
     metadata: {
       type: gameMetadataSchema,
+    },
+    access: {
+      type: gameAccessSchema,
+      default: () => ({ is_private: false }),
     },
   },
   {

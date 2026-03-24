@@ -32,6 +32,11 @@ const creating = ref(false)
 const reconnecting = ref(false)
 const remainingRooms = ref<number | null>(null)
 const dailyRoomLimit = ref<number | null>(null)
+const createPrivateRoom = ref(false)
+const createRoomPassword = ref('')
+const createRoomPasswordConfirm = ref('')
+const createRoomName = ref('')
+const roomNameTouched = ref(false)
 
 const createRoomDisabled = computed(() => !isOnline.value || remainingRooms.value === 0)
 const remainingRoomsLabel = computed(() => {
@@ -59,11 +64,11 @@ const lobbyStatus = computed(() => {
 })
 
 function joinedCount(m: LobbyMatch): number {
-  return m.players?.filter(p => p.name != null && p.name !== '')?.length ?? 0
+  return m.joined_count ?? m.players?.filter(p => p.name != null && p.name !== '')?.length ?? 0
 }
 
 function totalPlayers(m: LobbyMatch): number {
-  return m.players?.length ?? 0
+  return m.room_size ?? m.players?.length ?? 0
 }
 
 function isRoomFull(m: LobbyMatch): boolean {
@@ -106,8 +111,14 @@ function joinRoom(matchID: string) {
 
 async function openCreateModal() {
   if (createRoomDisabled.value) return
+  error.value = null
   createNumPlayers.value = 2
   createAiBots.value = 0
+  createRoomName.value = ''
+  roomNameTouched.value = false
+  createPrivateRoom.value = false
+  createRoomPassword.value = ''
+  createRoomPasswordConfirm.value = ''
   showCreateModal.value = true
 }
 
@@ -124,6 +135,8 @@ async function doCreateRoom() {
     error.value = 'You have reached today’s room creation limit. You can still join existing rooms.'
     return
   }
+  if (!validateRoomName()) return
+  if (createPrivateRoom.value && !validatePrivateRoomPassword()) return
 
   creating.value = true
   try {
@@ -146,8 +159,13 @@ async function doCreateRoom() {
 async function createGameRecordEntry(matchID: string) {
   try {
     await createGameRecord(matchID, {
+      room_name: createRoomName.value.trim(),
       room_size: createNumPlayers.value,
       creator_user_id: session.value?.id,
+      access: {
+        is_private: createPrivateRoom.value,
+        password: createRoomPassword.value,
+      },
       metadata: {
         source: 'web',
       },
@@ -171,6 +189,33 @@ async function refreshRemainingRooms() {
   const response = await getAccount(identifier, 0, 0)
   dailyRoomLimit.value = response.user.daily_room_limit
   remainingRooms.value = response.user.remaining_rooms
+}
+
+function validatePrivateRoomPassword() {
+  const password = createRoomPassword.value.trim()
+  if (password.length < 4) {
+    error.value = 'Private room passwords must be at least 4 characters.'
+    return false
+  }
+  if (password !== createRoomPasswordConfirm.value.trim()) {
+    error.value = 'Private room passwords do not match.'
+    return false
+  }
+  return true
+}
+
+function validateRoomName() {
+  roomNameTouched.value = true
+  const roomName = createRoomName.value.trim()
+  if (roomName.length < 3) {
+    error.value = 'Room name must be at least 3 characters.'
+    return false
+  }
+  if (roomName.length > 40) {
+    error.value = 'Room name must be 40 characters or fewer.'
+    return false
+  }
+  return true
 }
 
 async function enableNotifications() {
@@ -278,13 +323,7 @@ onMounted(() => {
 
     <section class="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
       <h2 class="px-4 py-3 font-semibold border-b border-white/10 text-slate-100">Available Rooms</h2>
-      <div v-if="loading" class="p-8 text-center text-slate-400">
-        Loading rooms…
-      </div>
-      <div v-if="!loading && rooms.length === 0" class="p-8 text-center text-slate-400">
-        No rooms available. Create one to start playing!
-      </div>
-      <div v-else class="overflow-x-auto">
+      <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr class="border-b border-white/10 text-slate-300 text-sm">
@@ -295,12 +334,50 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="4" class="px-4 py-10 text-center text-slate-400">
+                Loading rooms…
+              </td>
+            </tr>
+            <tr v-else-if="rooms.length === 0">
+              <td colspan="4" class="px-4 py-10 text-center text-slate-400">
+                No rooms available. Create one to start playing!
+              </td>
+            </tr>
             <tr
+              v-else
               v-for="room in rooms"
               :key="room.matchID"
               class="border-b border-white/5 hover:bg-slate-800/45"
             >
-              <td class="px-4 py-3 font-mono text-sm">{{ displayRoomID(room.matchID) }}</td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-semibold text-slate-100">{{ room.room_name || displayRoomID(room.matchID) }}</span>
+                  <span
+                    v-if="room.is_private"
+                    class="inline-flex h-5 w-5 items-center justify-center text-amber-100"
+                    aria-label="Private room"
+                    title="Private room"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="5" y="11" width="14" height="10" rx="2" ry="2" />
+                      <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="mt-1 font-mono text-xs text-slate-400">
+                  {{ displayRoomID(room.matchID) }}
+                </div>
+              </td>
               <td class="px-4 py-3 text-center">
                 {{ joinedCount(room) }} / {{ totalPlayers(room) }}
               </td>
@@ -352,6 +429,19 @@ onMounted(() => {
           </button>
         </div>
 
+        <label class="block text-sm text-slate-400 mb-1">Room Name</label>
+        <input
+          v-model="createRoomName"
+          type="text"
+          maxlength="40"
+          placeholder="Enter a room name"
+          class="w-full bg-slate-700 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:ring-2"
+          :class="roomNameTouched && createRoomName.trim().length < 3
+            ? 'border border-red-400/70 focus:ring-red-400'
+            : 'border border-slate-600 focus:ring-amber-500'"
+          @blur="roomNameTouched = true"
+        >
+
         <label class="block text-sm text-slate-400 mb-1">Number of Players</label>
         <select
           v-model.number="createNumPlayers"
@@ -371,6 +461,30 @@ onMounted(() => {
           <option :value="1">1 Bot</option>
           <option :value="2">2 Bots</option>
         </select>
+
+        <label class="mb-3 flex items-center gap-3 text-sm text-slate-200">
+          <input
+            v-model="createPrivateRoom"
+            type="checkbox"
+            class="h-4 w-4 rounded border-slate-500 bg-slate-700 text-amber-500 focus:ring-amber-500"
+          >
+          Private room
+        </label>
+
+        <div v-if="createPrivateRoom" class="space-y-4 mb-6">
+          <input
+            v-model="createRoomPassword"
+            type="password"
+            placeholder="Room password"
+            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          >
+          <input
+            v-model="createRoomPasswordConfirm"
+            type="password"
+            placeholder="Confirm password"
+            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          >
+        </div>
 
         <button
           type="button"
