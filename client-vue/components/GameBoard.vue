@@ -264,12 +264,17 @@ onUnmounted(() => {
           <div
             v-for="p in mobileSuitCards"
             :key="p.suit"
-            class="rounded-2xl border border-amber-200/10 bg-slate-900/38 p-3 shadow-[0_18px_40px_rgba(2,6,23,0.18)] backdrop-blur-sm"
+            class="rounded-2xl border p-3 backdrop-blur-sm"
+            :class="p.suit === 'hearts' || p.suit === 'diamonds'
+              ? 'border-red-400/55 bg-[linear-gradient(180deg,rgba(69,10,10,0.78),rgba(30,41,59,0.9))] shadow-[0_22px_48px_rgba(248,113,113,0.24),inset_0_1px_0_rgba(254,202,202,0.16)]'
+              : 'border-slate-200/30 bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.96))] shadow-[0_22px_48px_rgba(255,255,255,0.12),inset_0_1px_0_rgba(255,255,255,0.12)]'"
           >
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between">
               <div
-                class="font-extrabold text-lg tracking-wide"
-                :class="p.suit === 'hearts' || p.suit === 'diamonds' ? 'text-rose-200' : 'text-slate-100'"
+                class="font-extrabold text-[1.75rem] tracking-wide"
+                :class="p.suit === 'hearts' || p.suit === 'diamonds'
+                  ? 'text-red-300 [text-shadow:0_0_18px_rgba(252,165,165,0.75)]'
+                  : 'text-slate-50 [text-shadow:0_0_18px_rgba(255,255,255,0.45)]'"
               >
                 {{ suitSymbols[p.suit] }}
               </div>
@@ -473,7 +478,7 @@ onUnmounted(() => {
 
 <style scoped>
 .board-stage__mobile {
-  padding: 4.75rem 0.75rem 13.5rem;
+  padding: 3.5rem 0.75rem 13.5rem;
   overflow-y: auto;
 }
 
