@@ -306,7 +306,7 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="flex max-h-[calc(100dvh-18rem)] flex-col rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
+      <section class="flex max-h-[calc(100dvh-10rem)] flex-col rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
         <div class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
           <h2 class="font-semibold text-slate-100">Available Rooms</h2>
           <div class="flex items-center gap-3">
