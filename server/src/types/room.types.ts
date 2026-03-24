@@ -17,6 +17,7 @@ export type RoomMatchPayload = {
 
 export type RoomListItem = RoomMatchPayload & {
   room_name: string;
+  creator_name?: string;
   room_size: number;
   joined_count: number;
   game_status: 'created' | 'in_progress' | 'completed' | 'abandoned' | 'open' | 'full';

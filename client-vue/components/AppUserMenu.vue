@@ -1,8 +1,9 @@
 <script setup lang="ts">
 const router = useRouter()
-const { session } = usePlayerSession()
+const { session, hydrated } = usePlayerSession()
 
 const open = ref(false)
+const showMenu = computed(() => hydrated.value && !!session.value)
 
 const displayName = computed(() => {
   const name = session.value?.name?.trim() ?? 'Player'
@@ -22,7 +23,7 @@ function goToAccount() {
 </script>
 
 <template>
-  <div v-if="session" class="user-menu">
+  <div v-if="showMenu" class="user-menu">
     <button
       type="button"
       class="user-menu__toggle"

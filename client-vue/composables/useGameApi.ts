@@ -41,7 +41,7 @@ export function useGameApi() {
   }
 
   async function getGameRecord(matchID: string) {
-    return $fetch<{ game: { access?: { is_private?: boolean } } }>(buildGameUrl(matchID))
+    return $fetch<{ game: { room_name?: string; access?: { is_private?: boolean } } }>(buildGameUrl(matchID))
   }
 
   async function authorizeJoin(matchID: string, password?: string) {

@@ -59,11 +59,6 @@ export function usePlayerSession() {
     saveToStorage(null)
   }
 
-  // Rehydrate from storage when client mounts (e.g. after nav)
-  onMounted(() => {
-    hydrateSession()
-  })
-
   return {
     session: readonly(session),
     hydrated: readonly(hydrated),

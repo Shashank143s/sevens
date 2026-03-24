@@ -15,7 +15,9 @@ async function loadLobbyMatches() {
 
 async function loadRoomGames(matchIDs: string[]) {
   if (matchIDs.length === 0) return [];
-  return GameModel.find({ match_id: { $in: matchIDs } }).lean();
+  return GameModel.find({ match_id: { $in: matchIDs } })
+    .populate('creator_user_id', 'full_name first_name')
+    .lean();
 }
 
 function buildGameMap(games: Awaited<ReturnType<typeof loadRoomGames>>) {
@@ -39,9 +41,14 @@ function buildRoomItem(match: RoomMatchPayload, gameMap: ReturnType<typeof build
   const game = gameMap.get(match.matchID);
   const roomSize = game?.room_size ?? match.setupData?.numPlayers ?? match.players.length;
   const joinedCount = countJoinedPlayers(match.players);
+  const creatorName = typeof game?.creator_user_id === 'object'
+    ? (game.creator_user_id as { full_name?: string; first_name?: string }).full_name
+      ?? (game.creator_user_id as { full_name?: string; first_name?: string }).first_name
+    : undefined;
   return {
     ...match,
     room_name: game?.room_name ?? `Room ${match.matchID.slice(0, 4)}`,
+    creator_name: creatorName,
     room_size: roomSize,
     joined_count: joinedCount,
     game_status: resolveGameStatus(game?.status, joinedCount, roomSize),

@@ -24,6 +24,7 @@ const checkingRoom = ref(false)
 const gameStarted = ref(false)
 const roomPassword = ref('')
 const requiresPassword = ref(false)
+const roomName = ref('')
 
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
@@ -62,8 +63,10 @@ async function fetchRoomAccess() {
   try {
     const response = await getGameRecord(matchID.value)
     requiresPassword.value = Boolean(response.game.access?.is_private)
+    roomName.value = typeof response.game.room_name === 'string' ? response.game.room_name : ''
   } catch {
     requiresPassword.value = false
+    roomName.value = ''
   }
 }
 
@@ -254,6 +257,7 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
       </p>
       <JoinTableModal
         :match-id="matchID"
+        :room-name="roomName"
         :player-name="playerName"
         :avatar="avatar"
         :room-password="roomPassword"

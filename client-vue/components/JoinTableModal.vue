@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
   matchId: string
+  roomName?: string
   playerName: string
   avatar: string
   roomPassword?: string
@@ -20,7 +21,7 @@ const emit = defineEmits<{
   <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-white">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-bold text-white">
-        Join Room {{ matchId }}
+        Join {{ roomName || `Room ${matchId}` }}
       </h2>
       <NuxtLink
         to="/lobby"
