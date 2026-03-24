@@ -158,26 +158,35 @@ watch(isOnline, (online, wasOnline) => {
     </div>
     <div
       v-if="isGameOver"
-      class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 safe-area-padding"
+      class="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 safe-area-padding"
     >
-      <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-900">
-        <div class="text-center">
-          <div class="text-5xl mb-3">{{ winnerDisplay.avatar }}</div>
-          <div class="text-2xl sm:text-3xl font-extrabold mb-2">
-            {{ didIWin ? 'You won!' : 'You lost' }}
+      <div class="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/96 p-6 text-white shadow-[0_30px_80px_rgba(2,6,23,0.6)] sm:p-8">
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.08),transparent_32%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.05),transparent_24%)]" />
+        <div class="relative text-center">
+          <div class="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full border border-amber-300/20 bg-white/5 text-5xl shadow-[0_18px_40px_rgba(245,158,11,0.14)]">
+            {{ winnerDisplay.avatar }}
           </div>
-          <div class="text-slate-600 mb-6">
-            Winner: <span class="font-bold">{{ winnerDisplay.name }}</span>
+          <div class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.28em] text-amber-300/80">
+            {{ didIWin ? 'Victory' : 'Round Complete' }}
           </div>
-          <div class="text-slate-500 text-sm">
-            Returning to lobby in <span class="font-bold">{{ redirectSeconds }}s</span>
+          <div class="text-3xl font-extrabold tracking-tight text-slate-50 sm:text-4xl">
+            {{ didIWin ? 'You won' : 'You lost' }}
+          </div>
+          <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            Winner
+            <div class="mt-1 text-lg font-bold text-slate-50">
+              {{ winnerDisplay.name }}
+            </div>
+          </div>
+          <div class="mt-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
+            Returning to lobby in {{ redirectSeconds }}s
           </div>
           <button
             type="button"
-            class="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl font-bold"
+            class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400 px-4 py-3 font-bold text-slate-950 shadow-[0_18px_40px_rgba(245,158,11,0.18)] transition hover:bg-amber-300"
             @click="router.push('/lobby')"
           >
-            Go to lobby now
+            Go to Lobby
           </button>
         </div>
       </div>
