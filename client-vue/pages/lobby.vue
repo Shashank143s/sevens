@@ -39,6 +39,10 @@ const createRoomName = ref('')
 const roomNameTouched = ref(false)
 
 const createRoomDisabled = computed(() => !isOnline.value || remainingRooms.value === 0)
+const botOptions = computed(() => {
+  const maxBots = Math.max(createNumPlayers.value - 1, 0)
+  return Array.from({ length: maxBots + 1 }, (_, value) => value)
+})
 const remainingRoomsLabel = computed(() => {
   if (remainingRooms.value == null || dailyRoomLimit.value == null) return null
   return `Games today: ${dailyRoomLimit.value - remainingRooms.value} / ${dailyRoomLimit.value}`
@@ -231,6 +235,13 @@ watch(isOnline, async (online, wasOnline) => {
     reconnecting.value = true
     await fetchRooms()
     reconnecting.value = false
+  }
+})
+
+watch(createNumPlayers, () => {
+  const maxBots = Math.max(createNumPlayers.value - 1, 0)
+  if (createAiBots.value > maxBots) {
+    createAiBots.value = maxBots
   }
 })
 
@@ -494,9 +505,13 @@ onMounted(() => {
           v-model.number="createAiBots"
           class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white mb-6 focus:outline-none focus:ring-2 focus:ring-amber-500"
         >
-          <option :value="0">None</option>
-          <option :value="1">1 Bot</option>
-          <option :value="2">2 Bots</option>
+          <option
+            v-for="option in botOptions"
+            :key="option"
+            :value="option"
+          >
+            {{ option === 0 ? 'None' : `${option} Bot${option > 1 ? 's' : ''}` }}
+          </option>
         </select>
 
         <label class="mb-3 flex items-center gap-3 text-sm text-slate-200">
