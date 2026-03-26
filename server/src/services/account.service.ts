@@ -58,9 +58,12 @@ function mapRecentGame(game: any, userId: string): RecentGameResult {
   const winnerIsBot = winner?.is_bot ?? (game.status === 'completed' && !game.winner_user_id && hasBots);
   return {
     match_id: game.match_id,
+    room_name: game.room_name,
     status: game.status,
     room_size: game.room_size,
     result: player?.result ?? 'unknown',
+    coins_delta: player?.coins?.delta ?? 0,
+    xp_delta: player?.xp?.delta ?? 0,
     winner_user_id: game.winner_user_id ? String(game.winner_user_id) : undefined,
     winner_name: winner?.display_name,
     winner_is_bot: winnerIsBot,
@@ -104,14 +107,41 @@ function resolveEmail(identifier: string, payload: AccountPayload) {
 export async function upsertAccountByIdentifier(identifier: string, payload: AccountPayload) {
   const email = resolveEmail(identifier, payload);
   const update = buildAccountUpdate(payload, email);
-  const lookup = (await findUserByIdentifier(identifier)) ? createUserLookup(identifier) : { email };
-  return UserModel.findOneAndUpdate(lookup as any, { $set: update }, { new: true, upsert: true });
+  const existingUser = await findUserByIdentifier(identifier);
+  const lookup = existingUser ? createUserLookup(identifier) : { email };
+  return UserModel.findOneAndUpdate(
+    lookup as any,
+    {
+      $set: update,
+      $unset: { deleted_at: 1 },
+      $setOnInsert: {
+        wallet: {
+          coins_balance: 100,
+          coins_reserved: 0,
+        },
+        progression: {
+          xp_total: 0,
+          level: 1,
+        },
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    },
+  );
 }
 
 export async function deleteAccountByIdentifier(identifier: string) {
   return UserModel.findOneAndUpdate(
     createUserLookup(identifier) as any,
-    { $set: { is_active: false } },
+    {
+      $set: {
+        is_active: false,
+        deleted_at: new Date(),
+      },
+    },
     { new: true },
   );
 }

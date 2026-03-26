@@ -1,8 +1,11 @@
 const STORAGE_KEY = 'sevens-room-credentials'
 
 export interface RoomCredentials {
-  playerID: string
-  credentials: string
+  playerID?: string
+  credentials?: string
+  roomPassword?: string
+  roomName?: string
+  creatorOwned?: boolean
 }
 
 function loadAll(): Record<string, RoomCredentials> {
@@ -26,18 +29,47 @@ function saveAll(data: Record<string, RoomCredentials>) {
 export function useRoomCredentials() {
   function getCredentials(matchID: string): RoomCredentials | null {
     const all = loadAll()
-    return all[matchID] ?? null
+    const entry = all[matchID]
+    if (!entry?.playerID || !entry?.credentials) return null
+    return entry
   }
 
   function setCredentials(matchID: string, creds: RoomCredentials) {
     const all = loadAll()
-    all[matchID] = creds
+    all[matchID] = {
+      ...all[matchID],
+      ...creds,
+    }
+    saveAll(all)
+  }
+
+  function getRoomMeta(matchID: string): RoomCredentials | null {
+    const all = loadAll()
+    return all[matchID] ?? null
+  }
+
+  function setRoomMeta(matchID: string, meta: RoomCredentials) {
+    const all = loadAll()
+    all[matchID] = {
+      ...all[matchID],
+      ...meta,
+    }
     saveAll(all)
   }
 
   function clearCredentials(matchID: string) {
     const all = loadAll()
-    delete all[matchID]
+    const existing = all[matchID]
+    if (!existing) return
+    if (existing.roomPassword || existing.roomName || existing.creatorOwned) {
+      all[matchID] = {
+        roomPassword: existing.roomPassword,
+        roomName: existing.roomName,
+        creatorOwned: existing.creatorOwned,
+      }
+    } else {
+      delete all[matchID]
+    }
     saveAll(all)
   }
 
@@ -45,5 +77,5 @@ export function useRoomCredentials() {
     saveAll({})
   }
 
-  return { getCredentials, setCredentials, clearCredentials, clearAllCredentials }
+  return { getCredentials, setCredentials, getRoomMeta, setRoomMeta, clearCredentials, clearAllCredentials }
 }

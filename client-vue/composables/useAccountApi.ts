@@ -22,6 +22,14 @@ export type AccountApiUser = {
     wins: number
     losses: number
   }
+  wallet?: {
+    coins_balance: number
+    coins_reserved: number
+  }
+  progression?: {
+    xp_total: number
+    level: number
+  }
   daily_room_limit: number
   remaining_rooms: number
 }
@@ -32,9 +40,12 @@ type UpsertAccountResponse = {
 
 export type AccountRecentGame = {
   match_id: string
+  room_name?: string
   status: string
   room_size: number
   result: string
+  coins_delta?: number
+  xp_delta?: number
   winner_user_id?: string
   winner_name?: string
   winner_is_bot?: boolean

@@ -26,6 +26,46 @@ const userStatsSchema = new Schema(
   },
 );
 
+const userWalletSchema = new Schema(
+  {
+    coins_balance: {
+      type: Number,
+      required: true,
+      default: 100,
+      min: 0,
+    },
+    coins_reserved: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+const userProgressionSchema = new Schema(
+  {
+    xp_total: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    level: {
+      type: Number,
+      required: true,
+      default: 1,
+      min: 1,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const userSchema = new Schema(
   {
     email: {
@@ -70,6 +110,10 @@ const userSchema = new Schema(
       required: true,
       default: true,
     },
+    deleted_at: {
+      type: Date,
+      default: null,
+    },
     stats: {
       type: userStatsSchema,
       required: true,
@@ -77,6 +121,22 @@ const userSchema = new Schema(
         games_played: 0,
         wins: 0,
         losses: 0,
+      }),
+    },
+    wallet: {
+      type: userWalletSchema,
+      required: true,
+      default: () => ({
+        coins_balance: 100,
+        coins_reserved: 0,
+      }),
+    },
+    progression: {
+      type: userProgressionSchema,
+      required: true,
+      default: () => ({
+        xp_total: 0,
+        level: 1,
       }),
     },
   },

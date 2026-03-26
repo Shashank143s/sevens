@@ -2,6 +2,9 @@ type CreateGameRecordPayload = {
   room_name: string
   room_size: number
   creator_user_id?: string
+  coin_rules?: {
+    stake?: number
+  }
   access?: {
     is_private?: boolean
     password?: string
@@ -41,14 +44,14 @@ export function useGameApi() {
   }
 
   async function getGameRecord(matchID: string) {
-    return $fetch<{ game: { room_name?: string; access?: { is_private?: boolean } } }>(buildGameUrl(matchID))
+    return $fetch<{ game: { room_name?: string; access?: { is_private?: boolean }; coin_rules?: { stake?: number } } }>(buildGameUrl(matchID))
   }
 
-  async function authorizeJoin(matchID: string, password?: string) {
+  async function authorizeJoin(matchID: string, password?: string, userID?: string) {
     try {
       return await $fetch(`${buildGameUrl(matchID)}/authorize-join`, {
         method: 'POST',
-        body: { password },
+        body: { password, user_id: userID },
       })
     } catch (error: any) {
       throw new Error(error?.data?.error ?? 'Unable to join this room')

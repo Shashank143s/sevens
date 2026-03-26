@@ -7,7 +7,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
-const { getCredentials, setCredentials } = useRoomCredentials()
+const { getCredentials, getRoomMeta, setCredentials } = useRoomCredentials()
 const { authorizeJoin, getGameRecord, registerJoinedPlayer, markGameInProgress } = useGameApi()
 const { isOnline } = useOnlineStatus()
 
@@ -25,6 +25,9 @@ const gameStarted = ref(false)
 const roomPassword = ref('')
 const requiresPassword = ref(false)
 const roomName = ref('')
+const roomStake = ref<number | null>(null)
+const creatorRoomPassword = ref('')
+const copiedPassword = ref(false)
 
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
@@ -64,9 +67,14 @@ async function fetchRoomAccess() {
     const response = await getGameRecord(matchID.value)
     requiresPassword.value = Boolean(response.game.access?.is_private)
     roomName.value = typeof response.game.room_name === 'string' ? response.game.room_name : ''
+    roomStake.value = response.game.coin_rules?.stake ?? null
+    if (requiresPassword.value && creatorRoomPassword.value) {
+      roomPassword.value = creatorRoomPassword.value
+    }
   } catch {
     requiresPassword.value = false
     roomName.value = ''
+    roomStake.value = null
   }
 }
 
@@ -81,7 +89,7 @@ function startPolling() {
       clearInterval(pollTimer)
       pollTimer = null
     }
-  }, 2000)
+  }, 5000)
 }
 
 onUnmounted(() => {
@@ -93,6 +101,11 @@ onMounted(async () => {
   if (session.value) {
     playerName.value = session.value.name
     avatar.value = session.value.avatar
+  }
+  const roomMeta = getRoomMeta(matchID.value)
+  creatorRoomPassword.value = roomMeta?.creatorOwned ? (roomMeta.roomPassword ?? '') : ''
+  if (creatorRoomPassword.value) {
+    roomPassword.value = creatorRoomPassword.value
   }
   const stored = getCredentials(matchID.value)
   if (stored) {
@@ -109,6 +122,19 @@ onMounted(async () => {
   await fetchRoomAccess()
 })
 
+async function copyRoomPassword() {
+  if (!creatorRoomPassword.value) return
+  try {
+    await navigator.clipboard.writeText(creatorRoomPassword.value)
+    copiedPassword.value = true
+    setTimeout(() => {
+      copiedPassword.value = false
+    }, 1800)
+  } catch {
+    copiedPassword.value = false
+  }
+}
+
 const enterGame = async () => {
   if (!playerName.value.trim()) return
   if (!isOnline.value) {
@@ -119,9 +145,7 @@ const enterGame = async () => {
   try {
     joining.value = true
     joinError.value = null
-    if (requiresPassword.value) {
-      await authorizeJoin(matchID.value, roomPassword.value)
-    }
+    await authorizeJoin(matchID.value, requiresPassword.value ? roomPassword.value : undefined, session.value?.id)
     const metaRes = await fetch(getMatchUrl(matchID.value))
     if (!metaRes.ok) {
       joinError.value = 'Could not load the room. Please try again.'
@@ -236,6 +260,26 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
   >
     <div class="w-full max-w-md">
       <div
+        v-if="creatorRoomPassword"
+        class="mb-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 backdrop-blur-sm"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-semibold text-amber-50">Private room password</div>
+            <div class="mt-1 truncate font-mono text-amber-100/90">
+              {{ creatorRoomPassword }}
+            </div>
+          </div>
+          <button
+            type="button"
+            class="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-300/20 bg-white/5 px-3 py-2 text-xs font-semibold text-amber-50 transition hover:bg-white/10"
+            @click="copyRoomPassword"
+          >
+            {{ copiedPassword ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+      </div>
+      <div
         v-if="roomStatusMessage"
         class="mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
         :class="roomBannerTone"
@@ -258,6 +302,7 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
       <JoinTableModal
         :match-id="matchID"
         :room-name="roomName"
+        :room-stake="roomStake ?? undefined"
         :player-name="playerName"
         :avatar="avatar"
         :room-password="roomPassword"
@@ -281,36 +326,16 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <Motion preset="slideTop">
-      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
-        <h2 class="text-xl font-bold text-white mb-2">Waiting for players</h2>
-        <p
-          v-if="roomStatusMessage"
-          class="mb-4 rounded-xl border px-3 py-2 text-sm"
-          :class="roomBannerTone"
-        >
-          {{ roomStatusMessage }}
-        </p>
-        <p class="text-slate-400 mb-4">
-          {{ joinedCount }} / {{ totalPlayers }} players have joined
-        </p>
-        <p class="text-sm text-slate-500 mb-6">The game will start when all players have joined.</p>
-        <button
-          v-if="isOnline"
-          type="button"
-          class="mb-3 inline-flex items-center justify-center w-full border border-white/10 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl touch-manipulation"
-          @click="retryRoomFetch"
-        >
-          Check Again
-        </button>
-        <NuxtLink
-          to="/lobby"
-          class="inline-flex items-center justify-center w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation"
-        >
-          Back to Lobby
-        </NuxtLink>
-      </div>
-    </Motion>
+    <WaitingForPlayersModal
+      :room-name="roomName"
+      :joined-count="joinedCount"
+      :total-players="totalPlayers"
+      :room-status-message="roomStatusMessage"
+      :room-banner-tone="roomBannerTone"
+      :is-online="isOnline"
+      :checking-room="checkingRoom"
+      @retry="retryRoomFetch"
+    />
   </div>
 
   <!-- All players joined: show game -->

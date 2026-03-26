@@ -39,6 +39,46 @@ const gamePlayerSchema = new Schema(
       type: Number,
       min: 1,
     },
+    coins: {
+      type: new Schema(
+        {
+          reserved: {
+            type: Number,
+            required: true,
+            default: 0,
+            min: 0,
+          },
+          delta: {
+            type: Number,
+            required: true,
+            default: 0,
+          },
+        },
+        { _id: false },
+      ),
+      required: true,
+      default: () => ({
+        reserved: 0,
+        delta: 0,
+      }),
+    },
+    xp: {
+      type: new Schema(
+        {
+          delta: {
+            type: Number,
+            required: true,
+            default: 0,
+            min: 0,
+          },
+        },
+        { _id: false },
+      ),
+      required: true,
+      default: () => ({
+        delta: 0,
+      }),
+    },
   },
   {
     _id: false,
@@ -71,6 +111,84 @@ const gameAccessSchema = new Schema(
     password_hash: {
       type: String,
       trim: true,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+const gameCoinRulesSchema = new Schema(
+  {
+    stake: {
+      type: Number,
+      required: true,
+      default: 10,
+      min: 10,
+    },
+    bot_reward: {
+      type: Number,
+      required: true,
+      default: 10,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+const gameCoinSettlementSchema = new Schema(
+  {
+    status: {
+      type: String,
+      enum: ['pending', 'completed', 'void'],
+      required: true,
+      default: 'pending',
+    },
+    settled_at: {
+      type: Date,
+    },
+    human_player_count: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    bot_count: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    human_pot: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    bot_bonus: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
+const gameXpSettlementSchema = new Schema(
+  {
+    status: {
+      type: String,
+      enum: ['pending', 'completed', 'void'],
+      required: true,
+      default: 'pending',
+    },
+    settled_at: {
+      type: Date,
     },
   },
   {
@@ -148,6 +266,32 @@ const gameSchema = new Schema(
     },
     metadata: {
       type: gameMetadataSchema,
+    },
+    coin_rules: {
+      type: gameCoinRulesSchema,
+      required: true,
+      default: () => ({
+        stake: 10,
+        bot_reward: 10,
+      }),
+    },
+    coin_settlement: {
+      type: gameCoinSettlementSchema,
+      required: true,
+      default: () => ({
+        status: 'pending',
+        human_player_count: 0,
+        bot_count: 0,
+        human_pot: 0,
+        bot_bonus: 0,
+      }),
+    },
+    xp_settlement: {
+      type: gameXpSettlementSchema,
+      required: true,
+      default: () => ({
+        status: 'pending',
+      }),
     },
     access: {
       type: gameAccessSchema,

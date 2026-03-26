@@ -8,7 +8,9 @@ const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccount } = useAccountApi()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
-const remainingRooms = ref<number | null>(null)
+const coinsBalance = ref<number | null>(null)
+const playerLevel = ref<number | null>(null)
+const xpTotal = ref<number | null>(null)
 
 const fullName = computed(() => session.value?.name?.trim() || 'Player')
 const email = computed(() => session.value?.email?.trim() || 'Not available')
@@ -16,6 +18,27 @@ const profileImage = computed(() => session.value?.image)
 const avatarLabel = computed(() => fullName.value.charAt(0).toUpperCase() || 'P')
 const accountIdentifier = computed(() => session.value?.id || session.value?.email?.trim() || '')
 const lastLoginLabel = computed(() => formatDate(session.value?.lastLoginAt))
+const levelProgress = computed(() => {
+  const totalXp = Math.max(xpTotal.value ?? 0, 0)
+  let level = 1
+  let xpIntoLevel = totalXp
+  let xpNeededForNextLevel = 100
+
+  while (xpIntoLevel >= xpNeededForNextLevel) {
+    xpIntoLevel -= xpNeededForNextLevel
+    level += 1
+    xpNeededForNextLevel += 50
+  }
+
+  return {
+    level,
+    xpIntoLevel,
+    xpNeededForNextLevel,
+    progressPercent: xpNeededForNextLevel > 0
+      ? Math.min((xpIntoLevel / xpNeededForNextLevel) * 100, 100)
+      : 0,
+  }
+})
 
 function formatDate(value?: string | number) {
   if (!value) return 'Not available'
@@ -55,13 +78,17 @@ function logout() {
   router.push('/')
 }
 
-async function loadAccountQuota() {
+async function loadAccountSummary() {
   if (!accountIdentifier.value) return
   try {
     const response = await getAccount(accountIdentifier.value, 0, 0)
-    remainingRooms.value = response.user.remaining_rooms
+    coinsBalance.value = response.user.wallet?.coins_balance ?? null
+    playerLevel.value = response.user.progression?.level ?? null
+    xpTotal.value = response.user.progression?.xp_total ?? null
   } catch {
-    remainingRooms.value = null
+    coinsBalance.value = null
+    playerLevel.value = null
+    xpTotal.value = null
   }
 }
 
@@ -71,7 +98,7 @@ onMounted(() => {
     return
   }
 
-  void loadAccountQuota()
+  void loadAccountSummary()
 })
 </script>
 
@@ -110,13 +137,25 @@ onMounted(() => {
         <p class="account-card__last-login">
           Last login: <strong>{{ lastLoginLabel }}</strong>
         </p>
-        <section class="account-card__quota">
-          <div>
-            <p class="account-card__quota-label">Remaining games today</p>
-            <p class="account-card__quota-copy">Fresh room creations left in your UTC daily quota.</p>
+        <section class="account-card__progression">
+          <div class="account-card__progression-top">
+            <div class="account-card__chip account-card__chip--coins">
+              <IconsCoinIcon class="account-card__coin-icon" />
+              <strong>{{ coinsBalance == null ? '—' : coinsBalance }}</strong>
+            </div>
+            <div class="account-card__chip account-card__chip--level">
+              <span class="account-card__chip-label">Lv</span>
+              <strong>{{ playerLevel ?? levelProgress.level }}</strong>
+            </div>
           </div>
-          <div class="account-card__quota-value">
-            {{ remainingRooms == null ? '—' : remainingRooms }}
+          <div class="account-card__xp">
+            <div class="account-card__xp-header">
+              <p class="account-card__economy-label">Level Progress</p>
+              <span>{{ levelProgress.xpIntoLevel }} / {{ levelProgress.xpNeededForNextLevel }} XP</span>
+            </div>
+            <div class="account-card__xp-track" aria-hidden="true">
+              <div class="account-card__xp-fill" :style="{ width: `${levelProgress.progressPercent}%` }" />
+            </div>
           </div>
         </section>
 
@@ -288,60 +327,131 @@ onMounted(() => {
   color: #f8fafc;
 }
 
-.account-card__quota {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 1.35rem;
-  border: 1px solid rgba(250, 204, 21, 0.16);
-  background:
-    radial-gradient(circle at left center, rgba(250, 204, 21, 0.16), transparent 52%),
-    linear-gradient(135deg, rgba(120, 53, 15, 0.22), rgba(15, 23, 42, 0.88));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 18px 40px rgba(2, 6, 23, 0.22);
-}
-
-.account-card__quota-label {
-  margin: 0;
-  color: #fde68a;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.account-card__quota-copy {
-  margin: 0.45rem 0 0;
-  color: rgba(226, 232, 240, 0.74);
-  font-size: 0.9rem;
-  line-height: 1.45;
-  max-width: 20rem;
-}
-
-.account-card__quota-value {
-  min-width: 4.2rem;
-  padding: 0.8rem 0.95rem;
-  border-radius: 1rem;
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(250, 204, 21, 0.24);
-  color: #fef3c7;
-  font-size: 1.7rem;
-  font-weight: 900;
-  line-height: 1;
-  text-align: center;
-  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.22);
-}
-
 .account-card__eyebrow {
   margin: 0;
   color: #d4af37;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.account-card__progression {
+  margin-top: 1rem;
+  padding: 1rem 1.05rem;
+  border-radius: 1.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.2);
+}
+
+.account-card__progression-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.account-card__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.7rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.account-card__chip strong {
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.account-card__chip--coins {
+  border-color: rgba(250, 204, 21, 0.2);
+}
+
+.account-card__chip--coins strong {
+  color: #fde68a;
+}
+
+.account-card__chip--level {
+  border-color: rgba(96, 165, 250, 0.18);
+}
+
+.account-card__chip--level strong {
+  color: #dbeafe;
+}
+
+.account-card__chip-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(191, 219, 254, 0.82);
+}
+
+.account-card__coin-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.account-card__xp {
+  margin-top: 0.95rem;
+}
+
+.account-card__xp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.account-card__xp-header span {
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.account-card__xp-track {
+  overflow: hidden;
+  width: 100%;
+  height: 0.7rem;
+  border-radius: 999px;
+  background: rgba(51, 65, 85, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.account-card__xp-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #facc15);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.26);
+}
+
+.account-card__economy {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.account-card__economy-label {
+  margin: 0;
+  color: rgba(203, 213, 225, 0.78);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -492,13 +602,9 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
-  .account-card__quota {
+  .account-card__xp-header {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .account-card__quota-value {
-    min-width: 3.6rem;
   }
 }
 </style>
