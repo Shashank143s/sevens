@@ -116,27 +116,32 @@ onMounted(() => {
 
     <main class="account-page__content">
       <section class="account-card">
-        <div class="account-card__hero">
-          <div class="account-card__avatar">
-            <img
-              v-if="profileImage"
-              :src="profileImage"
-              :alt="fullName"
-              class="account-card__image"
-            >
-            <span v-else>{{ avatarLabel }}</span>
-          </div>
+        <div class="account-card__hero-shell">
+          <div class="account-card__hero">
+            <div class="account-card__identity">
+              <p class="account-card__eyebrow">Player Account</p>
+              <div class="account-card__identity-main">
+                <h1>{{ fullName }}</h1>
+                <p class="account-card__email">{{ email }}</p>
+              </div>
+              <p class="account-card__meta-line">
+                <span class="account-card__meta-label">Last login</span>
+                <strong>{{ lastLoginLabel }}</strong>
+              </p>
+            </div>
 
-          <div class="account-card__identity">
-            <p class="account-card__eyebrow">Account</p>
-            <h1>{{ fullName }}</h1>
-            <p>{{ email }}</p>
+            <div class="account-card__avatar">
+              <img
+                v-if="profileImage"
+                :src="profileImage"
+                :alt="fullName"
+                class="account-card__image"
+              >
+              <span v-else>{{ avatarLabel }}</span>
+            </div>
           </div>
         </div>
 
-        <p class="account-card__last-login">
-          Last login: <strong>{{ lastLoginLabel }}</strong>
-        </p>
         <section class="account-card__progression">
           <div class="account-card__progression-top">
             <div class="account-card__chip account-card__chip--coins">
@@ -270,6 +275,7 @@ onMounted(() => {
 }
 
 .account-card {
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.8rem;
   background: rgba(15, 23, 42, 0.74);
@@ -278,9 +284,21 @@ onMounted(() => {
   padding: 1.4rem;
 }
 
+.account-card__hero-shell {
+  margin: -1.4rem -1.4rem 0;
+  padding: 1.1rem 1.4rem 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
+    radial-gradient(circle at left center, rgba(250, 204, 21, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .account-card__hero {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -292,8 +310,13 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at top, rgba(250, 204, 21, 0.22), transparent 46%),
+    rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 18px 36px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   font-size: 1.75rem;
   font-weight: 800;
   color: #f8f4ec;
@@ -305,26 +328,29 @@ onMounted(() => {
   object-fit: cover;
 }
 
+.account-card__identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-card__identity-main {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
 .account-card__identity h1 {
-  margin: 0.2rem 0 0;
+  margin: 0;
   font-size: clamp(1.45rem, 4vw, 2.2rem);
   line-height: 1;
   color: #f8f4ec;
+  text-shadow: 0 8px 22px rgba(2, 6, 23, 0.18);
 }
 
-.account-card__identity p:last-child {
-  margin: 0.55rem 0 0;
-  color: rgba(203, 213, 225, 0.82);
-}
-
-.account-card__last-login {
-  margin: 1rem 0 0;
-  color: rgba(203, 213, 225, 0.82);
-  font-size: 0.95rem;
-}
-
-.account-card__last-login strong {
-  color: #f8fafc;
+.account-card__email {
+  margin: 0;
+  color: rgba(191, 219, 254, 0.72);
+  font-size: 0.98rem;
 }
 
 .account-card__eyebrow {
@@ -336,8 +362,30 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
+.account-card__meta-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 0.9rem 0 0;
+}
+
+.account-card__meta-label {
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.account-card__meta-line strong {
+  color: #f8fafc;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
 .account-card__progression {
-  margin-top: 1rem;
+  margin-top: 1.1rem;
   padding: 1rem 1.05rem;
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -599,9 +647,27 @@ onMounted(() => {
   .account-card {
     padding: 1.8rem;
   }
+
+  .account-card__hero-shell {
+    margin: -1.8rem -1.8rem 0;
+    padding: 1.2rem 1.8rem 1.3rem;
+  }
 }
 
 @media (max-width: 640px) {
+  .account-card__hero-shell {
+    margin: -1.4rem -1.4rem 0;
+  }
+
+  .account-card__hero {
+    align-items: flex-start;
+  }
+
+  .account-card__avatar {
+    width: 4.6rem;
+    height: 4.6rem;
+  }
+
   .account-card__xp-header {
     align-items: flex-start;
     flex-direction: column;
