@@ -50,6 +50,7 @@ function buildRoomItem(match: RoomMatchPayload, gameMap: ReturnType<typeof build
     room_name: game?.room_name ?? `Room ${match.matchID.slice(0, 4)}`,
     creator_name: creatorName,
     room_size: roomSize,
+    coin_stake: Math.max(game?.coin_rules?.stake ?? 10, 10),
     joined_count: joinedCount,
     game_status: resolveGameStatus(game?.status, joinedCount, roomSize),
     is_private: Boolean(game?.access?.is_private),

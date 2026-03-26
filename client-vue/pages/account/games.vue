@@ -41,6 +41,17 @@ function resultTone(game: AccountRecentGame) {
   return 'games-page__badge--live'
 }
 
+function formatDelta(value = 0, unit = '') {
+  const sign = value > 0 ? '+' : ''
+  return `${sign}${value}${unit ? ` ${unit}` : ''}`
+}
+
+function deltaTone(value = 0) {
+  if (value > 0) return 'games-page__delta--positive'
+  if (value < 0) return 'games-page__delta--negative'
+  return 'games-page__delta--neutral'
+}
+
 async function fetchPage(nextOffset: number) {
   return getAccount(accountIdentifier.value, nextOffset, PAGE_SIZE)
 }
@@ -95,13 +106,14 @@ onMounted(async () => {
 
     <main class="games-page__content">
       <section class="games-page__hero">
-        <div>
+        <div class="games-page__hero-copy">
           <p class="games-page__eyebrow">Account Games</p>
           <h1>Match history</h1>
           <p class="games-page__subtitle">
             Your latest games, outcomes, and running totals in one place.
           </p>
         </div>
+        <div class="games-page__hero-glow" aria-hidden="true" />
       </section>
 
       <section class="games-page__stats">
@@ -139,11 +151,21 @@ onMounted(async () => {
         >
           <div class="games-page__item-top">
             <div>
-              <p class="games-page__match">Match {{ game.match_id }}</p>
+              <p class="games-page__match">{{ game.room_name || 'Sevens Royale' }}</p>
               <p class="games-page__meta">{{ game.room_size }} players · {{ formatDate(game.ended_at) }}</p>
             </div>
             <span class="games-page__badge" :class="resultTone(game)">
               {{ outcomeLabel(game) }}
+            </span>
+          </div>
+          <div class="games-page__item-bottom">
+            <span class="games-page__delta" :class="deltaTone(game.coins_delta ?? 0)">
+              {{ formatDelta(game.coins_delta ?? 0) }}
+              <IconsCoinIcon class="games-page__coin-icon" />
+            </span>
+            <span class="games-page__delta" :class="deltaTone(game.xp_delta ?? 0)">
+              {{ formatDelta(game.xp_delta ?? 0) }}
+              <span class="games-page__xp-label">XP</span>
             </span>
           </div>
         </article>
@@ -164,6 +186,8 @@ onMounted(async () => {
 
 <style scoped>
 .games-page {
+  position: relative;
+  overflow: hidden;
   min-height: 100vh;
   min-height: 100dvh;
   padding:
@@ -176,7 +200,36 @@ onMounted(async () => {
   background-position: center;
 }
 
+.games-page::before,
+.games-page::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(72px);
+  opacity: 0.7;
+}
+
+.games-page::before {
+  top: 7rem;
+  left: -4rem;
+  width: 14rem;
+  height: 14rem;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.games-page::after {
+  top: 11rem;
+  right: -3rem;
+  width: 15rem;
+  height: 15rem;
+  background: rgba(250, 204, 21, 0.14);
+}
+
 .games-page__header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -191,23 +244,43 @@ onMounted(async () => {
 }
 
 .games-page__content {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 58rem;
   margin: 0 auto;
 }
 
-.games-page__hero,
-.games-page__stats,
-.games-page__item {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.78);
-  box-shadow: 0 22px 55px rgba(2, 6, 23, 0.28);
-  backdrop-filter: blur(18px);
+.games-page__hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.14), transparent 30%),
+    radial-gradient(circle at left center, rgba(59, 130, 246, 0.12), transparent 32%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 60px rgba(2, 6, 23, 0.34);
+  backdrop-filter: blur(22px);
 }
 
-.games-page__hero {
-  padding: 1.4rem;
-  border-radius: 1.75rem;
+.games-page__hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.games-page__hero-glow {
+  position: absolute;
+  right: -2.5rem;
+  bottom: -3rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.18), transparent 70%);
+  filter: blur(12px);
 }
 
 .games-page__eyebrow {
@@ -235,8 +308,8 @@ onMounted(async () => {
 .games-page__stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-top: 1.1rem;
+  gap: 0.75rem;
+  margin-top: 1.15rem;
   padding: 0;
   border: 0;
   background: transparent;
@@ -247,15 +320,16 @@ onMounted(async () => {
 .games-page__stat {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.8rem;
+  gap: 0.5rem;
+  padding: 0.62rem 0.92rem;
   border-radius: 999px;
-  background: rgba(30, 41, 59, 0.72);
-  border: 1px solid rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
 }
 
 .games-page__stat--played {
-  background: rgba(51, 65, 85, 0.72);
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.76), rgba(30, 41, 59, 0.76));
   border-color: rgba(250, 204, 21, 0.18);
 }
 
@@ -264,7 +338,7 @@ onMounted(async () => {
 }
 
 .games-page__stat--won {
-  background: rgba(20, 83, 45, 0.72);
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.74), rgba(6, 95, 70, 0.72));
   border-color: rgba(74, 222, 128, 0.22);
 }
 
@@ -273,7 +347,7 @@ onMounted(async () => {
 }
 
 .games-page__stat--lost {
-  background: rgba(127, 29, 29, 0.72);
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.78), rgba(153, 27, 27, 0.72));
   border-color: rgba(248, 113, 113, 0.22);
 }
 
@@ -294,19 +368,34 @@ onMounted(async () => {
 
 .games-page__message {
   margin: 1.25rem 0 0;
+  padding: 1.15rem;
   line-height: 1.7;
   text-align: center;
+  border-radius: 1.35rem;
+  background: rgba(15, 23, 42, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
 }
 
 .games-page__list {
   display: grid;
-  gap: 0.9rem;
-  margin-top: 1.25rem;
+  gap: 1rem;
+  margin-top: 1.3rem;
 }
 
 .games-page__item {
-  border-radius: 1.45rem;
-  padding: 0.95rem 1rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.55rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 28%),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.7));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 20px 48px rgba(2, 6, 23, 0.26);
+  backdrop-filter: blur(18px);
 }
 
 .games-page__item-top {
@@ -318,9 +407,9 @@ onMounted(async () => {
 
 .games-page__match {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: #f8f4ec;
 }
 
 .games-page__meta {
@@ -333,20 +422,23 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 2.2rem;
-  padding: 0.45rem 0.85rem;
+  padding: 0.45rem 0.9rem;
   border-radius: 999px;
   font-size: 0.84rem;
   font-weight: 800;
   white-space: nowrap;
+  border: 1px solid transparent;
 }
 
 .games-page__badge--win {
-  background: rgba(21, 128, 61, 0.22);
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.26), rgba(5, 150, 105, 0.24));
+  border-color: rgba(74, 222, 128, 0.18);
   color: #bbf7d0;
 }
 
 .games-page__badge--loss {
-  background: rgba(148, 163, 184, 0.18);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(71, 85, 105, 0.22));
+  border-color: rgba(148, 163, 184, 0.14);
   color: #e2e8f0;
 }
 
@@ -356,8 +448,58 @@ onMounted(async () => {
 }
 
 .games-page__badge--live {
-  background: rgba(30, 64, 175, 0.22);
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.24), rgba(29, 78, 216, 0.22));
+  border-color: rgba(96, 165, 250, 0.16);
   color: #bfdbfe;
+}
+
+.games-page__item-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.games-page__delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+}
+
+.games-page__coin-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.games-page__xp-label {
+  color: #facc15;
+  text-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
+}
+
+.games-page__delta--positive {
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.22), rgba(5, 150, 105, 0.18));
+  border-color: rgba(74, 222, 128, 0.16);
+  color: #bbf7d0;
+}
+
+.games-page__delta--negative {
+  background: linear-gradient(135deg, rgba(185, 28, 28, 0.22), rgba(127, 29, 29, 0.2));
+  border-color: rgba(248, 113, 113, 0.16);
+  color: #fecaca;
+}
+
+.games-page__delta--neutral {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.62), rgba(30, 41, 59, 0.58));
+  border-color: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
 }
 
 .games-page__load-more {
@@ -365,9 +507,11 @@ onMounted(async () => {
   margin-top: 1.25rem;
   min-height: 3.3rem;
   border-radius: 999px;
-  background: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  background: linear-gradient(135deg, #facc15, #f59e0b);
   color: #111827;
   font-weight: 800;
+  box-shadow: 0 18px 40px rgba(245, 158, 11, 0.2);
 }
 
 @media (min-width: 768px) {

@@ -2,6 +2,7 @@
 const props = defineProps<{
   matchId: string
   roomName?: string
+  roomStake?: number
   playerName: string
   avatar: string
   roomPassword?: string
@@ -18,57 +19,90 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-white">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold text-white">
-        Join {{ roomName || `Room ${matchId}` }}
-      </h2>
-      <NuxtLink
-        to="/lobby"
-        class="text-slate-400 hover:text-white p-1 text-2xl leading-none"
-        aria-label="Back to Lobby"
-      >
-        ×
-      </NuxtLink>
+  <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 text-white shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
+    <div class="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_30%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="min-w-0">
+          <p class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-sky-300/80">Join Table</p>
+          <h2 class="mt-1 truncate text-xl font-bold text-white">
+            {{ roomName || `Room ${matchId}` }}
+          </h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <div
+            v-if="roomStake != null"
+            class="inline-flex items-center rounded-full border border-amber-300/15 bg-white/5 px-3 py-1 text-sm font-semibold text-amber-100"
+          >
+            <IconsCoinIcon class="mr-2 h-4 w-4" />
+            {{ roomStake }}
+          </div>
+          <NuxtLink
+            to="/lobby"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xl leading-none text-slate-400 transition hover:bg-white/8 hover:text-white"
+            aria-label="Back to Lobby"
+          >
+            ×
+          </NuxtLink>
+        </div>
+      </div>
     </div>
-    <input
-      :value="playerName"
-      type="text"
-      placeholder="Your alias"
-      class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-      @input="emit('update:playerName', ($event.target as HTMLInputElement).value)"
-      @keydown.enter="!disabled && emit('submit')"
-    >
-    <input
-      v-if="requiresPassword"
-      :value="roomPassword"
-      type="password"
-      placeholder="Room password"
-      class="w-full bg-slate-700 border border-amber-500/50 rounded-xl px-4 py-3 text-white placeholder-slate-400 mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-      @input="emit('update:roomPassword', ($event.target as HTMLInputElement).value)"
-      @keydown.enter="!disabled && emit('submit')"
-    >
-    <div class="mb-2 text-sm text-slate-400">
-      Avatar
+
+    <div class="p-5">
+      <div class="mb-4">
+        <label class="mb-1.5 block text-sm font-semibold text-slate-300">Alias</label>
+        <input
+          :value="playerName"
+          type="text"
+          placeholder="Your alias"
+          class="w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          @input="emit('update:playerName', ($event.target as HTMLInputElement).value)"
+          @keydown.enter="!disabled && emit('submit')"
+        >
+      </div>
+
+      <div v-if="requiresPassword" class="mb-4">
+        <label class="mb-1.5 block text-sm font-semibold text-slate-300">Password</label>
+        <input
+          :value="roomPassword"
+          type="password"
+          placeholder="Room password"
+          class="w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          @input="emit('update:roomPassword', ($event.target as HTMLInputElement).value)"
+          @keydown.enter="!disabled && emit('submit')"
+        >
+      </div>
+
+      <div class="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">
+        <div class="mb-2 flex items-center justify-between gap-3">
+          <div class="text-sm font-semibold text-slate-200">
+            Avatar
+          </div>
+          <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Selected <span class="ml-1 text-base normal-case text-white">{{ avatar }}</span>
+          </div>
+        </div>
+        <AvatarPicker
+          :model-value="avatar"
+          @update:model-value="emit('update:avatar', $event)"
+        />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <NuxtLink
+          to="/lobby"
+          class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+        >
+          Back to Lobby
+        </NuxtLink>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 font-bold text-slate-900 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="disabled"
+          @click="emit('submit')"
+        >
+          {{ disabled ? 'Room Full' : 'Join' }}
+        </button>
+      </div>
     </div>
-    <AvatarPicker
-      :model-value="avatar"
-      class="mb-4"
-      @update:model-value="emit('update:avatar', $event)"
-    />
-    <div class="text-sm text-slate-400 mb-6">
-      Selected avatar: <span class="text-2xl align-middle ml-2">{{ avatar }}</span>
-    </div>
-    <button
-      type="button"
-      class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
-      :disabled="disabled"
-      @click="emit('submit')"
-    >
-      {{ disabled ? 'Room Full' : 'Join the Table' }}
-    </button>
-    <NuxtLink to="/lobby" class="block mt-4 text-center text-slate-400 hover:text-white text-sm">
-      ← Back to Lobby
-    </NuxtLink>
   </div>
 </template>

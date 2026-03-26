@@ -7,12 +7,22 @@ export type GamePlayerPayload = {
   left_at?: string | number | Date;
   result?: 'won' | 'lost' | 'unknown';
   finish_position?: number;
+  coins?: {
+    reserved?: number;
+    delta?: number;
+  };
+  xp?: {
+    delta?: number;
+  };
 };
 
 export type CreateGamePayload = {
   room_name: string;
   room_size: number;
   creator_user_id?: string;
+  coin_rules?: {
+    stake?: number;
+  };
   access?: {
     is_private?: boolean;
     password?: string;
@@ -38,8 +48,21 @@ export type UpdateGamePayload = {
     source?: 'web' | 'pwa' | 'apk';
     notes?: string;
   };
+  coin_settlement?: {
+    status: 'pending' | 'completed' | 'void';
+    settled_at?: string | number | Date;
+    human_player_count?: number;
+    bot_count?: number;
+    human_pot?: number;
+    bot_bonus?: number;
+  };
+  xp_settlement?: {
+    status: 'pending' | 'completed' | 'void';
+    settled_at?: string | number | Date;
+  };
 };
 
 export type JoinAuthorizationPayload = {
   password?: string;
+  user_id?: string;
 };

@@ -39,7 +39,7 @@ async function handlePut(ctx: GameRouteContext, matchID: string) {
 async function handleAuthorizeJoin(ctx: GameRouteContext, matchID: string) {
   if (ctx.method !== 'POST') return setJson(ctx, 405, { error: 'Method not allowed' });
   const payload = (await readJsonBody(ctx)) as JoinAuthorizationPayload;
-  const result = await authorizeGameJoin(matchID, payload.password);
+  const result = await authorizeGameJoin(matchID, payload.password, payload.user_id);
   if (!result) return setJson(ctx, 404, { error: 'Game not found' });
   if (!result.allowed) return setJson(ctx, 403, { error: 'Incorrect room password' });
   return setJson(ctx, 200, { allowed: true });
@@ -58,6 +58,12 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
     try {
       await handleAuthorizeJoin(ctx, authorizeMatch[1]);
     } catch (error) {
+      if ((error as { status?: number }).status === 409) {
+        return setJson(ctx, 409, {
+          error: (error as Error).message,
+          reason: (error as { reason?: string }).reason ?? 'conflict',
+        });
+      }
       console.error('[game-route] Error:', error);
       setJson(ctx, 500, { error: 'Internal server error' });
     }
@@ -76,7 +82,7 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
     if ((error as { status?: number }).status === 409) {
       return setJson(ctx, 409, {
         error: (error as Error).message,
-        reason: (error as { reason?: string }).reason ?? 'limit_breached',
+        reason: (error as { reason?: string }).reason ?? 'conflict',
       });
     }
     console.error('[game-route] Error:', error);

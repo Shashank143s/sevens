@@ -6,7 +6,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
 const { session } = usePlayerSession()
-const { getCredentials } = useRoomCredentials()
+const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
 const { getAccount } = useAccountApi()
 const { isOnline } = useOnlineStatus()
@@ -28,35 +28,47 @@ const error = ref<string | null>(null)
 const showCreateModal = ref(false)
 const createNumPlayers = ref(2)
 const createAiBots = ref(0)
+const createStake = ref(10)
 const creating = ref(false)
 const reconnecting = ref(false)
-const remainingRooms = ref<number | null>(null)
-const dailyRoomLimit = ref<number | null>(null)
+const coinsBalance = ref<number | null>(null)
 const createPrivateRoom = ref(false)
 const createRoomPassword = ref('')
-const createRoomPasswordConfirm = ref('')
 const createRoomName = ref('')
 const roomNameTouched = ref(false)
+const stakeTouched = ref(false)
 
-const createRoomDisabled = computed(() => !isOnline.value || remainingRooms.value === 0)
+const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
 const botOptions = computed(() => {
   const maxBots = Math.max(createNumPlayers.value - 1, 0)
   return Array.from({ length: maxBots + 1 }, (_, value) => value)
 })
-const remainingRoomsLabel = computed(() => {
-  if (remainingRooms.value == null || dailyRoomLimit.value == null) return null
-  return `Games today: ${dailyRoomLimit.value - remainingRooms.value} / ${dailyRoomLimit.value}`
+const coinsBalanceLabel = computed(() => {
+  if (coinsBalance.value == null) return null
+  return `${coinsBalance.value}`
 })
-const remainingRoomsToneClass = computed(() => {
-  if (remainingRooms.value == null || dailyRoomLimit.value == null) return ''
-  const usedRooms = dailyRoomLimit.value - remainingRooms.value
-  if (usedRooms < 5) {
+const coinsBalanceToneClass = computed(() => {
+  if (coinsBalance.value == null) return ''
+  if (coinsBalance.value >= 100) {
     return 'border-emerald-300/25 bg-emerald-500/10 text-emerald-100 shadow-[0_10px_25px_rgba(16,185,129,0.12)]'
   }
-  if (usedRooms <= 8) {
+  if (coinsBalance.value >= 25) {
     return 'border-amber-300/25 bg-amber-500/10 text-amber-100 shadow-[0_10px_25px_rgba(245,158,11,0.12)]'
   }
   return 'border-red-500 bg-red-500/12 text-red-50 shadow-[0_10px_25px_rgba(239,68,68,0.18)]'
+})
+const roomNameError = computed(() => {
+  if (!roomNameTouched.value) return ''
+  const roomName = createRoomName.value.trim()
+  if (roomName.length < 3) return 'Use at least 3 characters.'
+  if (roomName.length > 40) return 'Keep it under 40 characters.'
+  return ''
+})
+const stakeError = computed(() => {
+  if (!stakeTouched.value) return ''
+  if (!Number.isFinite(createStake.value) || createStake.value < 10) return 'Minimum stake is 10.'
+  if (coinsBalance.value != null && createStake.value > coinsBalance.value) return 'Low balance.'
+  return ''
 })
 
 const lobbyStatus = computed(() => {
@@ -103,7 +115,7 @@ async function fetchRooms() {
   loading.value = true
   error.value = null
   try {
-    await refreshRemainingRooms().catch(() => {})
+    await refreshCoinsBalance().catch(() => {})
     rooms.value = await listMatches()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load rooms'
@@ -121,11 +133,12 @@ async function openCreateModal() {
   error.value = null
   createNumPlayers.value = 2
   createAiBots.value = 0
+  createStake.value = 10
   createRoomName.value = ''
   roomNameTouched.value = false
+  stakeTouched.value = false
   createPrivateRoom.value = false
   createRoomPassword.value = ''
-  createRoomPasswordConfirm.value = ''
   showCreateModal.value = true
 }
 
@@ -133,13 +146,35 @@ function closeCreateModal() {
   showCreateModal.value = false
 }
 
+function adjustStake(direction: 'up' | 'down') {
+  stakeTouched.value = true
+  const nextValue = Number.isFinite(createStake.value) ? createStake.value : 10
+  createStake.value = Math.max(10, nextValue + (direction === 'up' ? 10 : -10))
+}
+
+function normalizeStakeInput() {
+  stakeTouched.value = true
+  const normalized = Number.isFinite(createStake.value) ? Math.round(createStake.value / 10) * 10 : 10
+  createStake.value = Math.max(10, normalized)
+}
+
 async function doCreateRoom() {
   if (!isOnline.value) {
     error.value = 'Reconnect before creating a room.'
     return
   }
-  if (remainingRooms.value === 0) {
-    error.value = 'You have reached today’s room creation limit. You can still join existing rooms.'
+  if (coinsBalance.value != null && coinsBalance.value < 10) {
+    error.value = 'You need at least 10 available coins to create a room.'
+    return
+  }
+  if (!Number.isFinite(createStake.value) || createStake.value < 10) {
+    stakeTouched.value = true
+    error.value = 'Stake per player must be at least 10 coins.'
+    return
+  }
+  if (coinsBalance.value != null && createStake.value > coinsBalance.value) {
+    stakeTouched.value = true
+    error.value = 'Low balance for the selected stake.'
     return
   }
   if (!validateRoomName()) return
@@ -156,7 +191,7 @@ async function doCreateRoom() {
     closeCreateModal()
     router.push(`/room/${matchID}`)
   } catch (e) {
-    await refreshRemainingRooms()
+    await refreshCoinsBalance()
     error.value = e instanceof Error ? e.message : 'Failed to create room'
   } finally {
     creating.value = false
@@ -169,6 +204,9 @@ async function createGameRecordEntry(matchID: string) {
       room_name: createRoomName.value.trim(),
       room_size: createNumPlayers.value,
       creator_user_id: session.value?.id,
+      coin_rules: {
+        stake: createStake.value,
+      },
       access: {
         is_private: createPrivateRoom.value,
         password: createRoomPassword.value,
@@ -176,6 +214,11 @@ async function createGameRecordEntry(matchID: string) {
       metadata: {
         source: 'web',
       },
+    })
+    setRoomMeta(matchID, {
+      creatorOwned: true,
+      roomName: createRoomName.value.trim(),
+      roomPassword: createPrivateRoom.value ? createRoomPassword.value : undefined,
     })
   } catch (error) {
     await deleteCreatedRoom(matchID)
@@ -190,22 +233,17 @@ async function deleteCreatedRoom(matchID: string) {
   }).catch(() => {})
 }
 
-async function refreshRemainingRooms() {
+async function refreshCoinsBalance() {
   const identifier = session.value?.id || session.value?.email?.trim()
   if (!identifier) return
   const response = await getAccount(identifier, 0, 0)
-  dailyRoomLimit.value = response.user.daily_room_limit
-  remainingRooms.value = response.user.remaining_rooms
+  coinsBalance.value = response.user.wallet?.coins_balance ?? null
 }
 
 function validatePrivateRoomPassword() {
   const password = createRoomPassword.value.trim()
   if (password.length < 4) {
     error.value = 'Private room passwords must be at least 4 characters.'
-    return false
-  }
-  if (password !== createRoomPasswordConfirm.value.trim()) {
-    error.value = 'Private room passwords do not match.'
     return false
   }
   return true
@@ -260,7 +298,7 @@ onMounted(() => {
     class="min-h-screen min-h-[100dvh] bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="flex items-center justify-between mb-6">
+    <header class="mb-6 flex items-center justify-between gap-4">
       <NuxtLink to="/" class="flex items-center gap-2 text-slate-400 hover:text-white">
         ← Back
       </NuxtLink>
@@ -268,19 +306,6 @@ onMounted(() => {
     </header>
 
     <div class="mx-auto w-full max-w-5xl">
-      <div class="mb-4 flex flex-col gap-3">
-        <div class="flex items-start justify-between gap-3">
-          <h1 class="text-2xl sm:text-3xl font-bold text-slate-50">Game Lobby</h1>
-          <div
-            v-if="remainingRoomsLabel"
-            class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"
-            :class="remainingRoomsToneClass"
-          >
-            {{ remainingRoomsLabel }}
-          </div>
-        </div>
-      </div>
-
       <div
         v-if="lobbyStatus"
         class="mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
@@ -317,13 +342,24 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="flex max-h-[calc(100dvh-10rem)] flex-col rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-sm overflow-hidden">
-        <div class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-          <h2 class="font-semibold text-slate-100">Available Rooms</h2>
+      <section class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl">
+        <div class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-4 py-3.5">
+          <div class="min-w-0">
+            <p class="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-sky-300/80">Live Lobby</p>
+            <h2 class="mt-1 font-semibold text-slate-100">Available Rooms</h2>
+          </div>
           <div class="flex items-center gap-3">
+            <div
+              v-if="coinsBalanceLabel"
+              class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"
+              :class="coinsBalanceToneClass"
+            >
+              <IconsCoinIcon class="mr-2 h-4 w-4" />
+              {{ coinsBalanceLabel }}
+            </div>
             <button
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-900/70 text-slate-100 backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-900/70 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="loading || !isOnline"
               aria-label="Refresh rooms"
               title="Refresh rooms"
@@ -375,7 +411,7 @@ onMounted(() => {
         <div v-else-if="rooms.length === 0" class="flex flex-1 items-center justify-center px-4 py-10 text-center text-slate-400">
           No rooms available. Create one to start playing!
         </div>
-        <div v-else class="flex-1 overflow-y-auto p-3 sm:p-4">
+        <div v-else class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.05),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-3 sm:p-4">
           <div class="space-y-3">
             <article
               v-for="room in rooms"
@@ -436,16 +472,23 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="mt-4 grid grid-cols-[1fr_auto] gap-3 text-sm">
-            <div class="flex flex-col items-start">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Players</p>
-              <p class="mt-1 text-base font-semibold text-slate-100">
-                {{ joinedCount(room) }} / {{ totalPlayers(room) }}
-              </p>
-            </div>
-            <div class="self-center justify-self-end text-center">
+          <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
+              <div class="flex min-w-0 flex-col items-start">
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Players</p>
+                <p class="mt-1 text-base font-semibold text-slate-100">
+                  {{ joinedCount(room) }} / {{ totalPlayers(room) }}
+                </p>
+              </div>
+              <div class="flex flex-col items-center text-center">
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Stake</p>
+                <p class="mt-1 inline-flex items-center justify-center gap-2 text-base font-semibold text-amber-200">
+                  {{ room.coin_stake ?? 10 }}
+                  <IconsCoinIcon class="h-4 w-4" />
+                </p>
+              </div>
+            <div class="flex min-w-0 flex-col items-end text-right">
               <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Status</p>
-              <div class="mt-2 flex items-center justify-center">
+              <div class="mt-2 flex w-full items-center justify-center pl-8">
                 <span class="inline-flex h-4 w-4 rounded-full" :class="roomStatusDotClass(room)" />
               </div>
             </div>
@@ -464,88 +507,153 @@ onMounted(() => {
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
       @click.self="closeCreateModal"
     >
-      <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-white">Create a Room</h2>
-          <button
-            type="button"
-            class="text-slate-400 hover:text-white p-1 text-2xl leading-none"
-            aria-label="Close"
-            @click="closeCreateModal"
-          >
-            ×
-          </button>
+      <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
+        <div class="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-amber-300/80">New Table</p>
+              <h2 class="mt-1 text-xl font-bold text-white">Create a Room</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="inline-flex items-center rounded-full border border-amber-300/15 bg-white/5 px-3 py-1 text-sm font-semibold text-amber-100">
+                <IconsCoinIcon class="mr-2 h-4 w-4" />
+                {{ coinsBalanceLabel ?? '—' }}
+              </div>
+              <button
+                type="button"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xl leading-none text-slate-400 transition hover:bg-white/8 hover:text-white"
+                aria-label="Close"
+                @click="closeCreateModal"
+              >
+                ×
+              </button>
+            </div>
+          </div>
         </div>
-
-        <label class="block text-sm text-slate-400 mb-1">Room Name</label>
+        <div class="p-5">
+        <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Name</label>
         <input
           v-model="createRoomName"
           type="text"
           maxlength="40"
-          placeholder="Enter a room name"
-          class="w-full bg-slate-700 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:ring-2"
-          :class="roomNameTouched && createRoomName.trim().length < 3
+          placeholder="Friday Night Table"
+          class="w-full bg-slate-800/80 rounded-2xl px-4 py-3 text-white mb-1.5 focus:outline-none focus:ring-2"
+          :class="roomNameError
             ? 'border border-red-400/70 focus:ring-red-400'
             : 'border border-slate-600 focus:ring-amber-500'"
           @blur="roomNameTouched = true"
         >
+        <p v-if="roomNameError" class="mb-4 text-xs font-semibold text-red-300">{{ roomNameError }}</p>
+        <div v-else class="mb-4" />
 
-        <label class="block text-sm text-slate-400 mb-1">Number of Players</label>
-        <select
-          v-model.number="createNumPlayers"
-          class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500"
-        >
-          <option :value="2">2 Players</option>
-          <option :value="3">3 Players</option>
-          <option :value="4">4 Players</option>
-        </select>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Players</label>
+            <select
+              v-model.number="createNumPlayers"
+              class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option :value="2">2 Players</option>
+              <option :value="3">3 Players</option>
+              <option :value="4">4 Players</option>
+            </select>
+          </div>
 
-        <label class="block text-sm text-slate-400 mb-1">AI Opponents</label>
-        <select
-          v-model.number="createAiBots"
-          class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white mb-6 focus:outline-none focus:ring-2 focus:ring-amber-500"
-        >
-          <option
-            v-for="option in botOptions"
-            :key="option"
-            :value="option"
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Bots</label>
+            <select
+              v-model.number="createAiBots"
+              class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option
+                v-for="option in botOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ option === 0 ? 'None' : `${option}` }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <label class="block text-sm font-semibold text-slate-200">Stake per Player</label>
+              <p class="mt-1 text-xs text-slate-400">Minimum 10 coins. Must not exceed your balance.</p>
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/70 p-1">
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
+                  aria-label="Decrease stake"
+                  @click="adjustStake('down')"
+                >
+                  −
+                </button>
+                <input
+                  v-model.number="createStake"
+                  type="number"
+                  min="10"
+                  step="10"
+                  class="w-14 bg-transparent px-1 text-center text-base font-bold text-amber-100 focus:outline-none"
+                  @blur="normalizeStakeInput"
+                  @input="stakeTouched = true"
+                >
+                <button
+                  type="button"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
+                  aria-label="Increase stake"
+                  @click="adjustStake('up')"
+                >
+                  +
+                </button>
+              </div>
+              <p v-if="stakeError" class="mt-2 text-xs font-semibold text-red-300">{{ stakeError }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <div>
+            <p class="text-sm font-semibold text-slate-200">Private room</p>
+            <p class="mt-1 text-xs text-slate-400">Only players with the password can join.</p>
+          </div>
+          <button
+            type="button"
+            class="relative inline-flex h-7 w-12 items-center rounded-full border transition"
+            :class="createPrivateRoom ? 'border-amber-300/40 bg-amber-400/80' : 'border-white/10 bg-slate-800/80'"
+            role="switch"
+            :aria-checked="createPrivateRoom"
+            aria-label="Toggle private room"
+            @click="createPrivateRoom = !createPrivateRoom"
           >
-            {{ option === 0 ? 'None' : `${option} Bot${option > 1 ? 's' : ''}` }}
-          </option>
-        </select>
+            <span
+              class="inline-flex h-5 w-5 transform rounded-full bg-white shadow transition"
+              :class="createPrivateRoom ? 'translate-x-6' : 'translate-x-1'"
+            />
+          </button>
+        </div>
 
-        <label class="mb-3 flex items-center gap-3 text-sm text-slate-200">
-          <input
-            v-model="createPrivateRoom"
-            type="checkbox"
-            class="h-4 w-4 rounded border-slate-500 bg-slate-700 text-amber-500 focus:ring-amber-500"
-          >
-          Private room
-        </label>
-
-        <div v-if="createPrivateRoom" class="space-y-4 mb-6">
+        <div v-if="createPrivateRoom" class="grid gap-3 mb-5">
           <input
             v-model="createRoomPassword"
             type="password"
             placeholder="Room password"
-            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-          <input
-            v-model="createRoomPasswordConfirm"
-            type="password"
-            placeholder="Confirm password"
-            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
         </div>
 
         <button
           type="button"
-          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl touch-manipulation flex items-center justify-center gap-2 disabled:opacity-50"
-          :disabled="creating"
+          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-2xl touch-manipulation flex items-center justify-center gap-2 disabled:opacity-50"
+          :disabled="creating || !!roomNameError || !!stakeError"
           @click="doCreateRoom"
         >
           Create Room
         </button>
+        </div>
       </div>
     </div>
   </Teleport>

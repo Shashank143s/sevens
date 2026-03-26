@@ -12,6 +12,7 @@ export interface LobbyMatch {
   matchID: string
   room_name?: string
   creator_name?: string
+  coin_stake?: number
   players: MatchPlayer[]
   setupData?: { numPlayers?: number; aiBots?: number }
   room_size?: number

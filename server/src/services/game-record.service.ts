@@ -2,6 +2,12 @@ import { Types } from 'mongoose';
 import { GameModel } from '../models';
 import type { CreateGamePayload, GamePlayerPayload, UpdateGamePayload } from '../types/game-record.types';
 import { syncUserStatsForPlayers } from './user-stats.service';
+import {
+  ensureAvailableCoinsForUser,
+  reserveCoinsForJoin,
+  settleCompletedEconomy,
+  voidEconomySettlement,
+} from './user-economy.service';
 import { ensureRoomQuotaAvailable } from './room-quota.service';
 import { normalizeDate } from '../utils/user.util';
 import { hashRoomPassword, normalizeRoomPassword, verifyRoomPassword } from '../utils/password.util';
@@ -25,6 +31,13 @@ function normalizePlayer(player: GamePlayerPayload) {
     left_at: player.left_at ? normalizeDate(player.left_at) : undefined,
     result: player.result ?? 'unknown',
     finish_position: player.finish_position,
+    coins: {
+      reserved: Math.max(player.coins?.reserved ?? 0, 0),
+      delta: player.coins?.delta ?? 0,
+    },
+    xp: {
+      delta: Math.max(player.xp?.delta ?? 0, 0),
+    },
   };
 }
 
@@ -42,6 +55,13 @@ function serializeExistingPlayer(player: any): GamePlayerPayload {
     left_at: player.left_at,
     result: player.result ?? 'unknown',
     finish_position: player.finish_position,
+    coins: {
+      reserved: player.coins?.reserved ?? 0,
+      delta: player.coins?.delta ?? 0,
+    },
+    xp: {
+      delta: player.xp?.delta ?? 0,
+    },
   };
 }
 
@@ -91,6 +111,20 @@ function buildCreateDocument(matchID: string, payload: CreateGamePayload) {
     player_count: countPlayers(players),
     bot_count: countBots(players),
     status: 'created' as const,
+    coin_rules: {
+      stake: Math.max(payload.coin_rules?.stake ?? 10, 10),
+      bot_reward: 10,
+    },
+    coin_settlement: {
+      status: 'pending' as const,
+      human_player_count: countPlayers(players),
+      bot_count: countBots(players),
+      human_pot: countPlayers(players) * Math.max(payload.coin_rules?.stake ?? 10, 10),
+      bot_bonus: 0,
+    },
+    xp_settlement: {
+      status: 'pending' as const,
+    },
     access: buildAccessDocument(payload),
     metadata: payload.metadata,
   };
@@ -109,7 +143,7 @@ function buildUpdateDocument(payload: UpdateGamePayload, players: any[]) {
   const winnerUserId = payload.winner_user_id;
   const winnerSeatId = resolveWinnerSeatId(payload);
   const shouldPersistPlayers = Boolean(
-    payload.players || payload.joined_player || winnerSeatId || payload.status === 'completed',
+    payload.players || payload.joined_player || winnerSeatId || payload.status === 'completed' || payload.status === 'abandoned',
   );
   return {
     ...(payload.room_size ? { room_size: payload.room_size } : {}),
@@ -117,6 +151,8 @@ function buildUpdateDocument(payload: UpdateGamePayload, players: any[]) {
     ...(shouldPersistPlayers ? { players } : {}),
     ...(shouldPersistPlayers ? { player_count: countPlayers(players), bot_count: countBots(players) } : {}),
     ...(payload.status === 'completed' ? { winner_user_id: toObjectId(winnerUserId) ?? null } : {}),
+    ...(payload.coin_settlement ? { coin_settlement: payload.coin_settlement } : {}),
+    ...(payload.xp_settlement ? { xp_settlement: payload.xp_settlement } : {}),
     ...(payload.metadata ? { metadata: payload.metadata } : {}),
     ...buildStatusDates(payload),
   };
@@ -141,8 +177,16 @@ function applyPlayerResults(players: ReturnType<typeof normalizePlayers>, winner
 function mergeJoinedPlayer(existingPlayers: any[], joinedPlayer?: GamePlayerPayload) {
   if (!joinedPlayer) return existingPlayers;
   const normalizedPlayer = normalizePlayer(joinedPlayer);
+  const existingPlayer = existingPlayers.find((player) => player.player_id === normalizedPlayer.player_id);
   const withoutPlayer = existingPlayers.filter((player) => player.player_id !== normalizedPlayer.player_id);
-  return [...withoutPlayer, normalizedPlayer];
+  return [
+    ...withoutPlayer,
+    {
+      ...normalizedPlayer,
+      coins: existingPlayer?.coins ?? normalizedPlayer.coins,
+      xp: existingPlayer?.xp ?? normalizedPlayer.xp,
+    },
+  ];
 }
 
 function buildUpdatedPlayers(existingPlayers: any[], payload: UpdateGamePayload) {
@@ -152,6 +196,44 @@ function buildUpdatedPlayers(existingPlayers: any[], payload: UpdateGamePayload)
     ? normalizePlayers(payload.players)
     : mergeJoinedPlayer(normalizedExistingPlayers, payload.joined_player);
   return applyPlayerResults(nextPlayers, winnerSeatId);
+}
+
+function hasReservedCoinsForSeat(existingPlayers: any[], joinedPlayer?: GamePlayerPayload) {
+  if (!joinedPlayer) return false;
+  const existingPlayer = normalizeExistingPlayers(existingPlayers).find(
+    (player) => player.player_id === joinedPlayer.player_id,
+  );
+  return (existingPlayer?.coins?.reserved ?? 0) > 0;
+}
+
+async function reserveJoinedPlayerCoins(game: any, payload: UpdateGamePayload) {
+  const joinedPlayer = payload.joined_player;
+  if (!joinedPlayer?.user_id || joinedPlayer.is_bot) return;
+  if (hasReservedCoinsForSeat(game.players, joinedPlayer)) return;
+  await reserveCoinsForJoin(joinedPlayer.user_id, Math.max(game.coin_rules?.stake ?? 10, 10));
+  joinedPlayer.coins = {
+    reserved: Math.max(game.coin_rules?.stake ?? 10, 10),
+    delta: 0,
+  };
+  joinedPlayer.xp = {
+    delta: 0,
+  };
+}
+
+async function applySettlementIfNeeded(game: any, payload: UpdateGamePayload, players: any[]) {
+  if (payload.status === 'completed' && game.coin_settlement?.status === 'pending') {
+    return settleCompletedEconomy(game, players, resolveWinnerSeatId(payload));
+  }
+
+  if (payload.status === 'abandoned' && game.coin_settlement?.status === 'pending') {
+    return voidEconomySettlement(game, players);
+  }
+
+  return {
+    players,
+    coin_settlement: game.coin_settlement,
+    xp_settlement: game.xp_settlement,
+  };
 }
 
 export async function getGameRecord(matchID: string) {
@@ -171,13 +253,22 @@ export async function getPublicGameRecord(matchID: string) {
 
 export async function createGameRecord(matchID: string, payload: CreateGamePayload) {
   await ensureRoomQuotaAvailable(payload.creator_user_id);
+  if (payload.creator_user_id) {
+    await ensureAvailableCoinsForUser(
+      payload.creator_user_id,
+      Math.max(payload.coin_rules?.stake ?? 10, 10),
+    );
+  }
   const game = new GameModel(buildCreateDocument(matchID, payload));
   return game.save();
 }
 
-export async function authorizeGameJoin(matchID: string, password?: string) {
+export async function authorizeGameJoin(matchID: string, password?: string, userId?: string) {
   const game = await getGameRecord(matchID);
   if (!game) return null;
+  if (userId) {
+    await ensureAvailableCoinsForUser(userId, Math.max(game.coin_rules?.stake ?? 10, 10));
+  }
   if (!game.access?.is_private) return { allowed: true };
   const normalizedPassword = normalizeRoomPassword(password);
   const passwordHash = game.access.password_hash ?? '';
@@ -188,15 +279,28 @@ export async function authorizeGameJoin(matchID: string, password?: string) {
 export async function updateGameRecord(matchID: string, payload: UpdateGamePayload) {
   const game = await findGameDocument(matchID);
   if (!game) return null;
+  await reserveJoinedPlayerCoins(game, payload);
   const players = buildUpdatedPlayers(game.players, payload);
-  const winnerUserId = resolveWinnerUserId(players, payload);
+  const settlement = await applySettlementIfNeeded(game, payload, players);
+  const finalPlayers = settlement.players;
+  const winnerUserId = resolveWinnerUserId(finalPlayers, payload);
   const updatedGame = await GameModel.findOneAndUpdate(
     { match_id: matchID },
-    { $set: buildUpdateDocument({ ...payload, winner_user_id: winnerUserId }, players) },
+    {
+      $set: buildUpdateDocument(
+        {
+          ...payload,
+          winner_user_id: winnerUserId,
+          coin_settlement: settlement.coin_settlement,
+          xp_settlement: settlement.xp_settlement,
+        },
+        finalPlayers,
+      ),
+    },
     { new: true, lean: true },
   );
   if (payload.status === 'completed') {
-    await syncUserStatsForPlayers(players);
+    await syncUserStatsForPlayers(finalPlayers);
   }
   return updatedGame;
 }
