@@ -473,7 +473,7 @@ onMounted(() => {
           </div>
 
           <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
-              <div class="flex min-w-0 flex-col items-start">
+              <div class="flex min-w-0 flex-col items-center text-center">
                 <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Players</p>
                 <p class="mt-1 text-base font-semibold text-slate-100">
                   {{ joinedCount(room) }} / {{ totalPlayers(room) }}
@@ -486,9 +486,9 @@ onMounted(() => {
                   <IconsCoinIcon class="h-4 w-4" />
                 </p>
               </div>
-            <div class="flex min-w-0 flex-col items-end text-right">
+            <div class="flex min-w-0 flex-col items-center text-center">
               <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Status</p>
-              <div class="mt-2 flex w-full items-center justify-center pl-8">
+              <div class="mt-2 flex w-full items-center justify-center">
                 <span class="inline-flex h-4 w-4 rounded-full" :class="roomStatusDotClass(room)" />
               </div>
             </div>
