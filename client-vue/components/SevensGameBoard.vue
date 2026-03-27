@@ -20,7 +20,9 @@ const { state } = useSevensClient(
   props.playerId ?? '0',
   props.credentials ?? undefined,
 )
-const { completeGameRecord } = useGameApi()
+const { session } = usePlayerSession()
+const { getAccount } = useAccountApi()
+const { completeGameRecord, getGameRecord } = useGameApi()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -62,6 +64,8 @@ const didIWin = computed(() => {
 })
 
 const redirectSeconds = ref(30)
+const winnerCoinsDelta = ref<number | null>(null)
+const winnerTotalCoins = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
 let deleteRequested = false
 let completionSynced = false
@@ -78,10 +82,13 @@ watch(
   async (over) => {
     clearRedirectTimer()
     if (!over) return
-    redirectSeconds.value = 30
+    winnerCoinsDelta.value = null
+    winnerTotalCoins.value = null
+    redirectSeconds.value = 3000
     // Clear stored creds so user can re-join next game cleanly.
     clearCredentials(props.matchId)
     await syncCompletedGame()
+    await loadWinnerEconomy()
     // Best-effort: delete the room from the lobby once the game ends.
     if (!deleteRequested) {
       deleteRequested = true
@@ -100,6 +107,34 @@ watch(
   },
   { immediate: true },
 )
+
+async function loadWinnerEconomy() {
+  if (!didIWin.value || !session.value?.id) return
+
+  const accountIdentifier = session.value.id || session.value.email?.trim()
+  if (!accountIdentifier) return
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      const [accountResponse, gameResponse] = await Promise.all([
+        getAccount(accountIdentifier, 0, 0),
+        getGameRecord(props.matchId),
+      ])
+
+      winnerTotalCoins.value = accountResponse.user.wallet?.coins_balance ?? null
+      const player = gameResponse.game.players?.find((entry) => entry.user_id === session.value?.id)
+      winnerCoinsDelta.value = player?.coins?.delta ?? null
+
+      if (winnerTotalCoins.value != null && winnerCoinsDelta.value != null) {
+        return
+      }
+    } catch (error) {
+      console.error('[game-board] Failed to load winner economy:', error)
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 400))
+  }
+}
 
 async function syncCompletedGame() {
   if (completionSynced || winnerID.value == null || !shouldFinalizeGame.value) return
@@ -167,41 +202,16 @@ watch(isOnline, (online, wasOnline) => {
         </button>
       </div>
     </div>
-    <div
+    <WinnerOverlay
       v-if="isGameOver"
-      class="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 safe-area-padding"
-    >
-      <div class="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/96 p-6 text-white shadow-[0_30px_80px_rgba(2,6,23,0.6)] sm:p-8">
-        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(245,158,11,0.08),transparent_32%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.05),transparent_24%)]" />
-        <div class="relative text-center">
-          <div class="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full border border-amber-300/20 bg-white/5 text-5xl shadow-[0_18px_40px_rgba(245,158,11,0.14)]">
-            {{ winnerDisplay.avatar }}
-          </div>
-          <div class="mb-2 text-[0.72rem] font-bold uppercase tracking-[0.28em] text-amber-300/80">
-            {{ didIWin ? 'Victory' : 'Round Complete' }}
-          </div>
-          <div class="text-3xl font-extrabold tracking-tight text-slate-50 sm:text-4xl">
-            {{ didIWin ? 'You won' : 'You lost' }}
-          </div>
-          <div class="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-            Winner
-            <div class="mt-1 text-lg font-bold text-slate-50">
-              {{ winnerDisplay.name }}
-            </div>
-          </div>
-          <div class="mt-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
-            Returning to lobby in {{ redirectSeconds }}s
-          </div>
-          <button
-            type="button"
-            class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400 px-4 py-3 font-bold text-slate-950 shadow-[0_18px_40px_rgba(245,158,11,0.18)] transition hover:bg-amber-300"
-            @click="router.push('/lobby')"
-          >
-            Go to Lobby
-          </button>
-        </div>
-      </div>
-    </div>
+      :avatar="winnerDisplay.avatar"
+      :winner-name="winnerDisplay.name"
+      :did-i-win="didIWin"
+      :redirect-seconds="redirectSeconds"
+      :won-coins="winnerCoinsDelta"
+      :total-coins="winnerTotalCoins"
+      @go-lobby="router.push('/lobby')"
+    />
     <GameBoard
       :G="state.G"
       :ctx="state.ctx"

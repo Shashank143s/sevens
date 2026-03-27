@@ -405,8 +405,13 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        <div v-if="loading" class="flex flex-1 items-center justify-center px-4 py-10 text-center text-slate-400">
-          Loading rooms…
+        <div v-if="loading" class="flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.05),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-3 sm:p-4">
+          <div class="space-y-3">
+            <RoomCardSkeleton
+              v-for="index in 3"
+              :key="index"
+            />
+          </div>
         </div>
         <div v-else-if="rooms.length === 0" class="flex flex-1 items-center justify-center px-4 py-10 text-center text-slate-400">
           No rooms available. Create one to start playing!
@@ -549,30 +554,62 @@ onMounted(() => {
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div>
             <label class="block text-sm font-semibold text-slate-300 mb-1.5">Players</label>
-            <select
-              v-model.number="createNumPlayers"
-              class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              <option :value="2">2 Players</option>
-              <option :value="3">3 Players</option>
-              <option :value="4">4 Players</option>
-            </select>
+            <div class="relative">
+              <select
+                v-model.number="createNumPlayers"
+                class="w-full appearance-none bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                <option :value="2">2 Players</option>
+                <option :value="3">3 Players</option>
+                <option :value="4">4 Players</option>
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300">
+                <svg
+                  viewBox="0 0 20 20"
+                  class="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m5 7.5 5 5 5-5" />
+                </svg>
+              </span>
+            </div>
           </div>
 
           <div>
             <label class="block text-sm font-semibold text-slate-300 mb-1.5">Bots</label>
-            <select
-              v-model.number="createAiBots"
-              class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-            >
-              <option
-                v-for="option in botOptions"
-                :key="option"
-                :value="option"
+            <div class="relative">
+              <select
+                v-model.number="createAiBots"
+                class="w-full appearance-none bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
-                {{ option === 0 ? 'None' : `${option}` }}
-              </option>
-            </select>
+                <option
+                  v-for="option in botOptions"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ option === 0 ? 'None' : `${option}` }}
+                </option>
+              </select>
+              <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300">
+                <svg
+                  viewBox="0 0 20 20"
+                  class="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m5 7.5 5 5 5-5" />
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
 

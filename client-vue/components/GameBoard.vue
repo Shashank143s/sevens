@@ -55,6 +55,8 @@ const myHand = computed(() => {
 })
 
 const isPlayableCardAvailable = computed(() => getPlayableCards(myHand.value, G.value.piles).length > 0)
+const invalidCardId = ref<string | null>(null)
+let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
 
 type SortMode = 'byRank' | 'bySuit'
 const sortMode = ref<SortMode>('byRank')
@@ -81,6 +83,7 @@ const sortedHand = computed(() => {
 const isMyTurn = computed(
   () => playerIndex.value >= 0 && playerIndex.value === currentPlayerIndex.value,
 )
+const isGameFinished = computed(() => Boolean((ctx.value as { gameover?: unknown }).gameover))
 
 const currentPlayerDisplay = computed(() => getPlayerDisplay(currentPlayerIndex.value))
 const topBarMessage = computed(() =>
@@ -103,6 +106,7 @@ function clearTurnTimer() {
 }
 
 function runAutoPlayOrPass() {
+  if (isGameFinished.value) return
   clearTurnTimer()
   const cards = getPlayableCards(myHand.value, G.value.piles as Record<Suit, PileLike>)
   if (cards.length > 0) {
@@ -112,11 +116,38 @@ function runAutoPlayOrPass() {
   }
 }
 
+function clearInvalidCardFeedback() {
+  if (invalidCardTimer != null) {
+    clearTimeout(invalidCardTimer)
+    invalidCardTimer = null
+  }
+  invalidCardId.value = null
+}
+
+function triggerIllegalCardFeedback(cardId: string) {
+  clearInvalidCardFeedback()
+  invalidCardId.value = cardId
+  invalidCardTimer = setTimeout(() => {
+    invalidCardId.value = null
+    invalidCardTimer = null
+  }, 360)
+}
+
+function handleCardClick(card: Card) {
+  if (isGameFinished.value) return
+  if (!isMyTurn.value) return
+  if (!isPlayable(card, G.value.piles[card.suit])) {
+    triggerIllegalCardFeedback(card.id)
+    return
+  }
+  moves.value.playCard(card)
+}
+
 watch(
-  [isMyTurn, currentPlayerIndex],
+  [isMyTurn, currentPlayerIndex, isGameFinished],
   () => {
     clearTurnTimer()
-    if (!isMyTurn.value) {
+    if (!isMyTurn.value || isGameFinished.value) {
       timeLeft.value = TURN_SECONDS
       return
     }
@@ -131,7 +162,10 @@ watch(
   { immediate: true },
 )
 
-onUnmounted(clearTurnTimer)
+onUnmounted(() => {
+  clearTurnTimer()
+  clearInvalidCardFeedback()
+})
 
 const suitSymbols: Record<Suit, string> = {
   spades: '♠',
@@ -349,8 +383,9 @@ onUnmounted(() => {
         <div
           v-for="card in sortedHand"
           :key="card.id"
-          class="w-16 h-24 sm:w-28 sm:h-36 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
-          @click="playerIndex === currentPlayerIndex && moves.playCard(card)"
+          class="hand-card w-16 h-24 sm:w-28 sm:h-36 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
+          :class="{ 'hand-card--illegal': invalidCardId === card.id }"
+          @click="handleCardClick(card)"
         >
           <img
             :src="getCardImageSrc(card)"
@@ -365,7 +400,7 @@ onUnmounted(() => {
      <Motion preset="slideTop">
         <button
           is="button"
-          v-if="playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
+          v-if="!isGameFinished && playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
           type="button"
           class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
           @click="moves.pass()"
@@ -639,6 +674,33 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.hand-card--illegal {
+  animation: illegal-card-shake 320ms ease;
+}
+
+.hand-card--illegal img {
+  filter: drop-shadow(0 0 14px rgba(248, 113, 113, 0.45));
+}
+
+@keyframes illegal-card-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px) rotate(-2deg);
+  }
+  40% {
+    transform: translateX(4px) rotate(1.5deg);
+  }
+  60% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  80% {
+    transform: translateX(2px) rotate(0.5deg);
+  }
 }
 
 /* Sidebar widget: top-right on desktop; in top bar on mobile */
