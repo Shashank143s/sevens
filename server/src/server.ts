@@ -9,6 +9,7 @@ import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
 import { gameRoute } from './routes/game.router';
 import { roomsRoute } from './routes/rooms.router';
+import { registerVoiceSignaling } from './services/voice-signaling.service';
 
 const server = Server({
   games: [Sevens],
@@ -28,6 +29,8 @@ function registerRoutes() {
 function attachSocketLogging() {
   const io = (server.app as any)._io;
   if (!io) return;
+
+  registerVoiceSignaling(io);
 
   io.of('sevens').on('connection', (socket: any) => {
     socket.on('sync', (matchID: string, playerID: string) => {

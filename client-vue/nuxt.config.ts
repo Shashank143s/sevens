@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
       socketServer: process.env.NUXT_PUBLIC_SOCKET_SERVER || 'http://localhost:8000',
+      voiceIceServers: process.env.NUXT_PUBLIC_VOICE_ICE_SERVERS || '',
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
     },
   },

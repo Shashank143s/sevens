@@ -2,6 +2,7 @@
 import { getMatchUrl } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import { useVoiceChat } from '~/composables/useVoiceChat'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
@@ -28,6 +29,22 @@ const roomName = ref('')
 const roomStake = ref<number | null>(null)
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
+const {
+  canUseVoice,
+  connectionState: voiceConnectionState,
+  error: voiceError,
+  isJoined: isVoiceJoined,
+  isMuted,
+  joinVoice,
+  leaveVoice,
+  participants: voiceParticipants,
+  permissionState,
+  toggleMute,
+} = useVoiceChat({
+  matchId,
+  userId: computed(() => session.value?.id),
+  displayName: computed(() => session.value?.name),
+})
 
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
@@ -252,6 +269,29 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
 </script>
 
 <template>
+  <div
+    v-if="joined && session?.id"
+    class="fixed left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-[9997] mx-auto max-w-md sm:left-auto sm:right-4 sm:mx-0"
+  >
+    <div class="space-y-2">
+      <VoiceControls
+        :can-use-voice="canUseVoice"
+        :connection-state="voiceConnectionState"
+        :is-muted="isMuted"
+        :permission-state="permissionState"
+        :error="voiceError"
+        @join="joinVoice"
+        @leave="leaveVoice"
+        @toggle-mute="toggleMute"
+      />
+      <VoiceParticipants
+        v-if="isVoiceJoined && voiceParticipants.length"
+        :participants="voiceParticipants"
+        :current-user-id="session?.id"
+      />
+    </div>
+  </div>
+
   <!-- Not yet joined: show join form (pre-filled from session) -->
   <div
     v-if="!joined"

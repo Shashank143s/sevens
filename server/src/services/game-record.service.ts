@@ -251,6 +251,27 @@ export async function getPublicGameRecord(matchID: string) {
   };
 }
 
+export async function getVoiceEligibleParticipant(matchID: string, userID: string) {
+  const userObjectId = toObjectId(userID);
+  if (!userObjectId) return null;
+
+  const game = await GameModel.findOne(
+    { match_id: matchID, 'players.user_id': userObjectId },
+    { players: 1 },
+  ).lean();
+
+  if (!game?.players?.length) return null;
+
+  const participant = game.players.find((player: any) => String(player.user_id) === userID && !player.is_bot);
+  if (!participant) return null;
+
+  return {
+    userId: userID,
+    playerId: String(participant.player_id ?? ''),
+    displayName: String(participant.display_name ?? ''),
+  };
+}
+
 export async function createGameRecord(matchID: string, payload: CreateGamePayload) {
   await ensureRoomQuotaAvailable(payload.creator_user_id);
   if (payload.creator_user_id) {
