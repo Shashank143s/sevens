@@ -181,7 +181,6 @@ export async function upsertAccountWithGeo(identifier: string, payload: AccountP
           xp_total: 0,
           level: 1,
         },
-        ...(locationOnInsert ? { location: locationOnInsert } : {}),
       },
     },
     {
