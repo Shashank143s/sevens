@@ -3,11 +3,13 @@ import { Sevens } from './game';
 import { HOST, PORT } from './config';
 import { connectToDatabase } from './database/mongoose';
 import { corsMiddleware } from './middleware/cors.middleware';
+import { geoMiddleware } from './middleware/geo.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
 import { accountRoute } from './routes/account.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
 import { gameRoute } from './routes/game.router';
+import { leaderboardRoute } from './routes/leaderboard.router';
 import { roomsRoute } from './routes/rooms.router';
 
 const server = Server({
@@ -17,7 +19,9 @@ const server = Server({
 
 function registerRoutes() {
   server.app.use(corsMiddleware);
+  server.app.use(geoMiddleware);
   server.app.use(accountRoute);
+  server.app.use(leaderboardRoute);
   server.app.use(roomsRoute);
   server.app.use(gameRoute);
   server.app.use(joinRoute);

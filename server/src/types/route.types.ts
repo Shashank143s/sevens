@@ -5,6 +5,16 @@ export type ApiRouteContext = JsonBodyContext & {
   path: string;
   status: number;
   body?: unknown;
+  state?: {
+    geo?: {
+      ipAddress?: string;
+      countryCode?: string;
+      countryName?: string;
+      region?: string;
+      source: 'header' | 'ip';
+      capturedAt: Date;
+    };
+  };
 };
 
 export type JoinRouteContext = ApiRouteContext;

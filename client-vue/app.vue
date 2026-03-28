@@ -4,7 +4,7 @@ const pwa = import.meta.client ? usePWA() : undefined
 const splashDismissed = ref(false)
 const config = useRuntimeConfig()
 const route = useRoute()
-const { hydrated: sessionHydrated } = usePlayerSession()
+const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
 const isProtectedRoute = computed(() => route.path !== '/')
@@ -63,6 +63,7 @@ async function handleProtectedRouteRedirect() {
 }
 
 onMounted(() => {
+  hydrateSession()
   syncOnlineState()
   window.addEventListener('online', syncOnlineState)
   window.addEventListener('offline', syncOnlineState)

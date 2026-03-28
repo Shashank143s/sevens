@@ -30,8 +30,29 @@ export type AccountApiUser = {
     xp_total: number
     level: number
   }
+  location?: {
+    country_code?: string
+    country_name?: string
+    region?: string
+  }
   daily_room_limit: number
   remaining_rooms: number
+}
+
+export type LeaderboardEntry = {
+  rank: number
+  user_id: string
+  full_name: string
+  profile_image_url?: string
+  avatar_emoji?: string
+  country_code?: string
+  country_name?: string
+  wins: number
+  games_played: number
+  win_percentage: number
+  coins_balance: number
+  level: number
+  xp_total: number
 }
 
 type UpsertAccountResponse = {
@@ -66,6 +87,10 @@ type DeleteAccountResponse = {
   deleted: boolean
 }
 
+type GetLeaderboardResponse = {
+  entries: LeaderboardEntry[]
+}
+
 export function useAccountApi() {
   const config = useRuntimeConfig()
 
@@ -92,9 +117,16 @@ export function useAccountApi() {
     })
   }
 
+  async function getLeaderboard(limit = 25) {
+    return $fetch<GetLeaderboardResponse>(`${config.public.apiBase}/api/leaderboard`, {
+      query: { limit },
+    })
+  }
+
   return {
     deleteAccount,
     getAccount,
+    getLeaderboard,
     upsertAccount,
   }
 }

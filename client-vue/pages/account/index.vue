@@ -165,14 +165,24 @@ onMounted(() => {
         </section>
 
         <section class="account-history">
-          <button
-            type="button"
-            class="account-history__link"
-            @click="router.push('/account/games')"
-          >
-            <span class="account-history__title">Recent Games</span>
-            <span class="account-history__arrow">→</span>
-          </button>
+          <div class="account-history__grid">
+            <button
+              type="button"
+              class="account-history__link"
+              @click="router.push('/account/games')"
+            >
+              <span class="account-history__title">Recent Games</span>
+              <span class="account-history__arrow">→</span>
+            </button>
+            <button
+              type="button"
+              class="account-history__link"
+              @click="router.push('/account/leaderboard')"
+            >
+              <span class="account-history__title">Leaderboard</span>
+              <span class="account-history__arrow">→</span>
+            </button>
+          </div>
         </section>
 
         <div class="account-card__actions">
@@ -515,6 +525,11 @@ onMounted(() => {
   border-radius: 1.35rem;
   background: rgba(15, 23, 42, 0.52);
   border: 1px solid rgba(245, 158, 11, 0.12);
+}
+
+.account-history__grid {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .account-history__link {

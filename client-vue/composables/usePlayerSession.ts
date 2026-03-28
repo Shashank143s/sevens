@@ -33,8 +33,8 @@ function saveToStorage(session: PlayerSession | null) {
 }
 
 export function usePlayerSession() {
-  const session = useState<PlayerSession | null>('player-session', () => loadFromStorage())
-  const hydrated = useState<boolean>('player-session-hydrated', () => import.meta.server)
+  const session = useState<PlayerSession | null>('player-session', () => null)
+  const hydrated = useState<boolean>('player-session-hydrated', () => false)
 
   function hydrateSession() {
     const stored = loadFromStorage()

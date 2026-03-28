@@ -66,6 +66,41 @@ const userProgressionSchema = new Schema(
   },
 );
 
+const userLocationSchema = new Schema(
+  {
+    ip_address: {
+      type: String,
+      trim: true,
+    },
+    country_code: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      minlength: 2,
+      maxlength: 2,
+    },
+    country_name: {
+      type: String,
+      trim: true,
+    },
+    region: {
+      type: String,
+      trim: true,
+    },
+    source: {
+      type: String,
+      trim: true,
+      default: 'ip',
+    },
+    captured_at: {
+      type: Date,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const userSchema = new Schema(
   {
     email: {
@@ -138,6 +173,10 @@ const userSchema = new Schema(
         xp_total: 0,
         level: 1,
       }),
+    },
+    location: {
+      type: userLocationSchema,
+      required: false,
     },
   },
   {

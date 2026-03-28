@@ -1,4 +1,4 @@
-import { deleteAccountByIdentifier, getAccountByIdentifier, upsertAccountByIdentifier } from '../services/account.service';
+import { deleteAccountByIdentifier, getAccountByIdentifier, upsertAccountWithGeo } from '../services/account.service';
 import type { AccountPayload } from '../types/account.types';
 import type { AccountRouteContext, RouteNext } from '../types/route.types';
 import { matchRoute, setJson } from '../utils/http.util';
@@ -25,7 +25,7 @@ async function handleGet(ctx: AccountRouteContext, userID: string) {
 
 async function handlePost(ctx: AccountRouteContext, userID: string) {
   const payload = (await readJsonBody(ctx)) as AccountPayload;
-  const account = await upsertAccountByIdentifier(userID, payload);
+  const account = await upsertAccountWithGeo(userID, payload, ctx.state?.geo);
   setJson(ctx, 200, { user: account?.toObject() as Record<string, unknown> });
 }
 

@@ -1,6 +1,6 @@
 import { GameModel, UserModel } from '../models';
 import { MAX_DAILY_GAMES_PER_USER } from '../config';
-import type { AccountApiUserPayload, AccountPayload, RecentGameResult } from '../types/account.types';
+import type { AccountApiUserPayload, AccountGeoPayload, AccountPayload, LeaderboardEntry, RecentGameResult } from '../types/account.types';
 import { syncUserStats } from './user-stats.service';
 import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
@@ -46,6 +46,13 @@ async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
   return {
     ...user,
     _id: String(user._id),
+    location: user.location
+      ? {
+          country_code: user.location.country_code,
+          country_name: user.location.country_name,
+          region: user.location.region,
+        }
+      : undefined,
     daily_room_limit: MAX_DAILY_GAMES_PER_USER,
     remaining_rooms: remainingRooms,
   };
@@ -131,6 +138,92 @@ export async function upsertAccountByIdentifier(identifier: string, payload: Acc
       setDefaultsOnInsert: true,
     },
   );
+}
+
+function buildLocationOnInsert(geo?: AccountGeoPayload) {
+  if (!geo?.countryCode) return undefined;
+  return {
+    ip_address: geo.ipAddress,
+    country_code: geo.countryCode,
+    country_name: geo.countryName,
+    region: geo.region,
+    source: geo.source,
+    captured_at: geo.capturedAt,
+  };
+}
+
+export async function upsertAccountWithGeo(identifier: string, payload: AccountPayload, geo?: AccountGeoPayload) {
+  const email = resolveEmail(identifier, payload);
+  const update = buildAccountUpdate(payload, email);
+  const existingUser = await findUserByIdentifier(identifier);
+  const lookup = existingUser ? createUserLookup(identifier) : { email };
+  const locationOnInsert = buildLocationOnInsert(geo);
+  const setPayload = {
+    ...update,
+    ...(existingUser?.location?.country_code || !locationOnInsert
+      ? {}
+      : {
+          location: locationOnInsert,
+        }),
+  };
+
+  return UserModel.findOneAndUpdate(
+    lookup as any,
+    {
+      $set: setPayload,
+      $unset: { deleted_at: 1 },
+      $setOnInsert: {
+        wallet: {
+          coins_balance: 100,
+          coins_reserved: 0,
+        },
+        progression: {
+          xp_total: 0,
+          level: 1,
+        },
+        ...(locationOnInsert ? { location: locationOnInsert } : {}),
+      },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    },
+  );
+}
+
+export async function getLeaderboard(limit = 25): Promise<{ entries: LeaderboardEntry[] }> {
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
+  const users = await UserModel.find({ is_active: true } as any)
+    .sort({
+      'wallet.coins_balance': -1,
+      'progression.level': -1,
+      'progression.xp_total': -1,
+      'stats.wins': -1,
+      created_at: 1,
+    })
+    .limit(safeLimit)
+    .lean();
+
+  return {
+    entries: users.map((user, index) => ({
+      rank: index + 1,
+      user_id: String(user._id),
+      full_name: user.full_name,
+      profile_image_url: user.profile_image_url ?? undefined,
+      avatar_emoji: user.avatar_emoji,
+      country_code: user.location?.country_code ?? undefined,
+      country_name: user.location?.country_name ?? undefined,
+      wins: user.stats?.wins ?? 0,
+      games_played: user.stats?.games_played ?? 0,
+      win_percentage: (user.stats?.games_played ?? 0) > 0
+        ? Math.round(((user.stats?.wins ?? 0) / (user.stats?.games_played ?? 0)) * 100)
+        : 0,
+      coins_balance: user.wallet?.coins_balance ?? 0,
+      level: user.progression?.level ?? 1,
+      xp_total: user.progression?.xp_total ?? 0,
+    })),
+  };
 }
 
 export async function deleteAccountByIdentifier(identifier: string) {

@@ -46,8 +46,38 @@ export type AccountApiUserPayload = {
     xp_total: number;
     level: number;
   };
+  location?: {
+    country_code?: string;
+    country_name?: string;
+    region?: string;
+  };
   daily_room_limit: number;
   remaining_rooms: number;
   created_at?: Date;
   updated_at?: Date;
+};
+
+export type AccountGeoPayload = {
+  ipAddress?: string;
+  countryCode?: string;
+  countryName?: string;
+  region?: string;
+  source: 'header' | 'ip';
+  capturedAt: Date;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  user_id: string;
+  full_name: string;
+  profile_image_url?: string;
+  avatar_emoji?: string;
+  country_code?: string;
+  country_name?: string;
+  wins: number;
+  games_played: number;
+  win_percentage: number;
+  coins_balance: number;
+  level: number;
+  xp_total: number;
 };
