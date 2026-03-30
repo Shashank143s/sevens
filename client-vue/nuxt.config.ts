@@ -16,6 +16,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
       socketServer: process.env.NUXT_PUBLIC_SOCKET_SERVER || 'http://localhost:8000',
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://sevensroyale.com',
     },
   },
   googleAuth: {
@@ -55,6 +56,9 @@ export default defineNuxtConfig({
           name: 'description',
           content: 'Play Sevens online, create rooms, invite friends, and jump back into the table from your home screen.',
         },
+        { property: 'og:site_name', content: 'Sevens Royale' },
+        { property: 'og:type', content: 'website' },
+        { name: 'twitter:card', content: 'summary_large_image' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

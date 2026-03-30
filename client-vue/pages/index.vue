@@ -2,9 +2,64 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
+const route = useRoute()
+const config = useRuntimeConfig()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
 const pwa = import.meta.client ? usePWA() : undefined
+const canonicalUrl = computed(() => new URL(route.path || '/', config.public.siteUrl).toString())
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value },
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Sevens Royale',
+        url: config.public.siteUrl,
+        description: 'Play Sevens online with friends, private rooms, bots, coins, and ranked progression.',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${config.public.siteUrl}/instructions`,
+          'query-input': 'required name=search_term_string',
+        },
+      }),
+    },
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Sevens Royale',
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'Web, Android',
+        url: config.public.siteUrl,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        alternateName: ['Sevens card game', 'Seven Up Seven Down'],
+      }),
+    },
+  ],
+}))
+
+useSeoMeta({
+  title: 'Play Sevens Card Game Online',
+  description: 'Play Sevens online with friends or bots. Sevens Royale brings the classic Sevens card game, also searched as Seven Up or Seven Down, to multiplayer web and Android play.',
+  ogTitle: 'Sevens Royale - Play Sevens Card Game Online',
+  ogDescription: 'Create private rooms, play Sevens with friends, earn coins, and climb the leaderboard in Sevens Royale.',
+  ogUrl: canonicalUrl,
+  ogImage: `${config.public.siteUrl}/branding/sevens-seven-suits-mark.svg`,
+  twitterTitle: 'Sevens Royale - Play Sevens Card Game Online',
+  twitterDescription: 'Classic Sevens card game online with rooms, bots, coins, and leaderboard progression.',
+  robots: 'index, follow',
+})
 
 const isLoggedIn = computed(() => !!session.value?.name?.trim())
 const homeCtaLabel = computed(() => (isLoggedIn.value ? 'Get Started' : 'Login to Play'))
@@ -41,8 +96,9 @@ async function handleInstallApp() {
         <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
         <h1 class="mobile-home__title">Sevens Royale</h1>
         <p class="mobile-home__description">
-          Play the timeless card game of Sevens online. Create a room, invite friends
-          or add AI bots, and be the first to play all your cards.
+          Play the timeless card game of Sevens online. If you know it as Seven Up or
+          Seven Down, this is the same fast, sequence-building card game with rooms,
+          bots, and live multiplayer.
         </p>
         <div class="mobile-home__divider" aria-hidden="true">
           <span class="mobile-home__line" />

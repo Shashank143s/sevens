@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /account
+Disallow: /account/
+Disallow: /lobby
+Disallow: /lobby/
+Disallow: /room
+Disallow: /room/
+
+Sitemap: https://sevensroyale.com/sitemap.xml

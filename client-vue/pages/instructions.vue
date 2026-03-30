@@ -1,9 +1,27 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
+const route = useRoute()
+const config = useRuntimeConfig()
 const { session, hydrated } = usePlayerSession()
 const mounted = ref(false)
 const sessionReady = computed(() => mounted.value && hydrated.value)
+const canonicalUrl = computed(() => new URL(route.path || '/instructions', config.public.siteUrl).toString())
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value },
+  ],
+}))
+
+useSeoMeta({
+  title: 'How to Play Sevens',
+  description: 'Learn how to play Sevens, also commonly searched as Seven Up or Seven Down. See the rules, room flow, stakes, coins, and winning tips for Sevens Royale.',
+  ogTitle: 'How to Play Sevens - Sevens Royale',
+  ogDescription: 'Rules, examples, coin stakes, and gameplay tips for Sevens Royale.',
+  ogUrl: canonicalUrl,
+  robots: 'index, follow',
+})
 
 const primaryCta = computed(() => {
   if (sessionReady.value && session.value?.name?.trim()) {
@@ -87,8 +105,8 @@ onMounted(() => {
         <p class="instructions-hero__eyebrow">How To Play</p>
         <h1 class="instructions-hero__title">Sevens Royale Instructions</h1>
         <p class="instructions-hero__description">
-          This guide is designed for the first-time player journey: get into a room, understand
-          what you are seeing on the table, and know exactly what to do on your turn.
+          This guide explains how to play Sevens, including the classic card game many players
+          also call Seven Up or Seven Down, from room join to winning play.
         </p>
 
         <div class="instructions-hero__actions">

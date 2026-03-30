@@ -1,5 +1,24 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+
+const route = useRoute()
+const config = useRuntimeConfig()
+const canonicalUrl = computed(() => new URL(route.path || '/privacy-policy', config.public.siteUrl).toString())
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value },
+  ],
+}))
+
+useSeoMeta({
+  title: 'Privacy Policy',
+  description: 'Read the Sevens Royale Privacy Policy to understand what player, account, country, and gameplay data is collected and how it is used.',
+  ogTitle: 'Privacy Policy - Sevens Royale',
+  ogDescription: 'See how Sevens Royale collects, uses, and stores account and gameplay data.',
+  ogUrl: canonicalUrl,
+  robots: 'index, follow',
+})
 </script>
 
 <template>

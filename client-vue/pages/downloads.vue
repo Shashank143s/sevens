@@ -1,6 +1,25 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import apkUrl from '~/assets/downloads/Sevens.apk?url'
+
+const route = useRoute()
+const config = useRuntimeConfig()
+const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value },
+  ],
+}))
+
+useSeoMeta({
+  title: 'Download Sevens APK',
+  description: 'Download the Sevens Royale Android APK and install the Sevens card game on your device. iPhone support is currently under development.',
+  ogTitle: 'Download Sevens APK - Sevens Royale',
+  ogDescription: 'Get the Android APK for Sevens Royale and keep the classic Sevens card game one tap away.',
+  ogUrl: canonicalUrl,
+  robots: 'index, follow',
+})
 </script>
 
 <template>

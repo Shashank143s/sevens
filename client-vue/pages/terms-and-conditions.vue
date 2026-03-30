@@ -1,5 +1,24 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+
+const route = useRoute()
+const config = useRuntimeConfig()
+const canonicalUrl = computed(() => new URL(route.path || '/terms-and-conditions', config.public.siteUrl).toString())
+
+useHead(() => ({
+  link: [
+    { rel: 'canonical', href: canonicalUrl.value },
+  ],
+}))
+
+useSeoMeta({
+  title: 'Terms and Conditions',
+  description: 'Read the Sevens Royale Terms and Conditions covering gameplay, coins, stakes, fair use, accounts, and service availability.',
+  ogTitle: 'Terms and Conditions - Sevens Royale',
+  ogDescription: 'The Sevens Royale terms covering accounts, fair play, stakes, coins, and service usage.',
+  ogUrl: canonicalUrl,
+  robots: 'index, follow',
+})
 </script>
 
 <template>
