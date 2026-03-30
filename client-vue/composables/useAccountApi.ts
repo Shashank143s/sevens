@@ -55,6 +55,11 @@ export type LeaderboardEntry = {
   xp_total: number
 }
 
+type GetLeaderboardResponse = {
+  entries: LeaderboardEntry[]
+  current_user?: LeaderboardEntry
+}
+
 type UpsertAccountResponse = {
   user: AccountApiUser
 }
@@ -87,10 +92,6 @@ type DeleteAccountResponse = {
   deleted: boolean
 }
 
-type GetLeaderboardResponse = {
-  entries: LeaderboardEntry[]
-}
-
 export function useAccountApi() {
   const config = useRuntimeConfig()
 
@@ -117,9 +118,12 @@ export function useAccountApi() {
     })
   }
 
-  async function getLeaderboard(limit = 25) {
+  async function getLeaderboard(limit = 25, userID?: string) {
     return $fetch<GetLeaderboardResponse>(`${config.public.apiBase}/api/leaderboard`, {
-      query: { limit },
+      query: {
+        limit,
+        ...(userID ? { user_id: userID } : {}),
+      },
     })
   }
 

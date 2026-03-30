@@ -1,6 +1,6 @@
 import { GameModel, UserModel } from '../models';
 import { MAX_DAILY_GAMES_PER_USER } from '../config';
-import type { AccountApiUserPayload, AccountGeoPayload, AccountPayload, LeaderboardEntry, RecentGameResult } from '../types/account.types';
+import type { AccountApiUserPayload, AccountGeoPayload, AccountPayload, LeaderboardEntry, LeaderboardResponse, RecentGameResult } from '../types/account.types';
 import { syncUserStats } from './user-stats.service';
 import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
@@ -191,7 +191,48 @@ export async function upsertAccountWithGeo(identifier: string, payload: AccountP
   );
 }
 
-export async function getLeaderboard(limit = 25): Promise<{ entries: LeaderboardEntry[] }> {
+function mapLeaderboardEntry(user: any, rank: number): LeaderboardEntry {
+  return {
+    rank,
+    user_id: String(user._id),
+    full_name: user.full_name,
+    profile_image_url: user.profile_image_url ?? undefined,
+    avatar_emoji: user.avatar_emoji,
+    country_code: user.location?.country_code ?? undefined,
+    country_name: user.location?.country_name ?? undefined,
+    wins: user.stats?.wins ?? 0,
+    games_played: user.stats?.games_played ?? 0,
+    win_percentage: (user.stats?.games_played ?? 0) > 0
+      ? Math.round(((user.stats?.wins ?? 0) / (user.stats?.games_played ?? 0)) * 100)
+      : 0,
+    coins_balance: user.wallet?.coins_balance ?? 0,
+    level: user.progression?.level ?? 1,
+    xp_total: user.progression?.xp_total ?? 0,
+  };
+}
+
+async function getLeaderboardRank(user: any): Promise<number> {
+  const coinsBalance = user.wallet?.coins_balance ?? 0;
+  const level = user.progression?.level ?? 1;
+  const xpTotal = user.progression?.xp_total ?? 0;
+  const wins = user.stats?.wins ?? 0;
+  const createdAt = user.created_at ?? new Date(0);
+
+  const usersAhead = await UserModel.countDocuments({
+    is_active: true,
+    $or: [
+      { 'wallet.coins_balance': { $gt: coinsBalance } },
+      { 'wallet.coins_balance': coinsBalance, 'progression.level': { $gt: level } },
+      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': { $gt: xpTotal } },
+      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': xpTotal, 'stats.wins': { $gt: wins } },
+      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': xpTotal, 'stats.wins': wins, created_at: { $lt: createdAt } },
+    ],
+  } as any);
+
+  return usersAhead + 1;
+}
+
+export async function getLeaderboard(limit = 25, identifier?: string): Promise<LeaderboardResponse> {
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
   const users = await UserModel.find({ is_active: true } as any)
     .sort({
@@ -204,24 +245,29 @@ export async function getLeaderboard(limit = 25): Promise<{ entries: Leaderboard
     .limit(safeLimit)
     .lean();
 
+  const entries = users.map((user, index) => mapLeaderboardEntry(user, index + 1));
+
+  if (!identifier) {
+    return { entries };
+  }
+
+  const currentUser = await findUserByIdentifier(identifier);
+  if (!currentUser || !currentUser.is_active) {
+    return { entries };
+  }
+
+  const existingEntry = entries.find((entry) => entry.user_id === String(currentUser._id));
+  if (existingEntry) {
+    return {
+      entries,
+      current_user: existingEntry,
+    };
+  }
+
+  const rank = await getLeaderboardRank(currentUser);
   return {
-    entries: users.map((user, index) => ({
-      rank: index + 1,
-      user_id: String(user._id),
-      full_name: user.full_name,
-      profile_image_url: user.profile_image_url ?? undefined,
-      avatar_emoji: user.avatar_emoji,
-      country_code: user.location?.country_code ?? undefined,
-      country_name: user.location?.country_name ?? undefined,
-      wins: user.stats?.wins ?? 0,
-      games_played: user.stats?.games_played ?? 0,
-      win_percentage: (user.stats?.games_played ?? 0) > 0
-        ? Math.round(((user.stats?.wins ?? 0) / (user.stats?.games_played ?? 0)) * 100)
-        : 0,
-      coins_balance: user.wallet?.coins_balance ?? 0,
-      level: user.progression?.level ?? 1,
-      xp_total: user.progression?.xp_total ?? 0,
-    })),
+    entries,
+    current_user: mapLeaderboardEntry(currentUser, rank),
   };
 }
 

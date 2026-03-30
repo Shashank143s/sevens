@@ -81,3 +81,8 @@ export type LeaderboardEntry = {
   level: number;
   xp_total: number;
 };
+
+export type LeaderboardResponse = {
+  entries: LeaderboardEntry[];
+  current_user?: LeaderboardEntry;
+};

@@ -46,7 +46,7 @@
 }
 
 .account-progress-skeleton__chip--coins {
-  width: 11rem;
+  width:11rem;
   max-width: 100%;
 }
 
@@ -95,7 +95,7 @@
 
 @media (max-width: 640px) {
   .account-progress-skeleton__chip--coins {
-    width: 9.6rem;
+    width: 7.6rem;
   }
 
   .account-progress-skeleton__chip--level {

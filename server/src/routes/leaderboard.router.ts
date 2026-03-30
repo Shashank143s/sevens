@@ -15,7 +15,8 @@ export async function leaderboardRoute(ctx: ApiRouteContext, next: RouteNext): P
   try {
     const query = (ctx as any).query ?? {};
     const limit = Number(query.limit ?? 25);
-    const leaderboard = await getLeaderboard(limit);
+    const identifier = typeof query.user_id === 'string' ? query.user_id.trim() : '';
+    const leaderboard = await getLeaderboard(limit, identifier || undefined);
     setJson(ctx, 200, leaderboard as Record<string, unknown>);
   } catch (error) {
     console.error('[leaderboard-route] Error:', error);

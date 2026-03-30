@@ -7,8 +7,13 @@ const { session } = usePlayerSession()
 const { getLeaderboard } = useAccountApi()
 
 const entries = ref<LeaderboardEntry[]>([])
+const currentUserEntry = ref<LeaderboardEntry | null>(null)
 const isLoading = ref(true)
 const loadError = ref('')
+const currentUserId = computed(() => session.value?.id || session.value?.email?.trim() || '')
+const currentUserInTopList = computed(() =>
+  !!currentUserEntry.value && entries.value.some(entry => entry.user_id === currentUserEntry.value?.user_id),
+)
 
 function countryFlag(countryCode?: string) {
   if (!countryCode || countryCode.length !== 2) return ''
@@ -28,8 +33,9 @@ function medalTone(rank: number) {
 
 async function loadLeaderboard() {
   try {
-    const response = await getLeaderboard(25)
+    const response = await getLeaderboard(25, currentUserId.value || undefined)
     entries.value = response.entries
+    currentUserEntry.value = response.current_user ?? null
     loadError.value = ''
   } catch {
     loadError.value = 'We could not load the leaderboard right now.'
@@ -69,9 +75,15 @@ onMounted(async () => {
             Top players by coin balance, with progression and wins sharpening the order.
           </p>
         </div>
-        <div class="leaderboard-page__hero-chip">
-          <IconsCoinIcon class="h-4 w-4" />
-          <span>Top 25</span>
+        <div class="leaderboard-page__hero-side">
+          <div class="leaderboard-page__hero-chip">
+            <IconsCoinIcon class="h-4 w-4" />
+            <span>Top 25</span>
+          </div>
+          <div v-if="currentUserEntry" class="leaderboard-page__self-chip">
+            <span class="leaderboard-page__self-label">Your Rank</span>
+            <strong>#{{ currentUserEntry.rank }}</strong>
+          </div>
         </div>
       </section>
 
@@ -93,7 +105,10 @@ onMounted(async () => {
           v-for="entry in entries"
           :key="entry.user_id"
           class="leaderboard-card"
-          :class="{ 'leaderboard-card--top': entry.rank <= 3 }"
+          :class="{
+            'leaderboard-card--top': entry.rank <= 3,
+            'leaderboard-card--self': currentUserEntry && entry.user_id === currentUserEntry.user_id,
+          }"
         >
           <div class="leaderboard-card__top">
             <div class="leaderboard-card__main">
@@ -143,6 +158,56 @@ onMounted(async () => {
             <div class="leaderboard-card__stat leaderboard-card__stat--xp">
               <span>XP</span>
               <strong>{{ entry.xp_total }}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article
+          v-if="currentUserEntry && !currentUserInTopList"
+          class="leaderboard-card leaderboard-card--self leaderboard-card--pinned"
+        >
+          <div class="leaderboard-card__top">
+            <div class="leaderboard-card__main">
+              <div class="leaderboard-card__avatar">
+                <img
+                  v-if="currentUserEntry.profile_image_url"
+                  :src="currentUserEntry.profile_image_url"
+                  :alt="currentUserEntry.full_name"
+                >
+                <span v-else>{{ currentUserEntry.avatar_emoji || '👤' }}</span>
+              </div>
+              <div class="leaderboard-card__identity">
+                <div class="leaderboard-card__name-row">
+                  <h2>{{ currentUserEntry.full_name }}</h2>
+                  <span class="leaderboard-card__you-badge">You</span>
+                </div>
+                <p class="leaderboard-card__meta">
+                  {{ currentUserEntry.wins }} wins · {{ currentUserEntry.games_played }} games
+                </p>
+              </div>
+            </div>
+            <div class="leaderboard-card__rank">
+              <span>RANK</span>
+              <strong>{{ currentUserEntry.rank }}</strong>
+            </div>
+          </div>
+
+          <div class="leaderboard-card__stats">
+            <div class="leaderboard-card__stat leaderboard-card__stat--winrate">
+              <span>Win %</span>
+              <strong>{{ currentUserEntry.win_percentage }}%</strong>
+            </div>
+            <div class="leaderboard-card__stat leaderboard-card__stat--coins">
+              <span>Coins</span>
+              <strong>{{ currentUserEntry.coins_balance }}</strong>
+            </div>
+            <div class="leaderboard-card__stat leaderboard-card__stat--level">
+              <span>Level</span>
+              <strong>Lv {{ currentUserEntry.level }}</strong>
+            </div>
+            <div class="leaderboard-card__stat leaderboard-card__stat--xp">
+              <span>XP</span>
+              <strong>{{ currentUserEntry.xp_total }}</strong>
             </div>
           </div>
         </article>
@@ -208,6 +273,15 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.leaderboard-page__hero-side {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
 .leaderboard-page__eyebrow {
   margin: 0;
   color: rgba(250, 204, 21, 0.84);
@@ -233,8 +307,10 @@ onMounted(async () => {
 .leaderboard-page__hero-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
   flex-shrink: 0;
+  min-height: 2.6rem;
   border-radius: 999px;
   border: 1px solid rgba(250, 204, 21, 0.16);
   background: rgba(255, 255, 255, 0.05);
@@ -248,6 +324,35 @@ onMounted(async () => {
   margin-top: 1.5rem;
   text-align: center;
   color: rgba(203, 213, 225, 0.82);
+}
+
+.leaderboard-page__self-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 2.6rem;
+  padding: 0.58rem 0.88rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.16);
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+.leaderboard-page__self-label {
+  color: rgba(148, 163, 184, 0.86);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.leaderboard-page__self-chip strong {
+  color: #fde68a;
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .leaderboard-page__list {
@@ -275,6 +380,18 @@ onMounted(async () => {
   box-shadow:
     0 20px 44px rgba(2, 6, 23, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-card--self {
+  border-color: rgba(56, 189, 248, 0.2);
+  box-shadow:
+    0 20px 44px rgba(2, 6, 23, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(56, 189, 248, 0.08);
+}
+
+.leaderboard-card--pinned {
+  margin-top: 0.25rem;
 }
 
 .leaderboard-card__top {
@@ -405,6 +522,20 @@ onMounted(async () => {
   font-size: 0.78rem;
 }
 
+.leaderboard-card__you-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background: rgba(56, 189, 248, 0.12);
+  color: #bae6fd;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
 .leaderboard-card__stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -507,6 +638,12 @@ onMounted(async () => {
   .leaderboard-page__hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .leaderboard-page__hero-side {
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .leaderboard-card {
