@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
-const { session } = usePlayerSession()
+const { session, hydrated } = usePlayerSession()
+const mounted = ref(false)
+const sessionReady = computed(() => mounted.value && hydrated.value)
 
 const primaryCta = computed(() => {
-  if (session.value?.name?.trim()) {
+  if (sessionReady.value && session.value?.name?.trim()) {
     return {
       label: 'Go to Lobby',
       to: '/lobby',
@@ -51,6 +53,10 @@ const tips = [
   'Low cards and high cards are equally valuable. Saving both ends gives you more options later.',
   'If you create a room, you can add AI bots to fill empty seats and start faster.',
 ]
+
+onMounted(() => {
+  mounted.value = true
+})
 </script>
 
 <template>

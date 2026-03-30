@@ -3,7 +3,8 @@ const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 
 const open = ref(false)
-const showMenu = computed(() => hydrated.value && !!session.value)
+const mounted = ref(false)
+const showMenu = computed(() => mounted.value && hydrated.value && !!session.value)
 
 const displayName = computed(() => {
   const name = session.value?.name?.trim() ?? 'Player'
@@ -20,6 +21,10 @@ function goToAccount() {
   open.value = false
   router.push('/account')
 }
+
+onMounted(() => {
+  mounted.value = true
+})
 </script>
 
 <template>

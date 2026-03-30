@@ -3,7 +3,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 
 const router = useRouter()
-const { session, clearSession } = usePlayerSession()
+const { session, clearSession, hydrated } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccount } = useAccountApi()
 const isDeleting = ref(false)
@@ -11,13 +11,15 @@ const isDeleteDialogOpen = ref(false)
 const coinsBalance = ref<number | null>(null)
 const playerLevel = ref<number | null>(null)
 const xpTotal = ref<number | null>(null)
+const mounted = ref(false)
 
-const fullName = computed(() => session.value?.name?.trim() || 'Player')
-const email = computed(() => session.value?.email?.trim() || 'Not available')
-const profileImage = computed(() => session.value?.image)
+const sessionReady = computed(() => mounted.value && hydrated.value)
+const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
+const email = computed(() => (sessionReady.value ? session.value?.email?.trim() : '') || 'Not available')
+const profileImage = computed(() => (sessionReady.value ? session.value?.image : undefined))
 const avatarLabel = computed(() => fullName.value.charAt(0).toUpperCase() || 'P')
-const accountIdentifier = computed(() => session.value?.id || session.value?.email?.trim() || '')
-const lastLoginLabel = computed(() => formatDate(session.value?.lastLoginAt))
+const accountIdentifier = computed(() => (sessionReady.value ? session.value?.id || session.value?.email?.trim() : '') || '')
+const lastLoginLabel = computed(() => (sessionReady.value ? formatDate(session.value?.lastLoginAt) : 'Not available'))
 const levelProgress = computed(() => {
   const totalXp = Math.max(xpTotal.value ?? 0, 0)
   let level = 1
@@ -93,6 +95,7 @@ async function loadAccountSummary() {
 }
 
 onMounted(() => {
+  mounted.value = true
   if (!session.value?.name?.trim()) {
     router.replace('/')
     return
