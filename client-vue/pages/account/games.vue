@@ -187,7 +187,7 @@ onMounted(async () => {
 <style scoped>
 .games-page {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
   padding:
@@ -229,7 +229,7 @@ onMounted(async () => {
 
 .games-page__header {
   position: relative;
-  z-index: 1;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;

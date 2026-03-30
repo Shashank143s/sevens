@@ -124,9 +124,21 @@ function clearInvalidCardFeedback() {
   invalidCardId.value = null
 }
 
+function triggerIllegalMoveHaptics() {
+  if (import.meta.server || typeof navigator === 'undefined') return
+  if (typeof navigator.vibrate !== 'function') return
+
+  try {
+    navigator.vibrate(28)
+  } catch {
+    // Ignore unsupported or blocked haptic requests.
+  }
+}
+
 function triggerIllegalCardFeedback(cardId: string) {
   clearInvalidCardFeedback()
   invalidCardId.value = cardId
+  triggerIllegalMoveHaptics()
   invalidCardTimer = setTimeout(() => {
     invalidCardId.value = null
     invalidCardTimer = null
