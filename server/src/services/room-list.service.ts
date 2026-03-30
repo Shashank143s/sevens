@@ -9,7 +9,12 @@ function normalizeLobbyPayload(payload: unknown): RoomMatchPayload[] {
 
 async function loadLobbyMatches() {
   const response = await fetchLobbyMatches();
-  if (!response.ok) throw new Error('Failed to load rooms');
+  if (!response.ok) {
+    const responseBody = await response.text().catch(() => '');
+    throw new Error(
+      `Failed to load rooms: ${response.status} ${response.statusText}${responseBody ? ` :: ${responseBody.slice(0, 500)}` : ''}`,
+    );
+  }
   return normalizeLobbyPayload(await response.json());
 }
 
