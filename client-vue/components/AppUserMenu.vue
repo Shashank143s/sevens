@@ -22,6 +22,11 @@ function goToAccount() {
   router.push('/account')
 }
 
+function goToDownloads() {
+  open.value = false
+  router.push('/downloads')
+}
+
 onMounted(() => {
   mounted.value = true
 })
@@ -63,6 +68,13 @@ onMounted(() => {
           @click="goToInstructions"
         >
           Instructions
+        </button>
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral user-menu__action--download"
+          @click="goToDownloads"
+        >
+          <span>Downloads</span>
         </button>
       </div>
     </Transition>
@@ -135,6 +147,9 @@ onMounted(() => {
 
 .user-menu__action {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.6rem 0.8rem;
   border-radius: 0.7rem;
   color: #e2e8f0;
@@ -150,6 +165,10 @@ onMounted(() => {
 
 .user-menu__action:hover {
   background: rgba(148, 163, 184, 0.2);
+}
+
+.user-menu__action--download {
+  color: #dcfce7;
 }
 
 .user-menu-panel-enter-active,

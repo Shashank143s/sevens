@@ -2,14 +2,9 @@
   <section class="account-progress-skeleton animate-pulse" aria-hidden="true">
     <div class="account-progress-skeleton__top">
       <div class="account-progress-skeleton__chip account-progress-skeleton__chip--coins" />
-      <div class="account-progress-skeleton__chip account-progress-skeleton__chip--level" />
-    </div>
-
-    <div class="account-progress-skeleton__body">
-      <div class="account-progress-skeleton__label" />
-      <div class="account-progress-skeleton__value" />
-      <div class="account-progress-skeleton__track">
-        <div class="account-progress-skeleton__fill" />
+      <div class="account-progress-skeleton__controls">
+        <div class="account-progress-skeleton__chip account-progress-skeleton__chip--level" />
+        <div class="account-progress-skeleton__chevron" />
       </div>
     </div>
   </section>
@@ -18,7 +13,7 @@
 <style scoped>
 .account-progress-skeleton {
   margin-top: 1.1rem;
-  padding: 1rem 1.05rem;
+  padding: 0.85rem 1.05rem;
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
@@ -34,7 +29,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.account-progress-skeleton__controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .account-progress-skeleton__chip {
@@ -54,43 +58,12 @@
   width: 5.9rem;
 }
 
-.account-progress-skeleton__body {
-  margin-top: 0.95rem;
-}
-
-.account-progress-skeleton__label {
-  width: 11rem;
-  max-width: 100%;
-  height: 0.95rem;
+.account-progress-skeleton__chevron {
+  width: 2.35rem;
+  height: 2.35rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-}
-
-.account-progress-skeleton__value {
-  width: 7rem;
-  max-width: 100%;
-  height: 1.35rem;
-  margin-top: 0.9rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
-}
-
-.account-progress-skeleton__track {
-  overflow: hidden;
-  width: 100%;
-  height: 0.7rem;
-  margin-top: 1rem;
-  border-radius: 999px;
-  background: rgba(51, 65, 85, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.account-progress-skeleton__fill {
-  width: 62%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.72), rgba(250, 204, 21, 0.82));
-  opacity: 0.7;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 640px) {
@@ -102,8 +75,21 @@
     width: 5.2rem;
   }
 
-  .account-progress-skeleton__label {
-    width: 9.8rem;
+  .account-progress-skeleton__top {
+    gap: 0.55rem;
+  }
+
+  .account-progress-skeleton__controls {
+    gap: 0.5rem;
+  }
+
+  .account-progress-skeleton__chip {
+    min-height: 2.5rem;
+  }
+
+  .account-progress-skeleton__chevron {
+    width: 2.1rem;
+    height: 2.1rem;
   }
 }
 </style>

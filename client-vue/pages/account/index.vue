@@ -13,6 +13,7 @@ const coinsBalance = ref<number | null>(null)
 const playerLevel = ref<number | null>(null)
 const xpTotal = ref<number | null>(null)
 const mounted = ref(false)
+const progressionExpanded = ref(false)
 
 const sessionReady = computed(() => mounted.value && hydrated.value)
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
@@ -152,25 +153,45 @@ onMounted(() => {
         <AccountProgressSkeleton v-if="isSummaryLoading" />
 
         <section v-else class="account-card__progression">
-          <div class="account-card__progression-top">
-            <div class="account-card__chip account-card__chip--coins">
-              <IconsCoinIcon class="account-card__coin-icon" />
-              <strong>{{ coinsBalance == null ? '—' : coinsBalance }}</strong>
+          <button
+            type="button"
+            class="account-card__progression-toggle"
+            :aria-expanded="progressionExpanded ? 'true' : 'false'"
+            @click="progressionExpanded = !progressionExpanded"
+          >
+            <div class="account-card__progression-top">
+              <div class="account-card__chip account-card__chip--coins">
+                <IconsCoinIcon class="account-card__coin-icon" />
+                <strong>{{ coinsBalance == null ? '—' : coinsBalance }}</strong>
+              </div>
+              <div class="account-card__progression-controls">
+                <div class="account-card__chip account-card__chip--level">
+                  <span class="account-card__chip-label">Lv</span>
+                  <strong>{{ playerLevel ?? levelProgress.level }}</strong>
+                </div>
+                <span
+                  class="account-card__chevron"
+                  :class="{ 'account-card__chevron--open': progressionExpanded }"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 8 4 4 4-4" />
+                  </svg>
+                </span>
+              </div>
             </div>
-            <div class="account-card__chip account-card__chip--level">
-              <span class="account-card__chip-label">Lv</span>
-              <strong>{{ playerLevel ?? levelProgress.level }}</strong>
+          </button>
+          <Transition name="account-progress-expand">
+            <div v-if="progressionExpanded" class="account-card__xp">
+              <div class="account-card__xp-header">
+                <p class="account-card__economy-label">Level Progress</p>
+                <span>{{ levelProgress.xpIntoLevel }} / {{ levelProgress.xpNeededForNextLevel }} XP</span>
+              </div>
+              <div class="account-card__xp-track" aria-hidden="true">
+                <div class="account-card__xp-fill" :style="{ width: `${levelProgress.progressPercent}%` }" />
+              </div>
             </div>
-          </div>
-          <div class="account-card__xp">
-            <div class="account-card__xp-header">
-              <p class="account-card__economy-label">Level Progress</p>
-              <span>{{ levelProgress.xpIntoLevel }} / {{ levelProgress.xpNeededForNextLevel }} XP</span>
-            </div>
-            <div class="account-card__xp-track" aria-hidden="true">
-              <div class="account-card__xp-fill" :style="{ width: `${levelProgress.progressPercent}%` }" />
-            </div>
-          </div>
+          </Transition>
         </section>
 
         <section class="account-history">
@@ -405,7 +426,7 @@ onMounted(() => {
 
 .account-card__progression {
   margin-top: 1.1rem;
-  padding: 1rem 1.05rem;
+  padding: 0.85rem 1.05rem 1rem;
   border-radius: 1.35rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
@@ -416,12 +437,26 @@ onMounted(() => {
     0 18px 40px rgba(2, 6, 23, 0.2);
 }
 
+.account-card__progression-toggle {
+  display: block;
+  width: 100%;
+}
+
 .account-card__progression-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+.account-card__progression-controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .account-card__chip {
@@ -475,6 +510,30 @@ onMounted(() => {
   margin-top: 0.95rem;
 }
 
+.account-card__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.54);
+  color: rgba(226, 232, 240, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.account-card__chevron svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.account-card__chevron--open {
+  transform: rotate(180deg);
+  background: rgba(30, 41, 59, 0.82);
+}
+
 .account-card__xp-header {
   display: flex;
   align-items: center;
@@ -504,6 +563,18 @@ onMounted(() => {
   border-radius: inherit;
   background: linear-gradient(90deg, #38bdf8, #facc15);
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.26);
+}
+
+.account-progress-expand-enter-active,
+.account-progress-expand-leave-active {
+  transition: opacity 0.18s ease, transform 0.22s ease;
+  transform-origin: top center;
+}
+
+.account-progress-expand-enter-from,
+.account-progress-expand-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .account-card__economy {
@@ -695,6 +766,31 @@ onMounted(() => {
   .account-card__xp-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .account-card__progression-top {
+    gap: 0.55rem;
+  }
+
+  .account-card__progression-controls {
+    gap: 0.5rem;
+  }
+
+  .account-card__chip {
+    padding: 0.5rem 0.72rem;
+  }
+
+  .account-card__chip strong {
+    font-size: 0.92rem;
+  }
+
+  .account-card__chip-label {
+    font-size: 0.7rem;
+  }
+
+  .account-card__chevron {
+    width: 2.1rem;
+    height: 2.1rem;
   }
 }
 </style>

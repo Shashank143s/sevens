@@ -54,6 +54,17 @@ const tips = [
   'If you create a room, you can add AI bots to fill empty seats and start faster.',
 ]
 
+const coinRules = [
+  'New players start with 100 coins on onboarding.',
+  'You need at least 10 available coins to create a room or join a staked match.',
+  'Every room has a stake per player, chosen when the room is created.',
+  'When you join a room, that stake is reserved from your available coins until the match ends.',
+  'If a human player wins, they earn the losing human stakes plus 10 coins for each bot in the room.',
+  'If a bot wins, human players lose their reserved stake and the bot does not receive a wallet payout.',
+  'If a game is abandoned, reserved coins are released and no one wins or loses coins.',
+  'Completed games also grant XP: wins give more XP than losses.',
+]
+
 onMounted(() => {
   mounted.value = true
 })
@@ -158,6 +169,24 @@ onMounted(() => {
 
         <article class="instructions-card">
           <div class="instructions-card__heading">
+            <h2>Coins & Stakes</h2>
+            <p>How the in-game economy works before, during, and after a match.</p>
+          </div>
+
+          <ul class="instructions-list">
+            <li
+              v-for="rule in coinRules"
+              :key="rule"
+            >
+              {{ rule }}
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="instructions-layout">
+        <article class="instructions-card">
+          <div class="instructions-card__heading">
             <h2>Helpful Tips</h2>
             <p>Small strategic habits that make the first few games smoother.</p>
           </div>
@@ -169,6 +198,21 @@ onMounted(() => {
             >
               {{ tip }}
             </li>
+          </ul>
+        </article>
+
+        <article class="instructions-card">
+          <div class="instructions-card__heading">
+            <h2>Quick Reminder</h2>
+            <p>The shortest possible summary before you jump back in.</p>
+          </div>
+
+          <ul class="instructions-list">
+            <li>Open or join a room from the lobby.</li>
+            <li>Play only legal cards that extend an active suit lane.</li>
+            <li>Pass only when no legal move exists.</li>
+            <li>First player to empty their hand wins the round.</li>
+            <li>Winning also pays out the room stake and XP rewards.</li>
           </ul>
         </article>
       </section>
