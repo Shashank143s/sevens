@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="176" y1="90" x2="1438" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D2219" />
+      <stop offset="0.48" stop-color="#082019" />
+      <stop offset="1" stop-color="#06131D" />
+    </linearGradient>
+    <linearGradient id="gold" x1="636" y1="196" x2="828" y2="662" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3D970" />
+      <stop offset="0.48" stop-color="#D4AF37" />
+      <stop offset="1" stop-color="#9D7714" />
+    </linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(710 366) rotate(90) scale(320 264)">
+      <stop stop-color="#D4AF37" stop-opacity="0.24" />
+      <stop offset="1" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+    <filter id="suitsGlow" x="520" y="598" width="470" height="110" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix" />
+      <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+      <feGaussianBlur stdDeviation="14" result="effect1_foregroundBlur_1_1" />
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)" />
+  <circle cx="710" cy="366" r="320" fill="url(#halo)" />
+
+  <path d="M650 168h230v42L744 564h-70l123-316H650v-80Z" fill="url(#gold)" />
+
+  <g stroke="#D4AF37" stroke-opacity="0.25" stroke-width="8" stroke-linecap="round">
+    <path d="M438 632h108" />
+    <path d="M942 632h76" />
+  </g>
+
+  <g filter="url(#suitsGlow)" opacity="0.4" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+    <text x="602" y="656" fill="#D4AF37" font-size="64">♠</text>
+    <text x="680" y="656" fill="#D44D5C" font-size="64">♥</text>
+    <text x="758" y="656" fill="#D44D5C" font-size="64">♦</text>
+    <text x="836" y="656" fill="#D4AF37" font-size="64">♣</text>
+  </g>
+
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+    <text x="602" y="656" fill="#111827" font-size="64">♠</text>
+    <text x="680" y="656" fill="#B91C1C" font-size="64">♥</text>
+    <text x="758" y="656" fill="#B91C1C" font-size="64">♦</text>
+    <text x="836" y="656" fill="#111827" font-size="64">♣</text>
+  </g>
+
+  <text x="962" y="520" fill="#F8F4EC" font-size="104" font-family="Georgia, 'Times New Roman', serif" font-weight="700">Sevens</text>
+  <text x="962" y="614" fill="#F8F4EC" font-size="104" font-family="Georgia, 'Times New Roman', serif" font-weight="700">Royale</text>
+  <text x="964" y="688" fill="#D4AF37" font-size="30" font-family="Arial, sans-serif" letter-spacing="9">THE CLASSIC GAME, ELEVATED</text>
+</svg>

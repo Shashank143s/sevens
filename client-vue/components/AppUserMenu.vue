@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { useRoomCredentials } from '~/composables/useRoomCredentials'
-
 const router = useRouter()
-const { session, clearSession } = usePlayerSession()
-const { clearAllCredentials } = useRoomCredentials()
+const { session, hydrated } = usePlayerSession()
 
 const open = ref(false)
+const mounted = ref(false)
+const showMenu = computed(() => mounted.value && hydrated.value && !!session.value)
 
 const displayName = computed(() => {
   const name = session.value?.name?.trim() ?? 'Player'
@@ -13,16 +12,28 @@ const displayName = computed(() => {
   return `Welcome, ${first}`
 })
 
-function logout() {
-  clearSession()
-  clearAllCredentials()
+function goToInstructions() {
   open.value = false
-  router.push('/')
+  router.push('/instructions')
 }
+
+function goToAccount() {
+  open.value = false
+  router.push('/account')
+}
+
+function goToDownloads() {
+  open.value = false
+  router.push('/downloads')
+}
+
+onMounted(() => {
+  mounted.value = true
+})
 </script>
 
 <template>
-  <div v-if="session" class="user-menu">
+  <div v-if="showMenu" class="user-menu">
     <button
       type="button"
       class="user-menu__toggle"
@@ -46,10 +57,24 @@ function logout() {
       <div v-if="open" class="user-menu__panel">
         <button
           type="button"
-          class="user-menu__action"
-          @click="logout"
+          class="user-menu__action user-menu__action--neutral"
+          @click="goToAccount"
         >
-          Logout
+          Account
+        </button>
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral"
+          @click="goToInstructions"
+        >
+          Instructions
+        </button>
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral user-menu__action--download"
+          @click="goToDownloads"
+        >
+          <span>Downloads</span>
         </button>
       </div>
     </Transition>
@@ -59,6 +84,7 @@ function logout() {
 <style scoped>
 .user-menu {
   position: relative;
+  z-index: 80;
 }
 
 .user-menu__toggle {
@@ -109,6 +135,7 @@ function logout() {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
+  z-index: 81;
   min-width: 10rem;
   padding: 0.5rem;
   border-radius: 1rem;
@@ -120,17 +147,28 @@ function logout() {
 
 .user-menu__action {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.6rem 0.8rem;
   border-radius: 0.7rem;
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.18);
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.12);
   text-align: left;
   font-size: 0.88rem;
   font-weight: 700;
 }
 
+.user-menu__action + .user-menu__action {
+  margin-top: 0.4rem;
+}
+
 .user-menu__action:hover {
-  background: rgba(127, 29, 29, 0.28);
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.user-menu__action--download {
+  color: #dcfce7;
 }
 
 .user-menu-panel-enter-active,

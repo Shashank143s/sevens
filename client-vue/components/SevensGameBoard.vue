@@ -20,13 +20,23 @@ const { state } = useSevensClient(
   props.playerId ?? '0',
   props.credentials ?? undefined,
 )
+const { session } = usePlayerSession()
+const { getAccount } = useAccountApi()
+const { completeGameRecord, getGameRecord } = useGameApi()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
 const { clearCredentials } = useRoomCredentials()
+const { isOnline } = useOnlineStatus()
 
 const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
+const isSocketConnected = computed(() => state.value?.isConnected !== false)
+const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
+const reconnectLabel = computed(() => {
+  if (!isOnline.value) return 'You are offline. The table will sync when your network returns.'
+  return 'Reconnecting to the game server...'
+})
 const winnerDisplay = computed(() => {
   const id = winnerID.value
   if (id == null) return { name: 'Unknown', avatar: '🏆' }
@@ -36,6 +46,17 @@ const winnerDisplay = computed(() => {
     avatar: p?.avatar ?? '🏆',
   }
 })
+const humanPlayerIds = computed(() => {
+  return players.value
+    .filter((player) => player.name && !player.name.startsWith('Bot '))
+    .map((player) => player.id)
+    .sort((left, right) => left - right)
+})
+const shouldFinalizeGame = computed(() => {
+  if (state.value?.playerID == null) return false
+  const currentPlayerId = Number(state.value.playerID)
+  return humanPlayerIds.value[0] === currentPlayerId
+})
 const didIWin = computed(() => {
   const id = winnerID.value
   if (id == null) return false
@@ -43,8 +64,11 @@ const didIWin = computed(() => {
 })
 
 const redirectSeconds = ref(30)
+const winnerCoinsDelta = ref<number | null>(null)
+const winnerTotalCoins = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
 let deleteRequested = false
+let completionSynced = false
 
 function clearRedirectTimer() {
   if (redirectTimer != null) {
@@ -58,9 +82,13 @@ watch(
   async (over) => {
     clearRedirectTimer()
     if (!over) return
+    winnerCoinsDelta.value = null
+    winnerTotalCoins.value = null
     redirectSeconds.value = 30
     // Clear stored creds so user can re-join next game cleanly.
     clearCredentials(props.matchId)
+    await syncCompletedGame()
+    await loadWinnerEconomy()
     // Best-effort: delete the room from the lobby once the game ends.
     if (!deleteRequested) {
       deleteRequested = true
@@ -80,10 +108,50 @@ watch(
   { immediate: true },
 )
 
+async function loadWinnerEconomy() {
+  if (!didIWin.value || !session.value?.id) return
+
+  const accountIdentifier = session.value.id || session.value.email?.trim()
+  if (!accountIdentifier) return
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      const [accountResponse, gameResponse] = await Promise.all([
+        getAccount(accountIdentifier, 0, 0),
+        getGameRecord(props.matchId),
+      ])
+
+      winnerTotalCoins.value = accountResponse.user.wallet?.coins_balance ?? null
+      const player = gameResponse.game.players?.find((entry) => entry.user_id === session.value?.id)
+      winnerCoinsDelta.value = player?.coins?.delta ?? null
+
+      if (winnerTotalCoins.value != null && winnerCoinsDelta.value != null) {
+        return
+      }
+    } catch (error) {
+      console.error('[game-board] Failed to load winner economy:', error)
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 400))
+  }
+}
+
+async function syncCompletedGame() {
+  if (completionSynced || winnerID.value == null || !shouldFinalizeGame.value) return
+  completionSynced = true
+  try {
+    await completeGameRecord(props.matchId, String(winnerID.value))
+  } catch (error) {
+    completionSynced = false
+    console.error('[game-board] Failed to finalize game record:', error)
+  }
+}
+
 onUnmounted(clearRedirectTimer)
 
 async function fetchMatchPlayers() {
   if (!props.matchId) return
+  if (!isOnline.value) return
   try {
     const res = await fetch(`${useRuntimeConfig().public.apiBase}/games/sevens/${props.matchId}`)
     if (!res.ok) return
@@ -105,36 +173,45 @@ async function fetchMatchPlayers() {
 watch(() => props.matchId, fetchMatchPlayers, { immediate: true })
 // Refresh players when game state appears (e.g. after join)
 watch(() => state.value?.G, fetchMatchPlayers)
+watch(isOnline, (online, wasOnline) => {
+  if (online && wasOnline === false) {
+    fetchMatchPlayers()
+  }
+})
 </script>
 
 <template>
   <div v-if="state" class="sevens-game-wrapper">
     <div
-      v-if="isGameOver"
-      class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 safe-area-padding"
+      v-if="showReconnectNotice"
+      class="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 z-[9998] mx-auto max-w-xl rounded-2xl border border-white/10 bg-slate-900/88 px-4 py-3 text-white shadow-2xl backdrop-blur-sm"
     >
-      <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-900">
-        <div class="text-center">
-          <div class="text-5xl mb-3">{{ winnerDisplay.avatar }}</div>
-          <div class="text-2xl sm:text-3xl font-extrabold mb-2">
-            {{ didIWin ? 'You won!' : 'You lost' }}
-          </div>
-          <div class="text-slate-600 mb-6">
-            Winner: <span class="font-bold">{{ winnerDisplay.name }}</span>
-          </div>
-          <div class="text-slate-500 text-sm">
-            Returning to lobby in <span class="font-bold">{{ redirectSeconds }}s</span>
-          </div>
-          <button
-            type="button"
-            class="mt-6 w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl font-bold"
-            @click="router.push('/lobby')"
-          >
-            Go to lobby now
-          </button>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div class="text-sm font-semibold">Connection paused</div>
+          <p class="text-sm text-slate-300">
+            {{ reconnectLabel }}
+          </p>
         </div>
+        <button
+          type="button"
+          class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white hover:bg-white/10"
+          @click="fetchMatchPlayers"
+        >
+          Retry Sync
+        </button>
       </div>
     </div>
+    <WinnerOverlay
+      v-if="isGameOver"
+      :avatar="winnerDisplay.avatar"
+      :winner-name="winnerDisplay.name"
+      :did-i-win="didIWin"
+      :redirect-seconds="redirectSeconds"
+      :won-coins="winnerCoinsDelta"
+      :total-coins="winnerTotalCoins"
+      @go-lobby="router.push('/lobby')"
+    />
     <GameBoard
       :G="state.G"
       :ctx="state.ctx"

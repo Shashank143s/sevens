@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="56" y1="44" x2="456" y2="468" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10231B" />
+      <stop offset="0.55" stop-color="#0A1F18" />
+      <stop offset="1" stop-color="#06141F" />
+    </linearGradient>
+    <linearGradient id="gold" x1="180" y1="84" x2="322" y2="392" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2D66C" />
+      <stop offset="0.48" stop-color="#D4AF37" />
+      <stop offset="1" stop-color="#9E7714" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 214) rotate(90) scale(196 188)">
+      <stop stop-color="#D4AF37" stop-opacity="0.24" />
+      <stop offset="1" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+    <filter id="suitsGlow" x="150" y="360" width="248" height="96" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix" />
+      <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+      <feGaussianBlur stdDeviation="10" result="effect1_foregroundBlur_1_1" />
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="128" fill="url(#bg)" />
+  <rect x="24" y="24" width="464" height="464" rx="112" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2" />
+  <circle cx="256" cy="214" r="196" fill="url(#glow)" />
+
+  <path d="M177 82h164v31L246.5 372h-51l86.5-228H177V82Z" fill="url(#gold)" />
+
+  <g stroke="#D4AF37" stroke-opacity="0.4" stroke-width="4" stroke-linecap="round">
+    <path d="M122 411h58" />
+    <path d="M346 411h44" />
+  </g>
+
+  <g filter="url(#suitsGlow)" opacity="0.42" font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+    <text x="206" y="422" fill="#D4AF37" font-size="42">♠</text>
+    <text x="242" y="422" fill="#D44D5C" font-size="42">♥</text>
+    <text x="278" y="422" fill="#D44D5C" font-size="42">♦</text>
+    <text x="314" y="422" fill="#D4AF37" font-size="42">♣</text>
+  </g>
+
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+    <text x="206" y="422" fill="#111827" font-size="42">♠</text>
+    <text x="242" y="422" fill="#B91C1C" font-size="42">♥</text>
+    <text x="278" y="422" fill="#B91C1C" font-size="42">♦</text>
+    <text x="314" y="422" fill="#111827" font-size="42">♣</text>
+  </g>
+</svg>
