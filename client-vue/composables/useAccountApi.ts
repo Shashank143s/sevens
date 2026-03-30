@@ -6,6 +6,10 @@ type UpsertAccountPayload = {
   profile_image_url?: string
   avatar_emoji?: string
   last_login_at: string
+  legal_consent?: {
+    privacy_policy_accepted_at?: string
+    terms_accepted_at?: string
+  }
 }
 
 export type AccountApiUser = {
@@ -34,6 +38,10 @@ export type AccountApiUser = {
     country_code?: string
     country_name?: string
     region?: string
+  }
+  legal_consent?: {
+    privacy_policy_accepted_at?: string
+    terms_accepted_at?: string
   }
   daily_room_limit: number
   remaining_rooms: number

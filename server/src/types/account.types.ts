@@ -6,6 +6,10 @@ export type AccountPayload = {
   profile_image_url?: string;
   avatar_emoji?: string;
   last_login_at?: string | number | Date;
+  legal_consent?: {
+    privacy_policy_accepted_at?: string | number | Date;
+    terms_accepted_at?: string | number | Date;
+  };
 };
 
 export type RecentGameResult = {
@@ -50,6 +54,10 @@ export type AccountApiUserPayload = {
     country_code?: string;
     country_name?: string;
     region?: string;
+  };
+  legal_consent?: {
+    privacy_policy_accepted_at?: Date;
+    terms_accepted_at?: Date;
   };
   daily_room_limit: number;
   remaining_rooms: number;

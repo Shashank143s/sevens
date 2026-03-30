@@ -24,6 +24,18 @@ function buildAccountUpdate(payload: AccountPayload, email: string) {
     profile_image_url: payload.profile_image_url?.trim(),
     avatar_emoji: payload.avatar_emoji?.trim() ?? '🐶',
     last_login_at: normalizeDate(payload.last_login_at),
+    ...(payload.legal_consent
+      ? {
+          legal_consent: {
+            privacy_policy_accepted_at: payload.legal_consent.privacy_policy_accepted_at
+              ? normalizeDate(payload.legal_consent.privacy_policy_accepted_at)
+              : undefined,
+            terms_accepted_at: payload.legal_consent.terms_accepted_at
+              ? normalizeDate(payload.legal_consent.terms_accepted_at)
+              : undefined,
+          },
+        }
+      : {}),
     is_active: true,
   };
 }
@@ -51,6 +63,12 @@ async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
           country_code: user.location.country_code,
           country_name: user.location.country_name,
           region: user.location.region,
+        }
+      : undefined,
+    legal_consent: user.legal_consent
+      ? {
+          privacy_policy_accepted_at: user.legal_consent.privacy_policy_accepted_at,
+          terms_accepted_at: user.legal_consent.terms_accepted_at,
         }
       : undefined,
     daily_room_limit: MAX_DAILY_GAMES_PER_USER,

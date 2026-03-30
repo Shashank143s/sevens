@@ -101,6 +101,20 @@ const userLocationSchema = new Schema(
   },
 );
 
+const userLegalConsentSchema = new Schema(
+  {
+    privacy_policy_accepted_at: {
+      type: Date,
+    },
+    terms_accepted_at: {
+      type: Date,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const userSchema = new Schema(
   {
     email: {
@@ -176,6 +190,10 @@ const userSchema = new Schema(
     },
     location: {
       type: userLocationSchema,
+      required: false,
+    },
+    legal_consent: {
+      type: userLegalConsentSchema,
       required: false,
     },
   },

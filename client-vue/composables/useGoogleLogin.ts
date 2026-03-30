@@ -70,12 +70,15 @@ export function useGoogleLogin() {
     isOpen.value = false
   }
 
-  async function handleGoogleSuccess(e: { credential: string; claims: Record<string, unknown> }) {
+  async function handleGoogleSuccess(
+    e: { credential: string; claims: Record<string, unknown> },
+    legalAcceptedAt?: string,
+  ) {
     const tokenClaims = decodeJwtPayload<GoogleTokenClaims>(e.credential)
     const identity = buildIdentity(e.claims, tokenClaims)
     const { firstName, lastName } = splitName(identity.fullName)
     const syncedAccount = identity.email
-      ? await syncAccount(identity, firstName, lastName)
+      ? await syncAccount(identity, firstName, lastName, legalAcceptedAt)
       : null
 
     setSession(syncedAccount ?? {
@@ -88,7 +91,12 @@ export function useGoogleLogin() {
     closeAuth()
   }
 
-  async function syncAccount(identity: AccountIdentity, firstName: string, lastName: string) {
+  async function syncAccount(
+    identity: AccountIdentity,
+    firstName: string,
+    lastName: string,
+    legalAcceptedAt?: string,
+  ) {
     try {
       const response = await upsertAccount(identity.email!, {
         email: identity.email!,
@@ -98,6 +106,12 @@ export function useGoogleLogin() {
         profile_image_url: identity.image,
         avatar_emoji: '🐶',
         last_login_at: new Date(identity.lastLoginAt).toISOString(),
+        legal_consent: legalAcceptedAt
+          ? {
+              privacy_policy_accepted_at: legalAcceptedAt,
+              terms_accepted_at: legalAcceptedAt,
+            }
+          : undefined,
       })
 
       return {
