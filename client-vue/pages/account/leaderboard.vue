@@ -78,9 +78,12 @@ onMounted(async () => {
       <p v-if="loadError" class="leaderboard-page__message">
         {{ loadError }}
       </p>
-      <p v-else-if="isLoading" class="leaderboard-page__message">
-        Loading leaderboard...
-      </p>
+      <section v-else-if="isLoading" class="leaderboard-page__list" aria-label="Loading leaderboard">
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
+      </section>
       <p v-else-if="entries.length === 0" class="leaderboard-page__message">
         No leaderboard entries yet.
       </p>

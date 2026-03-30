@@ -84,7 +84,7 @@ watch(
     if (!over) return
     winnerCoinsDelta.value = null
     winnerTotalCoins.value = null
-    redirectSeconds.value = 3000
+    redirectSeconds.value = 30
     // Clear stored creds so user can re-join next game cleanly.
     clearCredentials(props.matchId)
     await syncCompletedGame()

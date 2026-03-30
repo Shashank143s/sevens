@@ -135,9 +135,11 @@ onMounted(async () => {
         {{ loadError }}
       </p>
 
-      <p v-else-if="isLoading" class="games-page__message">
-        Loading your latest tables...
-      </p>
+      <section v-else-if="isLoading" class="games-page__list" aria-label="Loading recent games">
+        <RecentGameCardSkeleton />
+        <RecentGameCardSkeleton />
+        <RecentGameCardSkeleton />
+      </section>
 
       <p v-else-if="games.length === 0" class="games-page__message">
         No games recorded yet.

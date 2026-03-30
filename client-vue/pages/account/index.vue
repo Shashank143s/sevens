@@ -8,6 +8,7 @@ const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccount } = useAccountApi()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
+const isSummaryLoading = ref(true)
 const coinsBalance = ref<number | null>(null)
 const playerLevel = ref<number | null>(null)
 const xpTotal = ref<number | null>(null)
@@ -82,6 +83,7 @@ function logout() {
 
 async function loadAccountSummary() {
   if (!accountIdentifier.value) return
+  isSummaryLoading.value = true
   try {
     const response = await getAccount(accountIdentifier.value, 0, 0)
     coinsBalance.value = response.user.wallet?.coins_balance ?? null
@@ -91,6 +93,8 @@ async function loadAccountSummary() {
     coinsBalance.value = null
     playerLevel.value = null
     xpTotal.value = null
+  } finally {
+    isSummaryLoading.value = false
   }
 }
 
@@ -145,7 +149,9 @@ onMounted(() => {
           </div>
         </div>
 
-        <section class="account-card__progression">
+        <AccountProgressSkeleton v-if="isSummaryLoading" />
+
+        <section v-else class="account-card__progression">
           <div class="account-card__progression-top">
             <div class="account-card__chip account-card__chip--coins">
               <IconsCoinIcon class="account-card__coin-icon" />
