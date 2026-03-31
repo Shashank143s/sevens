@@ -61,6 +61,13 @@ export default defineNuxtConfig({
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'google-adsense-account', content: 'ca-pub-7523880309915043' },
       ],
+      script: [
+        {
+          async: true,
+          src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7523880309915043',
+          crossorigin: 'anonymous',
+        },
+      ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#d1a728' },
