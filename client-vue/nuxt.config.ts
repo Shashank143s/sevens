@@ -59,6 +59,7 @@ export default defineNuxtConfig({
         { property: 'og:site_name', content: 'Sevens Royale' },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'google-adsense-account', content: 'ca-pub-7523880309915043' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
