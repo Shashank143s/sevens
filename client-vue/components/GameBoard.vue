@@ -793,7 +793,8 @@ onUnmounted(() => {
   }
 
   .board-stage__desktop {
-    padding: 0.75rem 1.25rem 1rem;
+    padding: 4.75rem 1.25rem 1rem;
+    align-items: flex-start;
   }
 
   .desktop-table {
