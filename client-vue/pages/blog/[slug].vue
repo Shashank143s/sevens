@@ -380,12 +380,20 @@ useHead(() => ({
 .blog-article__gallery-item figcaption {
   display: grid;
   gap: 0.25rem;
-  padding: 0.8rem 0.9rem 0.9rem;
+  padding: 0.95rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent 32%),
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px);
 }
 
 .blog-article__gallery-item strong {
   color: #f8fafc;
-  font-size: 0.94rem;
+  font-size: 0.98rem;
+  line-height: 1.25;
 }
 
 .blog-article__gallery-item span {

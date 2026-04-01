@@ -192,16 +192,21 @@ useHead(() => ({
   min-height: 11rem;
   border-radius: 1.4rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 22px 52px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   background:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.12), rgba(2, 6, 23, 0.62)),
-    rgba(15, 23, 42, 0.84);
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.12), rgba(2, 6, 23, 0.72)),
+    rgba(15, 23, 42, 0.88);
   margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.8rem;
+  backdrop-filter: blur(18px);
 }
 
 .blog-hero__preview-image {
@@ -218,10 +223,24 @@ useHead(() => ({
   left: 1rem;
   bottom: 0.9rem;
   z-index: 1;
-  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.34rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.16), transparent 58%),
+    linear-gradient(180deg, rgba(120, 53, 15, 0.28), rgba(15, 23, 42, 0.76));
+  box-shadow:
+    0 10px 24px rgba(2, 6, 23, 0.22),
+    inset 0 1px 0 rgba(255, 244, 163, 0.08);
+  color: #fde68a;
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  backdrop-filter: blur(12px);
 }
 
 .blog-grid {
@@ -253,8 +272,9 @@ useHead(() => ({
   justify-content: center;
   padding: 1rem;
   background:
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 38%),
-    linear-gradient(180deg, rgba(2, 6, 23, 0.86), rgba(2, 6, 23, 0.72));
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 34%),
+    radial-gradient(circle at left top, rgba(250, 204, 21, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.88), rgba(2, 6, 23, 0.72));
 }
 
 .blog-card__visual-image {
@@ -275,7 +295,9 @@ useHead(() => ({
 .blog-card__visual-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(2, 6, 23, 0.06), rgba(2, 6, 23, 0.72));
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.04), rgba(2, 6, 23, 0.74)),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 26%);
 }
 
 .blog-card__category {
@@ -285,8 +307,10 @@ useHead(() => ({
   z-index: 1;
   padding: 0.42rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(250, 204, 21, 0.16);
-  background: rgba(15, 23, 42, 0.74);
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.68));
+  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.22);
   color: #fde68a;
   font-size: 0.72rem;
   font-weight: 800;
@@ -374,6 +398,17 @@ useHead(() => ({
   .blog-hero__preview-card {
     min-height: 15rem;
     padding: 0.7rem;
+  }
+
+  .blog-hero__preview-card span {
+    left: 0.8rem;
+    right: 0.8rem;
+    bottom: 0.75rem;
+    justify-content: center;
+    min-height: 2.35rem;
+    padding: 0.58rem 0.8rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
   }
 
   .blog-card {
