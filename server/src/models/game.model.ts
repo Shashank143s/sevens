@@ -247,6 +247,10 @@ const gameSchema = new Schema(
       ref: 'User',
       index: true,
     },
+    creator_display_name: {
+      type: String,
+      trim: true,
+    },
     players: {
       type: [gamePlayerSchema],
       required: true,

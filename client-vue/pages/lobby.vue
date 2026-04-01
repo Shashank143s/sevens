@@ -8,7 +8,7 @@ const router = useRouter()
 const { session } = usePlayerSession()
 const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
-const { getAccount } = useAccountApi()
+const { getAccountSummary } = useAccountApi()
 const { isOnline } = useOnlineStatus()
 const {
   isSupported: notificationsSupported,
@@ -115,8 +115,20 @@ async function fetchRooms() {
   loading.value = true
   error.value = null
   try {
-    await refreshCoinsBalance().catch(() => {})
-    rooms.value = await listMatches()
+    const [coinsResult, roomsResult] = await Promise.allSettled([
+      refreshCoinsBalance(),
+      listMatches(),
+    ])
+
+    if (coinsResult.status === 'rejected') {
+      console.error('[lobby] Failed to refresh coins balance:', coinsResult.reason)
+    }
+
+    if (roomsResult.status === 'fulfilled') {
+      rooms.value = roomsResult.value
+    } else {
+      throw roomsResult.reason
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load rooms'
   } finally {
@@ -236,7 +248,7 @@ async function deleteCreatedRoom(matchID: string) {
 async function refreshCoinsBalance() {
   const identifier = session.value?.id || session.value?.email?.trim()
   if (!identifier) return
-  const response = await getAccount(identifier, 0, 0)
+  const response = await getAccountSummary(identifier)
   coinsBalance.value = response.user.wallet?.coins_balance ?? null
 }
 
