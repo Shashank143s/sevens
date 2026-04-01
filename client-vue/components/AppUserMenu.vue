@@ -1,15 +1,23 @@
 <script setup lang="ts">
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
+const { openAuth } = useGoogleLogin()
 
 const open = ref(false)
 const mounted = ref(false)
-const showMenu = computed(() => mounted.value && hydrated.value && !!session.value)
+const showMenu = computed(() => mounted.value && hydrated.value)
+const isLoggedIn = computed(() => !!session.value)
 
 const displayName = computed(() => {
+  if (!isLoggedIn.value) return 'Login'
   const name = session.value?.name?.trim() ?? 'Player'
   const first = name.split(/\s+/)[0]
   return `Welcome, ${first}`
+})
+
+const avatarLabel = computed(() => {
+  if (!isLoggedIn.value) return '↗'
+  return session.value?.avatar ?? '🐶'
 })
 
 function goToInstructions() {
@@ -25,6 +33,26 @@ function goToAccount() {
 function goToDownloads() {
   open.value = false
   router.push('/downloads')
+}
+
+function goToContact() {
+  open.value = false
+  router.push('/contact')
+}
+
+function goToPrivacyPolicy() {
+  open.value = false
+  router.push('/privacy-policy')
+}
+
+function goToTerms() {
+  open.value = false
+  router.push('/terms-and-conditions')
+}
+
+function login() {
+  open.value = false
+  openAuth()
 }
 
 onMounted(() => {
@@ -44,23 +72,39 @@ onMounted(() => {
       <span class="user-menu__label">{{ displayName }}</span>
       <span class="user-menu__avatar">
         <img
-          v-if="session.image"
+          v-if="isLoggedIn && session?.image"
           :src="session.image"
           :alt="session.name"
           class="user-menu__image"
         >
-        <span v-else>{{ session.avatar }}</span>
+        <span v-else>{{ avatarLabel }}</span>
       </span>
     </button>
 
     <Transition name="user-menu-panel">
       <div v-if="open" class="user-menu__panel">
         <button
+          v-if="!isLoggedIn"
+          type="button"
+          class="user-menu__action user-menu__action--login"
+          @click="login"
+        >
+          Login
+        </button>
+        <button
+          v-if="isLoggedIn"
           type="button"
           class="user-menu__action user-menu__action--neutral"
           @click="goToAccount"
         >
           Account
+        </button>
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral user-menu__action--download"
+          @click="goToDownloads"
+        >
+          <span>Downloads</span>
         </button>
         <button
           type="button"
@@ -71,11 +115,28 @@ onMounted(() => {
         </button>
         <button
           type="button"
-          class="user-menu__action user-menu__action--neutral user-menu__action--download"
-          @click="goToDownloads"
+          class="user-menu__action user-menu__action--neutral"
+          @click="goToContact"
         >
-          <span>Downloads</span>
+          Contact Us
         </button>
+        <div class="user-menu__divider" />
+        <div class="user-menu__legal">
+          <button
+            type="button"
+            class="user-menu__action user-menu__action--neutral user-menu__action--legal"
+            @click="goToPrivacyPolicy"
+          >
+            Privacy Policy
+          </button>
+          <button
+            type="button"
+            class="user-menu__action user-menu__action--neutral user-menu__action--legal"
+            @click="goToTerms"
+          >
+            Terms &amp; Conditions
+          </button>
+        </div>
       </div>
     </Transition>
   </div>
@@ -169,6 +230,27 @@ onMounted(() => {
 
 .user-menu__action--download {
   color: #dcfce7;
+}
+
+.user-menu__action--login {
+  color: #17120a;
+  background: linear-gradient(180deg, #e0bd39, #d1a728);
+}
+
+.user-menu__divider {
+  height: 1px;
+  margin: 0.55rem 0;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.3), transparent);
+}
+
+.user-menu__legal {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.user-menu__action--legal {
+  font-size: 0.82rem;
+  color: rgba(226, 232, 240, 0.8);
 }
 
 .user-menu-panel-enter-active,
