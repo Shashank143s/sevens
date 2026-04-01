@@ -29,6 +29,14 @@ const roomStake = ref<number | null>(null)
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
 
+function sendToWrongTable() {
+  return showError({
+    statusCode: 404,
+    statusMessage: `/room/${matchID.value}`,
+    message: `Finished or missing room: /room/${matchID.value}`,
+  })
+}
+
 // After join: wait until all players have joined before showing game
 const matchMeta = ref<LobbyMatch | null>(null)
 const allPlayersJoined = computed(() => {
@@ -48,13 +56,20 @@ async function fetchMatchMeta() {
     checkingRoom.value = true
     const res = await fetch(getMatchUrl(matchID.value))
     if (!res.ok) {
+      if (res.status === 404) {
+        roomStatusMessage.value = null
+        return Boolean(sendToWrongTable())
+      }
       roomStatusMessage.value = 'Unable to load the room right now.'
       return false
     }
     matchMeta.value = await res.json() as LobbyMatch
     roomStatusMessage.value = null
     return true
-  } catch {
+  } catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      return false
+    }
     roomStatusMessage.value = 'Connection lost while loading room details.'
     return false
   } finally {
@@ -71,7 +86,10 @@ async function fetchRoomAccess() {
     if (requiresPassword.value && creatorRoomPassword.value) {
       roomPassword.value = creatorRoomPassword.value
     }
-  } catch {
+  } catch (error: any) {
+    if (error?.statusCode === 404 || error?.status === 404) {
+      return sendToWrongTable()
+    }
     requiresPassword.value = false
     roomName.value = ''
     roomStake.value = null
@@ -187,6 +205,15 @@ const enterGame = async () => {
     await fetchMatchMeta()
     startPolling()
   } catch (error) {
+    const statusCode = (error as { statusCode?: number; status?: number })?.statusCode
+      ?? (error as { statusCode?: number; status?: number })?.status
+    const message = error instanceof Error ? error.message : ''
+
+    if (statusCode === 404 || message.toLowerCase().includes('game not found')) {
+      sendToWrongTable()
+      return
+    }
+
     joinError.value = error instanceof Error
       ? error.message
       : 'Connection lost while joining. Try again when the network is back.'
@@ -351,12 +378,10 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
         class="min-h-screen bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center text-white p-4 sm:p-6 safe-area-padding"
         :style="{ backgroundImage: `url(${backgroundGame})` }"
       >
-        <Motion preset="slideTop">
-          <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
-            <h2 class="text-xl font-bold text-white mb-2">Preparing the table</h2>
-            <p class="text-slate-400 text-sm">Loading the game board...</p>
-          </div>
-        </Motion>
+        <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
+          <h2 class="text-xl font-bold text-white mb-2">Preparing the table</h2>
+          <p class="text-slate-400 text-sm">Loading the game board...</p>
+        </div>
       </div>
     </template>
   </ClientOnly>
