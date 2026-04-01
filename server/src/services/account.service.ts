@@ -151,7 +151,7 @@ export async function upsertAccountByIdentifier(identifier: string, payload: Acc
       },
     },
     {
-      new: true,
+      returnDocument: 'after',
       upsert: true,
       setDefaultsOnInsert: true,
     },
@@ -202,7 +202,7 @@ export async function upsertAccountWithGeo(identifier: string, payload: AccountP
       },
     },
     {
-      new: true,
+      returnDocument: 'after',
       upsert: true,
       setDefaultsOnInsert: true,
     },
@@ -298,6 +298,6 @@ export async function deleteAccountByIdentifier(identifier: string) {
         deleted_at: new Date(),
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   );
 }

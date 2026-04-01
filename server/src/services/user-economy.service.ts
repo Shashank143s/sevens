@@ -112,7 +112,7 @@ export async function reserveCoinsForJoin(userId: string, amount: number) {
         'wallet.coins_reserved': amount,
       },
     } as any,
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   if (!user) {

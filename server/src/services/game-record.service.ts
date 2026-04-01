@@ -297,7 +297,7 @@ export async function updateGameRecord(matchID: string, payload: UpdateGamePaylo
         finalPlayers,
       ),
     },
-    { new: true, lean: true },
+    { returnDocument: 'after', lean: true },
   );
   if (payload.status === 'completed') {
     await syncUserStatsForPlayers(finalPlayers);
