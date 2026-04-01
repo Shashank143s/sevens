@@ -40,6 +40,11 @@ function goToContact() {
   router.push('/contact')
 }
 
+function goToBlog() {
+  open.value = false
+  router.push('/blog')
+}
+
 function goToPrivacyPolicy() {
   open.value = false
   router.push('/privacy-policy')
@@ -119,6 +124,13 @@ onMounted(() => {
           @click="goToContact"
         >
           Contact Us
+        </button>
+        <button
+          type="button"
+          class="user-menu__action user-menu__action--neutral user-menu__action--desktop"
+          @click="goToBlog"
+        >
+          Blog
         </button>
         <div class="user-menu__divider" />
         <div class="user-menu__legal">
@@ -251,6 +263,12 @@ onMounted(() => {
 .user-menu__action--legal {
   font-size: 0.82rem;
   color: rgba(226, 232, 240, 0.8);
+}
+
+@media (max-width: 767px) {
+  .user-menu__action--desktop {
+    display: none;
+  }
 }
 
 .user-menu-panel-enter-active,
