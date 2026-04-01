@@ -279,9 +279,11 @@ onMounted(() => {
 
 <style scoped>
 .account-page {
+  box-sizing: border-box;
   position: relative;
-  min-height: 100vh;
   min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   padding:
     max(1.25rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right))

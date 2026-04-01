@@ -307,7 +307,7 @@ onMounted(() => {
 
 <template>
   <div
-    class="min-h-screen min-h-[100dvh] bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
+    class="box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="mb-6 flex items-center justify-between gap-4">

@@ -84,7 +84,7 @@ async function handleInstallApp() {
 
 <template>
   <div
-    class="home-shell h-screen min-h-[100dvh] overflow-hidden text-white relative bg-cover bg-center bg-no-repeat"
+    class="home-shell box-border h-[100dvh] overflow-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <div class="absolute top-0 right-0 z-10 p-4 sm:p-6">
@@ -138,6 +138,7 @@ async function handleInstallApp() {
 }
 
 .mobile-home {
+  box-sizing: border-box;
   position: relative;
   z-index: 1;
   height: 100dvh;
