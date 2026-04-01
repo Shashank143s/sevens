@@ -185,11 +185,11 @@ onUnmounted(() => {
 
 <style scoped>
 .app-shell {
-  min-height: 100dvh;
+  height: 100%;
 }
 
 .app-shell__content {
-  min-height: 100dvh;
+  height: 100%;
 }
 
 .app-shell__content:not(.app-shell__content--ready) {
