@@ -1,7 +1,6 @@
 import { GameModel, UserModel } from '../models';
 import { MAX_DAILY_GAMES_PER_USER } from '../config';
 import type { AccountApiUserPayload, AccountGeoPayload, AccountPayload, LeaderboardEntry, LeaderboardResponse, RecentGameResult } from '../types/account.types';
-import { syncUserStats } from './user-stats.service';
 import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
 import { createUserLookup, normalizeDate, normalizeEmail } from '../utils/user.util';
@@ -99,6 +98,14 @@ function mapRecentGame(game: any, userId: string): RecentGameResult {
 async function findRecentGames(userId: string, offset = 0, limit = 5) {
   const safeOffset = normalizePaginationValue(offset, 0);
   const safeLimit = Math.min(normalizePaginationValue(limit, 5), 25);
+  if (safeLimit === 0) {
+    return {
+      games: [],
+      has_more: false,
+      offset: safeOffset,
+      limit: safeLimit,
+    };
+  }
   const games = await GameModel.find({ 'players.user_id': userId })
     .sort({ ended_at: -1, updated_at: -1 })
     .skip(safeOffset)
@@ -118,10 +125,8 @@ export async function getAccountByIdentifier(identifier: string, offset = 0, lim
   const user = await findUserByIdentifier(identifier);
   if (!user) return null;
   const userId = String(user._id);
-  await syncUserStats(userId);
-  const refreshedUser = await findUserById(userId);
   const recent_games = await findRecentGames(userId, offset, limit);
-  return { user: await buildAccountUser(refreshedUser ?? user), recent_games_page: recent_games };
+  return { user: await buildAccountUser(user), recent_games_page: recent_games };
 }
 
 function resolveEmail(identifier: string, payload: AccountPayload) {

@@ -308,6 +308,7 @@ const gameSchema = new Schema(
 );
 
 gameSchema.index({ 'players.user_id': 1, ended_at: -1 });
+gameSchema.index({ creator_user_id: 1, created_at: -1 });
 
 export type GamePlayerDocument = InferSchemaType<typeof gamePlayerSchema>;
 export type GameDocument = InferSchemaType<typeof gameSchema> & {
