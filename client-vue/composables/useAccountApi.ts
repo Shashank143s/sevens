@@ -96,6 +96,27 @@ type GetAccountResponse = {
   }
 }
 
+type GetAccountSummaryResponse = {
+  user: AccountApiUser
+}
+
+type GetAccountGamesResponse = {
+  user: {
+    _id: string
+    stats?: {
+      games_played: number
+      wins: number
+      losses: number
+    }
+  }
+  recent_games_page: {
+    games: AccountRecentGame[]
+    offset: number
+    limit: number
+    has_more: boolean
+  }
+}
+
 type DeleteAccountResponse = {
   deleted: boolean
 }
@@ -109,6 +130,16 @@ export function useAccountApi() {
 
   async function getAccount(userID: string, offset = 0, limit = 5) {
     return $fetch<GetAccountResponse>(buildAccountUrl(userID), {
+      query: { offset, limit },
+    })
+  }
+
+  async function getAccountSummary(userID: string) {
+    return $fetch<GetAccountSummaryResponse>(`${buildAccountUrl(userID)}/summary`)
+  }
+
+  async function getAccountGames(userID: string, offset = 0, limit = 5) {
+    return $fetch<GetAccountGamesResponse>(`${buildAccountUrl(userID)}/games`, {
       query: { offset, limit },
     })
   }
@@ -138,6 +169,8 @@ export function useAccountApi() {
   return {
     deleteAccount,
     getAccount,
+    getAccountGames,
+    getAccountSummary,
     getLeaderboard,
     upsertAccount,
   }

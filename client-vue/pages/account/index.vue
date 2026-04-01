@@ -5,7 +5,7 @@ import { useRoomCredentials } from '~/composables/useRoomCredentials'
 const router = useRouter()
 const { session, clearSession, hydrated } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
-const { deleteAccount, getAccount } = useAccountApi()
+const { deleteAccount, getAccountSummary } = useAccountApi()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isSummaryLoading = ref(true)
@@ -86,7 +86,7 @@ async function loadAccountSummary() {
   if (!accountIdentifier.value) return
   isSummaryLoading.value = true
   try {
-    const response = await getAccount(accountIdentifier.value, 0, 0)
+    const response = await getAccountSummary(accountIdentifier.value)
     coinsBalance.value = response.user.wallet?.coins_balance ?? null
     playerLevel.value = response.user.progression?.level ?? null
     xpTotal.value = response.user.progression?.xp_total ?? null

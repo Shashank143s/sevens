@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
-import { useAccountApi, type AccountApiUser, type AccountRecentGame } from '~/composables/useAccountApi'
+import { useAccountApi, type AccountRecentGame } from '~/composables/useAccountApi'
 
 const PAGE_SIZE = 5
 
 const router = useRouter()
 const { session } = usePlayerSession()
-const { getAccount } = useAccountApi()
+const { getAccountGames } = useAccountApi()
 
-const account = ref<AccountApiUser | null>(null)
+const accountStats = ref<{ games_played: number; wins: number; losses: number } | null>(null)
 const games = ref<AccountRecentGame[]>([])
 const isLoading = ref(true)
 const isLoadingMore = ref(false)
@@ -17,7 +17,7 @@ const hasMore = ref(false)
 const offset = ref(0)
 
 const accountIdentifier = computed(() => session.value?.id || session.value?.email?.trim() || '')
-const totals = computed(() => account.value?.stats ?? { games_played: 0, wins: 0, losses: 0 })
+const totals = computed(() => accountStats.value ?? { games_played: 0, wins: 0, losses: 0 })
 
 function formatDate(value?: string | number) {
   if (!value) return 'Still active'
@@ -53,7 +53,7 @@ function deltaTone(value = 0) {
 }
 
 async function fetchPage(nextOffset: number) {
-  return getAccount(accountIdentifier.value, nextOffset, PAGE_SIZE)
+  return getAccountGames(accountIdentifier.value, nextOffset, PAGE_SIZE)
 }
 
 async function loadGames(reset = false) {
@@ -62,7 +62,7 @@ async function loadGames(reset = false) {
 
   try {
     const response = await fetchPage(nextOffset)
-    account.value = response.user
+    accountStats.value = response.user.stats ?? { games_played: 0, wins: 0, losses: 0 }
     const nextGames = response.recent_games_page.games
     games.value = reset ? nextGames : [...games.value, ...nextGames]
     hasMore.value = response.recent_games_page.has_more
