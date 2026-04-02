@@ -20,6 +20,7 @@ export type CreateGamePayload = {
   room_name: string;
   room_size: number;
   creator_user_id?: string;
+  card_theme?: 'normal' | 'wwe-legends' | 'wwe-womans';
   coin_rules?: {
     stake?: number;
   };

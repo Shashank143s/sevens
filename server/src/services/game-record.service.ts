@@ -12,6 +12,7 @@ import { ensureRoomQuotaAvailable } from './room-quota.service';
 import { normalizeDate } from '../utils/user.util';
 import { hashRoomPassword, normalizeRoomPassword, verifyRoomPassword } from '../utils/password.util';
 import { validateRoomName } from '../utils/room.util';
+import { normalizeCardTheme } from '../utils/card-theme.util';
 
 function toObjectId(value?: string) {
   return value && Types.ObjectId.isValid(value) ? new Types.ObjectId(value) : undefined;
@@ -106,6 +107,7 @@ function buildCreateDocument(matchID: string, payload: CreateGamePayload, creato
     match_id: matchID,
     room_name: validateRoomName(payload.room_name),
     room_size: payload.room_size,
+    card_theme: normalizeCardTheme(payload.card_theme),
     creator_user_id: toObjectId(payload.creator_user_id),
     creator_display_name: creatorDisplayName,
     players,
@@ -254,6 +256,7 @@ export async function getPublicGameRecord(matchID: string) {
   if (!game) return null;
   return {
     ...game,
+    card_theme: normalizeCardTheme(game.card_theme),
     access: {
       is_private: Boolean(game.access?.is_private),
     },

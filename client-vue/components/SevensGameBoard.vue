@@ -2,6 +2,7 @@
 import { useSevensClient } from '~/composables/useSevensClient'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import type { CardTheme } from '~/constants/cardThemes'
 
 export interface PlayerInfo {
   id: number
@@ -13,6 +14,7 @@ const props = defineProps<{
   matchId: string
   playerId: string | null
   credentials?: string | null
+  cardTheme?: CardTheme
 }>()
 
 const { state } = useSevensClient(
@@ -252,6 +254,7 @@ watch(isOnline, (online, wasOnline) => {
       :moves="state.moves"
       :player-id="state.playerID"
       :players="players"
+      :card-theme="props.cardTheme"
     />
   </div>
   <div

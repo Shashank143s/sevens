@@ -3,6 +3,7 @@ import { getMatchUrl } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import { CARD_THEME_DEFAULT, type CardTheme } from '~/constants/cardThemes'
 
 const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
@@ -26,6 +27,7 @@ const roomPassword = ref('')
 const requiresPassword = ref(false)
 const roomName = ref('')
 const roomStake = ref<number | null>(null)
+const roomCardTheme = ref<CardTheme>(CARD_THEME_DEFAULT)
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
 
@@ -83,6 +85,7 @@ async function fetchRoomAccess() {
     requiresPassword.value = Boolean(response.game.access?.is_private)
     roomName.value = typeof response.game.room_name === 'string' ? response.game.room_name : ''
     roomStake.value = response.game.coin_rules?.stake ?? null
+    roomCardTheme.value = response.game.card_theme ?? CARD_THEME_DEFAULT
     if (requiresPassword.value && creatorRoomPassword.value) {
       roomPassword.value = creatorRoomPassword.value
     }
@@ -93,6 +96,7 @@ async function fetchRoomAccess() {
     requiresPassword.value = false
     roomName.value = ''
     roomStake.value = null
+    roomCardTheme.value = CARD_THEME_DEFAULT
   }
 }
 
@@ -132,6 +136,7 @@ onMounted(async () => {
     playerCredentials.value = stored.credentials
     joined.value = true
     await fetchMatchMeta()
+    await fetchRoomAccess()
     startPolling()
     return
   }
@@ -372,6 +377,7 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
       :match-id="matchID"
       :player-id="playerID"
       :credentials="playerCredentials"
+      :card-theme="roomCardTheme"
     />
     <template #fallback>
       <div

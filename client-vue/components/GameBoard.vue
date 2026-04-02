@@ -2,6 +2,8 @@
 import type { Card, Suit } from '@shared/types'
 import SuitesLane from './SuitesLane.vue'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import { CARD_THEME_DEFAULT, type CardTheme } from '~/constants/cardThemes'
+import { getCardImageSrc as resolveCardImageSrc } from '~/utils/cardImage'
 
 type PileLike = { started?: boolean; low: number | null; high: number | null }
 
@@ -39,6 +41,7 @@ const props = defineProps<{
   moves: Record<string, (...args: unknown[]) => void>
   playerId: string | null
   players?: PlayerInfo[]
+  cardTheme?: CardTheme
 }>()
 
 const { G, ctx, moves, playerId } = toRefs(props)
@@ -188,8 +191,10 @@ const suitSymbols: Record<Suit, string> = {
 
 const ranks = Array.from({ length: 13 }, (_, i) => i + 1)
 
+const cardTheme = computed(() => props.cardTheme ?? CARD_THEME_DEFAULT)
+
 const getCardImageSrc = (card: { suit: Suit; rank: number }) =>
-  new URL(`../assets/images/cards/${card.suit}-${card.rank}.png`, import.meta.url).href
+  resolveCardImageSrc(card, cardTheme.value)
 
 const lastPlayedCards = computed(() => (G.value.playedCards ?? []).slice(-5))
 

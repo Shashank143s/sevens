@@ -1,7 +1,10 @@
+import type { CardTheme } from '~/constants/cardThemes'
+
 type CreateGameRecordPayload = {
   room_name: string
   room_size: number
   creator_user_id?: string
+  card_theme?: CardTheme
   coin_rules?: {
     stake?: number
   }
@@ -47,6 +50,7 @@ export function useGameApi() {
     return $fetch<{
       game: {
         room_name?: string
+        card_theme?: CardTheme
         access?: { is_private?: boolean }
         coin_rules?: { stake?: number }
         players?: Array<{

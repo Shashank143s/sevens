@@ -3,6 +3,7 @@ import { listMatches, createMatch, joinBots } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import { CARD_THEME_DEFAULT, CARD_THEME_OPTIONS, type CardTheme } from '~/constants/cardThemes'
 
 const router = useRouter()
 const { session } = usePlayerSession()
@@ -29,6 +30,7 @@ const showCreateModal = ref(false)
 const createNumPlayers = ref(2)
 const createAiBots = ref(0)
 const createStake = ref(10)
+const createCardTheme = ref<CardTheme>(CARD_THEME_DEFAULT)
 const creating = ref(false)
 const reconnecting = ref(false)
 const coinsBalance = ref<number | null>(null)
@@ -146,6 +148,7 @@ async function openCreateModal() {
   createNumPlayers.value = 2
   createAiBots.value = 0
   createStake.value = 10
+  createCardTheme.value = CARD_THEME_DEFAULT
   createRoomName.value = ''
   roomNameTouched.value = false
   stakeTouched.value = false
@@ -216,6 +219,7 @@ async function createGameRecordEntry(matchID: string) {
       room_name: createRoomName.value.trim(),
       room_size: createNumPlayers.value,
       creator_user_id: session.value?.id,
+      card_theme: createCardTheme.value,
       coin_rules: {
         stake: createStake.value,
       },
@@ -623,6 +627,41 @@ onMounted(() => {
               </span>
             </div>
           </div>
+        </div>
+
+        <div class="mb-5">
+          <label class="mb-1.5 block text-sm font-semibold text-slate-300">Card Theme</label>
+          <div class="relative">
+            <select
+              v-model="createCardTheme"
+              class="w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option
+                v-for="theme in CARD_THEME_OPTIONS"
+                :key="theme.value"
+                :value="theme.value"
+              >
+                {{ theme.label }}
+              </option>
+            </select>
+            <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300">
+              <svg
+                viewBox="0 0 20 20"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m5 7.5 5 5 5-5" />
+              </svg>
+            </span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400">
+            {{ CARD_THEME_OPTIONS.find(theme => theme.value === createCardTheme)?.description }}
+          </p>
         </div>
 
         <div class="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">

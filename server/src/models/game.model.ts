@@ -251,6 +251,12 @@ const gameSchema = new Schema(
       type: String,
       trim: true,
     },
+    card_theme: {
+      type: String,
+      enum: ['normal', 'wwe-legends', 'wwe-womans'],
+      required: true,
+      default: 'normal',
+    },
     players: {
       type: [gamePlayerSchema],
       required: true,
