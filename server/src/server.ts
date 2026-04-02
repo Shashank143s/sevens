@@ -8,6 +8,7 @@ import { loggerMiddleware } from './middleware/logger.middleware';
 import { accountRoute } from './routes/account.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
+import { createCleanupRoute } from './routes/cleanup.router';
 import { gameRoute } from './routes/game.router';
 import { leaderboardRoute } from './routes/leaderboard.router';
 import { roomsRoute } from './routes/rooms.router';
@@ -26,6 +27,7 @@ function registerRoutes() {
   server.app.use(gameRoute);
   server.app.use(joinRoute);
   server.app.use(createDeleteRoute(server as any));
+  server.app.use(createCleanupRoute(server as any));
   server.app.use(loggerMiddleware);
 }
 

@@ -20,6 +20,9 @@ export type ApiRouteContext = JsonBodyContext & {
 export type JoinRouteContext = ApiRouteContext;
 export type AccountRouteContext = ApiRouteContext;
 export type GameRouteContext = ApiRouteContext;
+export type CleanupRouteContext = ApiRouteContext & {
+  headers?: Record<string, string | string[] | undefined>;
+};
 export type DeleteRouteContext = {
   method: string;
   path: string;
@@ -35,5 +38,7 @@ export type DeleteRouteServer = {
     deleteMatchQueue?: (matchID: string) => void;
   };
 };
+
+export type CleanupRouteServer = DeleteRouteServer;
 
 export type RouteNext = Next;

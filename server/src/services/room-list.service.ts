@@ -69,6 +69,12 @@ function buildRoomItem(match: RoomMatchPayload, gameMap: ReturnType<typeof build
   };
 }
 
+function shouldIncludeRoom(match: RoomMatchPayload, gameMap: ReturnType<typeof buildGameMap>) {
+  const game = gameMap.get(match.matchID);
+  if (!game) return true;
+  return !['completed', 'abandoned'].includes(game.status);
+}
+
 function sortRoomsByCreatedAt(
   rooms: RoomListItem[],
   gameMap: ReturnType<typeof buildGameMap>,
@@ -88,7 +94,9 @@ export async function listRooms() {
   const matches = await loadLobbyMatches();
   const gameMap = buildGameMap(await loadRoomGames(matches.map((match) => match.matchID)));
   const rooms = sortRoomsByCreatedAt(
-    matches.map((match) => buildRoomItem(match, gameMap)),
+    matches
+      .filter((match) => shouldIncludeRoom(match, gameMap))
+      .map((match) => buildRoomItem(match, gameMap)),
     gameMap,
   );
   return rooms;

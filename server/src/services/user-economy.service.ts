@@ -68,6 +68,17 @@ function getBotReward(game: EconomyGame) {
   return Math.max(game.coin_rules?.bot_reward ?? DEFAULT_STAKE, 0);
 }
 
+function buildReservedCoinsClampUpdate(reservedAmount: number) {
+  return {
+    $max: [
+      {
+        $subtract: ['$wallet.coins_reserved', Math.max(reservedAmount, 0)],
+      },
+      0,
+    ],
+  };
+}
+
 async function syncUserLevels(userIds: string[]) {
   const objectIds = userIds
     .map(toObjectId)
@@ -129,11 +140,13 @@ export async function releaseReservedCoins(players: EconomyPlayer[]) {
     .map((player) => ({
       updateOne: {
         filter: { _id: player.user_id },
-        update: {
-          $inc: {
-            'wallet.coins_reserved': -(player.coins?.reserved ?? 0),
+        update: [
+          {
+            $set: {
+              'wallet.coins_reserved': buildReservedCoinsClampUpdate(player.coins?.reserved ?? 0),
+            },
           },
-        },
+        ],
       },
     }));
 
@@ -195,13 +208,19 @@ export async function settleCompletedEconomy(game: EconomyGame, players: Economy
       return {
         updateOne: {
           filter: { _id: player.user_id },
-          update: {
-            $inc: {
-              'wallet.coins_balance': player.coins?.delta ?? 0,
-              'wallet.coins_reserved': -reservedAmount,
-              'progression.xp_total': player.xp?.delta ?? 0,
+          update: [
+            {
+              $set: {
+                'wallet.coins_balance': {
+                  $add: ['$wallet.coins_balance', player.coins?.delta ?? 0],
+                },
+                'wallet.coins_reserved': buildReservedCoinsClampUpdate(reservedAmount),
+                'progression.xp_total': {
+                  $add: ['$progression.xp_total', player.xp?.delta ?? 0],
+                },
+              },
             },
-          },
+          ],
         },
       };
     });
