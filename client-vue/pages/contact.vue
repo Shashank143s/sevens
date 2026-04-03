@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
+const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/contact', config.public.siteUrl).toString())
@@ -27,9 +28,13 @@ useSeoMeta({
     :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.92)), url(${backgroundGame})` }"
   >
     <header class="contact-page__header">
-      <NuxtLink to="/" class="contact-page__back">
+      <button
+        type="button"
+        class="contact-page__back"
+        @click="router.push('/')"
+      >
         ← Home
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 

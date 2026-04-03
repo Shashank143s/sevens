@@ -2,6 +2,7 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import apkUrl from '~/assets/downloads/Sevens.apk?url'
 
+const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
@@ -28,9 +29,13 @@ useSeoMeta({
     :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.94)), url(${backgroundGame})` }"
   >
     <header class="downloads-page__header">
-      <NuxtLink to="/account" class="downloads-page__back">
+      <button
+        type="button"
+        class="downloads-page__back"
+        @click="router.push('/account')"
+      >
         ← Account
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 

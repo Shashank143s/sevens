@@ -98,9 +98,13 @@ onMounted(async () => {
     :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.94)), url(${backgroundGame})` }"
   >
     <header class="games-page__header">
-      <NuxtLink to="/account" class="games-page__back">
+      <button
+        type="button"
+        class="games-page__back"
+        @click="router.push('/account')"
+      >
         ← Account
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 

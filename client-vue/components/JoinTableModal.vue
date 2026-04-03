@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const router = useRouter()
+
 const props = defineProps<{
   matchId: string
   roomName?: string
@@ -36,13 +38,14 @@ const emit = defineEmits<{
             <IconsCoinIcon class="mr-2 h-4 w-4" />
             {{ roomStake }}
           </div>
-          <NuxtLink
-            to="/lobby"
+          <button
+            type="button"
             class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xl leading-none text-slate-400 transition hover:bg-white/8 hover:text-white"
             aria-label="Back to Lobby"
+            @click="router.push('/lobby')"
           >
             ×
-          </NuxtLink>
+          </button>
         </div>
       </div>
     </div>
@@ -88,12 +91,13 @@ const emit = defineEmits<{
       </div>
 
       <div class="grid grid-cols-2 gap-3">
-        <NuxtLink
-          to="/lobby"
+        <button
+          type="button"
           class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+          @click="router.push('/lobby')"
         >
           Back to Lobby
-        </NuxtLink>
+        </button>
         <button
           type="button"
           class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 font-bold text-slate-900 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"

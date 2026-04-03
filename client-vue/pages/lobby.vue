@@ -311,9 +311,13 @@ onMounted(() => {
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="mb-6 flex items-center justify-between gap-4">
-      <NuxtLink to="/" class="flex items-center gap-2 text-slate-400 hover:text-white">
+      <button
+        type="button"
+        class="flex items-center gap-2 text-slate-400 hover:text-white"
+        @click="router.push('/')"
+      >
         ← Back
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 

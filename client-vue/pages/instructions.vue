@@ -2,6 +2,7 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
+const router = useRouter()
 const config = useRuntimeConfig()
 const { session, hydrated } = usePlayerSession()
 const mounted = ref(false)
@@ -86,6 +87,10 @@ const coinRules = [
 onMounted(() => {
   mounted.value = true
 })
+
+function goToPrimaryCta() {
+  router.push(primaryCta.value.to)
+}
 </script>
 
 <template>
@@ -94,9 +99,13 @@ onMounted(() => {
     :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.9)), url(${backgroundGame})` }"
   >
     <header class="instructions-page__header">
-      <NuxtLink :to="primaryCta.to" class="instructions-page__back">
+      <button
+        type="button"
+        class="instructions-page__back"
+        @click="goToPrimaryCta"
+      >
         ← {{ primaryCta.label }}
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 

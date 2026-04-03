@@ -2,6 +2,7 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { blogPosts, getBlogPost } from '~/data/blog'
 
+const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const slug = computed(() => String(route.params.slug || ''))
@@ -45,7 +46,7 @@ useHead(() => ({
     :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.76), rgba(2, 6, 23, 0.95)), url(${backgroundGame})` }"
   >
     <header class="blog-article-page__header">
-      <NuxtLink to="/blog" class="blog-article-page__back">← Blog</NuxtLink>
+      <button type="button" class="blog-article-page__back" @click="router.push('/blog')">← Blog</button>
       <AppUserMenu />
     </header>
 

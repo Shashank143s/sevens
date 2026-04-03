@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const router = useRouter()
+
 const props = defineProps<{
   roomName?: string
   joinedCount: number
@@ -81,12 +83,13 @@ const emit = defineEmits<{
         <div v-else class="rounded-2xl border border-red-400/20 bg-red-950/35 px-4 py-3 text-center text-sm font-semibold text-red-100">
           Offline
         </div>
-        <NuxtLink
-          to="/lobby"
+        <button
+          type="button"
           class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-900 transition hover:bg-amber-600"
+          @click="router.push('/lobby')"
         >
           Back to Lobby
-        </NuxtLink>
+        </button>
       </div>
     </div>
   </div>
