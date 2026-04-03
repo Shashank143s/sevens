@@ -3,9 +3,10 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 
 const router = useRouter()
-const { session, clearSession, hydrated } = usePlayerSession()
+const { session, hydrated } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccountSummary } = useAccountApi()
+const { signOut } = useGoogleLogin()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isSummaryLoading = ref(true)
@@ -67,7 +68,7 @@ async function confirmDeleteAccount() {
 
   try {
     await deleteAccount(accountIdentifier.value)
-    clearSession()
+    await signOut()
     clearAllCredentials()
     router.replace('/')
   } finally {
@@ -76,8 +77,8 @@ async function confirmDeleteAccount() {
   }
 }
 
-function logout() {
-  clearSession()
+async function logout() {
+  await signOut()
   clearAllCredentials()
   router.push('/')
 }

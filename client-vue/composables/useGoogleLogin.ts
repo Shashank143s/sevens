@@ -62,7 +62,7 @@ function buildIdentity(claims: Record<string, unknown>, tokenClaims: GoogleToken
 
 export function useGoogleLogin() {
   const isOpen = useState<boolean>(AUTH_OPEN_KEY, () => false)
-  const { setSession } = usePlayerSession()
+  const { clearSession, setSession } = usePlayerSession()
   const isNativePlatform = computed(() => import.meta.client && Capacitor.isNativePlatform())
   const { signInWithGoogleCredential, upsertAccount } = useAccountApi()
 
@@ -72,6 +72,18 @@ export function useGoogleLogin() {
 
   function closeAuth() {
     isOpen.value = false
+  }
+
+  async function signOut() {
+    if (isNativePlatform.value) {
+      try {
+        await GoogleSignIn.signOut()
+      } catch (error) {
+        console.error('[google-login] Failed to sign out native Google session:', error)
+      }
+    }
+
+    clearSession()
   }
 
   async function handleGoogleSuccess(
@@ -168,5 +180,6 @@ export function useGoogleLogin() {
     closeAuth,
     handleGoogleSuccess,
     signInWithNativeGoogle,
+    signOut,
   }
 }
