@@ -86,6 +86,7 @@ export default defineNuxtConfig({
   },
   pwa: {
     registerType: 'autoUpdate',
+    injectRegister: 'inline',
     client: {
       installPrompt: true,
       periodicSyncForUpdates: 3600,
