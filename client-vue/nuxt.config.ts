@@ -10,6 +10,23 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', 'nuxt-google-auth', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
+  routeRules: {
+    '/sw.js': {
+      headers: {
+        'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    },
+    '/manifest.webmanifest': {
+      headers: {
+        'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    },
+    '/_nuxt/**': {
+      headers: {
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    },
+  },
   // Define runtime config here; access with useRuntimeConfig().public in app. Localhost-only defaults for dev.
   runtimeConfig: {
     public: {
@@ -199,6 +216,7 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
+      cleanupOutdatedCaches: true,
       globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
       navigateFallback: null,
       runtimeCaching: [
