@@ -72,6 +72,10 @@ type UpsertAccountResponse = {
   user: AccountApiUser
 }
 
+type GoogleSignInResponse = {
+  user: AccountApiUser
+}
+
 export type AccountRecentGame = {
   match_id: string
   room_name?: string
@@ -151,6 +155,16 @@ export function useAccountApi() {
     })
   }
 
+  async function signInWithGoogleCredential(credential: string, legalAcceptedAt?: string) {
+    return $fetch<GoogleSignInResponse>(`${config.public.apiBase}/api/auth/google/sign-in`, {
+      method: 'POST',
+      body: {
+        credential,
+        legal_accepted_at: legalAcceptedAt,
+      },
+    })
+  }
+
   async function deleteAccount(userID: string) {
     return $fetch<DeleteAccountResponse>(buildAccountUrl(userID), {
       method: 'DELETE',
@@ -172,6 +186,7 @@ export function useAccountApi() {
     getAccountGames,
     getAccountSummary,
     getLeaderboard,
+    signInWithGoogleCredential,
     upsertAccount,
   }
 }

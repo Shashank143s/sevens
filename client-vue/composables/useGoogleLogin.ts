@@ -2,6 +2,9 @@
  * Composable for Google login flow: opens/closes auth UI (modal or drawer)
  * and sets player session on successful Google sign-in.
  */
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in'
+import { Capacitor } from '@capacitor/core'
+
 const AUTH_OPEN_KEY = 'sevens-google-auth-open'
 
 type GoogleTokenClaims = {
@@ -19,11 +22,11 @@ type AccountIdentity = {
 }
 
 type SyncedAccount = {
-  id: string
+  id?: string
   name: string
   avatar: string
   image?: string
-  email: string
+  email?: string
   lastLoginAt: number
 }
 
@@ -60,7 +63,8 @@ function buildIdentity(claims: Record<string, unknown>, tokenClaims: GoogleToken
 export function useGoogleLogin() {
   const isOpen = useState<boolean>(AUTH_OPEN_KEY, () => false)
   const { setSession } = usePlayerSession()
-  const { upsertAccount } = useAccountApi()
+  const isNativePlatform = computed(() => import.meta.client && Capacitor.isNativePlatform())
+  const { signInWithGoogleCredential, upsertAccount } = useAccountApi()
 
   function openAuth() {
     isOpen.value = true
@@ -81,13 +85,21 @@ export function useGoogleLogin() {
       ? await syncAccount(identity, firstName, lastName, legalAcceptedAt)
       : null
 
-    setSession(syncedAccount ?? {
-      name: identity.fullName,
-      avatar: '🐶',
-      image: identity.image,
-      email: identity.email,
-      lastLoginAt: identity.lastLoginAt,
-    })
+    setSession(syncedAccount ?? buildLocalSession(identity))
+    closeAuth()
+  }
+
+  async function signInWithNativeGoogle(legalAcceptedAt?: string) {
+    const result = await GoogleSignIn.signIn()
+
+    if (!result.idToken) {
+      throw new Error('Google sign-in did not return an ID token')
+    }
+
+    const response = await signInWithGoogleCredential(result.idToken, legalAcceptedAt)
+    const syncedAccount = mapSyncedAccount(response.user)
+
+    setSession(syncedAccount)
     closeAuth()
   }
 
@@ -114,24 +126,47 @@ export function useGoogleLogin() {
           : undefined,
       })
 
-      return {
-        id: response.user._id,
-        name: response.user.full_name,
-        avatar: response.user.avatar_emoji || '🐶',
-        image: response.user.profile_image_url,
-        email: response.user.email,
-        lastLoginAt: new Date(response.user.last_login_at).getTime(),
-      } satisfies SyncedAccount
+      return mapSyncedAccount(response.user)
     } catch (error) {
       console.error('[google-login] Failed to sync account:', error)
       return null
     }
   }
 
+  function buildLocalSession(identity: AccountIdentity): SyncedAccount {
+    return {
+      name: identity.fullName,
+      avatar: '🐶',
+      image: identity.image,
+      email: identity.email,
+      lastLoginAt: identity.lastLoginAt,
+    }
+  }
+
+  function mapSyncedAccount(user: {
+    _id: string
+    full_name: string
+    avatar_emoji?: string
+    profile_image_url?: string
+    email: string
+    last_login_at: string
+  }): SyncedAccount {
+    return {
+      id: user._id,
+      name: user.full_name,
+      avatar: user.avatar_emoji || '🐶',
+      image: user.profile_image_url,
+      email: user.email,
+      lastLoginAt: new Date(user.last_login_at).getTime(),
+    }
+  }
+
   return {
     isOpen: readonly(isOpen),
+    isNativePlatform,
     openAuth,
     closeAuth,
     handleGoogleSuccess,
+    signInWithNativeGoogle,
   }
 }
