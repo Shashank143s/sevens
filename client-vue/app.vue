@@ -99,6 +99,7 @@ onUnmounted(() => {
 <template>
   <div class="app-shell">
     <NuxtPwaAssets />
+    <NuxtPwaManifest />
 
     <Transition name="launch-splash">
       <div
