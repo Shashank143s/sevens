@@ -66,6 +66,8 @@ function getGoogleAccounts(): GoogleAccounts | null {
 }
 
 let scriptPromise: Promise<void> | null = null
+let initializedClientId: string | null = null
+let credentialHandler: ((response: GoogleCredentialResponse) => void) | null = null
 
 function ensureGoogleScript() {
   if (scriptPromise) return scriptPromise
@@ -99,6 +101,10 @@ function ensureGoogleScript() {
   return scriptPromise
 }
 
+function emitCredential(response: GoogleCredentialResponse) {
+  credentialHandler?.(response)
+}
+
 function renderButton() {
   const googleAccounts = getGoogleAccounts()
   if (!googleAccounts || !root.value) return
@@ -115,6 +121,30 @@ function renderButton() {
   })
 }
 
+function bindCredentialHandler() {
+  credentialHandler = (response) => {
+    if (!response.credential) {
+      emit('error', new Error('Google sign-in did not return a credential'))
+      return
+    }
+
+    emit('success', {
+      credential: response.credential,
+      claims: decodeJwtPayload<GoogleTokenClaims>(response.credential) ?? {},
+    })
+  }
+}
+
+function initializeGoogleAccounts(googleAccounts: GoogleAccounts) {
+  if (initializedClientId === clientId) return
+
+  googleAccounts.id.initialize({
+    client_id: clientId,
+    callback: emitCredential,
+  })
+  initializedClientId = clientId
+}
+
 async function initializeButton() {
   if (!clientId) {
     emit('error', new Error('Missing Google client ID'))
@@ -129,20 +159,8 @@ async function initializeButton() {
     return
   }
 
-  googleAccounts.id.initialize({
-    client_id: clientId,
-    callback: (response) => {
-      if (!response.credential) {
-        emit('error', new Error('Google sign-in did not return a credential'))
-        return
-      }
-
-      emit('success', {
-        credential: response.credential,
-        claims: decodeJwtPayload<GoogleTokenClaims>(response.credential) ?? {},
-      })
-    },
-  })
+  bindCredentialHandler()
+  initializeGoogleAccounts(googleAccounts)
 
   await nextTick()
   renderButton()
@@ -164,6 +182,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  credentialHandler = null
 })
 
 watch(() => props.options, async () => {
