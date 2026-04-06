@@ -24,6 +24,12 @@ type GoogleAccounts = {
   }
 }
 
+type GoogleIdentityRuntime = {
+  scriptPromise: Promise<void> | null
+  initializedClientId: string | null
+  credentialHandler: ((response: GoogleCredentialResponse) => void) | null
+}
+
 const props = withDefaults(defineProps<{
   options?: GoogleButtonOptions
   minWidth?: number
@@ -65,14 +71,24 @@ function getGoogleAccounts(): GoogleAccounts | null {
   return (window as typeof window & { google?: { accounts?: GoogleAccounts } }).google?.accounts ?? null
 }
 
-let scriptPromise: Promise<void> | null = null
-let initializedClientId: string | null = null
-let credentialHandler: ((response: GoogleCredentialResponse) => void) | null = null
+function getGoogleRuntime(): GoogleIdentityRuntime {
+  const runtimeWindow = window as typeof window & { __sevensGoogleIdentity?: GoogleIdentityRuntime }
+  if (!runtimeWindow.__sevensGoogleIdentity) {
+    runtimeWindow.__sevensGoogleIdentity = {
+      scriptPromise: null,
+      initializedClientId: null,
+      credentialHandler: null,
+    }
+  }
+  return runtimeWindow.__sevensGoogleIdentity
+}
 
 function ensureGoogleScript() {
-  if (scriptPromise) return scriptPromise
+  const runtime = getGoogleRuntime()
 
-  scriptPromise = new Promise((resolve, reject) => {
+  if (runtime.scriptPromise) return runtime.scriptPromise
+
+  runtime.scriptPromise = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-sevens-google-gis="1"]')
     if (existing?.dataset.loaded === 'true') {
       resolve()
@@ -98,11 +114,11 @@ function ensureGoogleScript() {
     document.head.appendChild(script)
   })
 
-  return scriptPromise
+  return runtime.scriptPromise
 }
 
 function emitCredential(response: GoogleCredentialResponse) {
-  credentialHandler?.(response)
+  getGoogleRuntime().credentialHandler?.(response)
 }
 
 function renderButton() {
@@ -122,7 +138,7 @@ function renderButton() {
 }
 
 function bindCredentialHandler() {
-  credentialHandler = (response) => {
+  getGoogleRuntime().credentialHandler = (response) => {
     if (!response.credential) {
       emit('error', new Error('Google sign-in did not return a credential'))
       return
@@ -136,13 +152,14 @@ function bindCredentialHandler() {
 }
 
 function initializeGoogleAccounts(googleAccounts: GoogleAccounts) {
-  if (initializedClientId === clientId) return
+  const runtime = getGoogleRuntime()
+  if (runtime.initializedClientId === clientId) return
 
   googleAccounts.id.initialize({
     client_id: clientId,
     callback: emitCredential,
   })
-  initializedClientId = clientId
+  runtime.initializedClientId = clientId
 }
 
 async function initializeButton() {
@@ -182,7 +199,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
-  credentialHandler = null
+  getGoogleRuntime().credentialHandler = null
 })
 
 watch(() => props.options, async () => {
