@@ -310,10 +310,10 @@ onMounted(() => {
     class="box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="mb-6 flex items-center justify-between gap-4">
+    <header class="lobby-page__header">
       <button
         type="button"
-        class="flex items-center gap-2 text-slate-400 hover:text-white"
+        class="lobby-page__back"
         @click="router.push('/')"
       >
         ← Back
@@ -711,3 +711,41 @@ onMounted(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.lobby-page__header {
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.15rem 0;
+}
+
+.lobby-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.lobby-page__back:hover,
+.lobby-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
+}
+</style>
