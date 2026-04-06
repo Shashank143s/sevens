@@ -2,7 +2,9 @@ import { Client } from 'boardgame.io/client';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { RandomBot } from 'boardgame.io/ai';
 import { Sevens } from './game';
-import { SERVER_URL } from './config';
+import { PORT } from './config';
+
+const INTERNAL_SERVER_URL = `http://127.0.0.1:${PORT}`;
 
 function createSevensBot() {
   const enumerate = (Sevens as { ai?: { enumerate: (G: unknown, ctx: { currentPlayer: string }, playerID: string) => unknown[] } }).ai?.enumerate;
@@ -21,7 +23,7 @@ function createSevensBot() {
 export function runBot(matchID: string, playerID: string, credentials: string): void {
   const client = Client({
     game: Sevens,
-    multiplayer: SocketIO({ server: SERVER_URL }),
+    multiplayer: SocketIO({ server: INTERNAL_SERVER_URL }),
     matchID,
     playerID,
     credentials,

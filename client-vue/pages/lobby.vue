@@ -8,7 +8,7 @@ const router = useRouter()
 const { session } = usePlayerSession()
 const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
-const { getAccount } = useAccountApi()
+const { getAccountSummary } = useAccountApi()
 const { isOnline } = useOnlineStatus()
 const {
   isSupported: notificationsSupported,
@@ -115,8 +115,20 @@ async function fetchRooms() {
   loading.value = true
   error.value = null
   try {
-    await refreshCoinsBalance().catch(() => {})
-    rooms.value = await listMatches()
+    const [coinsResult, roomsResult] = await Promise.allSettled([
+      refreshCoinsBalance(),
+      listMatches(),
+    ])
+
+    if (coinsResult.status === 'rejected') {
+      console.error('[lobby] Failed to refresh coins balance:', coinsResult.reason)
+    }
+
+    if (roomsResult.status === 'fulfilled') {
+      rooms.value = roomsResult.value
+    } else {
+      throw roomsResult.reason
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load rooms'
   } finally {
@@ -236,7 +248,7 @@ async function deleteCreatedRoom(matchID: string) {
 async function refreshCoinsBalance() {
   const identifier = session.value?.id || session.value?.email?.trim()
   if (!identifier) return
-  const response = await getAccount(identifier, 0, 0)
+  const response = await getAccountSummary(identifier)
   coinsBalance.value = response.user.wallet?.coins_balance ?? null
 }
 
@@ -295,13 +307,17 @@ onMounted(() => {
 
 <template>
   <div
-    class="min-h-screen min-h-[100dvh] bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
+    class="box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="mb-6 flex items-center justify-between gap-4">
-      <NuxtLink to="/" class="flex items-center gap-2 text-slate-400 hover:text-white">
+    <header class="lobby-page__header">
+      <button
+        type="button"
+        class="lobby-page__back"
+        @click="router.push('/')"
+      >
         ← Back
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 
@@ -695,3 +711,41 @@ onMounted(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.lobby-page__header {
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.15rem 0;
+}
+
+.lobby-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.lobby-page__back:hover,
+.lobby-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
+}
+</style>

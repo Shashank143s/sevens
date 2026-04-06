@@ -59,8 +59,8 @@ export type AccountApiUserPayload = {
     privacy_policy_accepted_at?: Date;
     terms_accepted_at?: Date;
   };
-  daily_room_limit: number;
-  remaining_rooms: number;
+  daily_room_limit?: number;
+  remaining_rooms?: number;
   created_at?: Date;
   updated_at?: Date;
 };
@@ -93,4 +93,26 @@ export type LeaderboardEntry = {
 export type LeaderboardResponse = {
   entries: LeaderboardEntry[];
   current_user?: LeaderboardEntry;
+};
+
+export type AccountGamesResponse = {
+  user: {
+    _id: string;
+    stats?: {
+      games_played: number;
+      wins: number;
+      losses: number;
+    };
+  };
+  recent_games_page: {
+    games: RecentGameResult[];
+    has_more: boolean;
+    offset: number;
+    limit: number;
+  };
+};
+
+export type GoogleSignInPayload = {
+  credential?: string;
+  legal_accepted_at?: string | number | Date;
 };

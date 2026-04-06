@@ -66,6 +66,8 @@ const didIWin = computed(() => {
 const redirectSeconds = ref(30)
 const winnerCoinsDelta = ref<number | null>(null)
 const winnerTotalCoins = ref<number | null>(null)
+const gameFinishedLocally = ref(false)
+const redirectDeadline = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
 let deleteRequested = false
 let completionSynced = false
@@ -77,13 +79,37 @@ function clearRedirectTimer() {
   }
 }
 
+async function syncRedirectState() {
+  if (!redirectDeadline.value) return
+
+  const remainingMs = redirectDeadline.value - Date.now()
+  const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000))
+  redirectSeconds.value = remainingSeconds
+
+  if (remainingMs <= 0) {
+    clearRedirectTimer()
+    await router.replace('/lobby')
+  }
+}
+
+function handleVisibilityResume() {
+  if (!gameFinishedLocally.value) return
+  void syncRedirectState()
+}
+
 watch(
   isGameOver,
   async (over) => {
     clearRedirectTimer()
-    if (!over) return
+    if (!over) {
+      gameFinishedLocally.value = false
+      redirectDeadline.value = null
+      return
+    }
+    gameFinishedLocally.value = true
     winnerCoinsDelta.value = null
     winnerTotalCoins.value = null
+    redirectDeadline.value = Date.now() + 30_000
     redirectSeconds.value = 30
     // Clear stored creds so user can re-join next game cleanly.
     clearCredentials(props.matchId)
@@ -97,13 +123,10 @@ watch(
         headers: { 'Content-Type': 'application/json' },
       }).catch(() => {})
     }
-    redirectTimer = setInterval(async () => {
-      redirectSeconds.value -= 1
-      if (redirectSeconds.value <= 0) {
-        clearRedirectTimer()
-        await router.push('/lobby')
-      }
+    redirectTimer = setInterval(() => {
+      void syncRedirectState()
     }, 1000)
+    await syncRedirectState()
   },
   { immediate: true },
 )
@@ -148,6 +171,17 @@ async function syncCompletedGame() {
 }
 
 onUnmounted(clearRedirectTimer)
+onMounted(() => {
+  if (!import.meta.client) return
+  document.addEventListener('visibilitychange', handleVisibilityResume)
+  window.addEventListener('pageshow', handleVisibilityResume)
+})
+
+onUnmounted(() => {
+  if (!import.meta.client) return
+  document.removeEventListener('visibilitychange', handleVisibilityResume)
+  window.removeEventListener('pageshow', handleVisibilityResume)
+})
 
 async function fetchMatchPlayers() {
   if (!props.matchId) return

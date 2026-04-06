@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { GameModel } from '../models';
+import { GameModel, UserModel } from '../models';
 import type { CreateGamePayload, GamePlayerPayload, UpdateGamePayload } from '../types/game-record.types';
 import { syncUserStatsForPlayers } from './user-stats.service';
 import {
@@ -100,13 +100,14 @@ function resolveWinnerUserId(players: any[], payload: UpdateGamePayload) {
   return winner?.user_id ? String(winner.user_id) : undefined;
 }
 
-function buildCreateDocument(matchID: string, payload: CreateGamePayload) {
+function buildCreateDocument(matchID: string, payload: CreateGamePayload, creatorDisplayName?: string) {
   const players = normalizePlayers(payload.players);
   return {
     match_id: matchID,
     room_name: validateRoomName(payload.room_name),
     room_size: payload.room_size,
     creator_user_id: toObjectId(payload.creator_user_id),
+    creator_display_name: creatorDisplayName,
     players,
     player_count: countPlayers(players),
     bot_count: countBots(players),
@@ -128,6 +129,14 @@ function buildCreateDocument(matchID: string, payload: CreateGamePayload) {
     access: buildAccessDocument(payload),
     metadata: payload.metadata,
   };
+}
+
+async function resolveCreatorDisplayName(userId?: string) {
+  if (!userId || !Types.ObjectId.isValid(userId)) return undefined;
+
+  const creator = await UserModel.findById(userId, { full_name: 1, first_name: 1 } as any).lean();
+  if (!creator) return undefined;
+  return creator.full_name ?? creator.first_name ?? undefined;
 }
 
 function buildAccessDocument(payload: CreateGamePayload) {
@@ -259,7 +268,8 @@ export async function createGameRecord(matchID: string, payload: CreateGamePaylo
       Math.max(payload.coin_rules?.stake ?? 10, 10),
     );
   }
-  const game = new GameModel(buildCreateDocument(matchID, payload));
+  const creatorDisplayName = await resolveCreatorDisplayName(payload.creator_user_id);
+  const game = new GameModel(buildCreateDocument(matchID, payload, creatorDisplayName));
   return game.save();
 }
 
@@ -297,7 +307,7 @@ export async function updateGameRecord(matchID: string, payload: UpdateGamePaylo
         finalPlayers,
       ),
     },
-    { new: true, lean: true },
+    { returnDocument: 'after', lean: true },
   );
   if (payload.status === 'completed') {
     await syncUserStatsForPlayers(finalPlayers);

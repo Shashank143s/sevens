@@ -1,7 +1,7 @@
+import { Types } from 'mongoose';
 import { GameModel, UserModel } from '../models';
 import { MAX_DAILY_GAMES_PER_USER } from '../config';
-import type { AccountApiUserPayload, AccountGeoPayload, AccountPayload, LeaderboardEntry, LeaderboardResponse, RecentGameResult } from '../types/account.types';
-import { syncUserStats } from './user-stats.service';
+import type { AccountApiUserPayload, AccountGamesResponse, AccountGeoPayload, AccountPayload, LeaderboardEntry, LeaderboardResponse, RecentGameResult } from '../types/account.types';
 import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
 import { createUserLookup, normalizeDate, normalizeEmail } from '../utils/user.util';
@@ -44,8 +44,30 @@ async function findUserByIdentifier(identifier: string) {
   return UserModel.findOne(createUserLookup(identifier) as any).lean();
 }
 
-async function findUserById(userId: string) {
-  return UserModel.findById(userId).lean();
+async function findAccountSummaryByIdentifier(identifier: string) {
+  return UserModel.findOne(createUserLookup(identifier) as any, {
+    email: 1,
+    first_name: 1,
+    last_name: 1,
+    full_name: 1,
+    profile_image_url: 1,
+    avatar_emoji: 1,
+    last_login_at: 1,
+    is_active: 1,
+    deleted_at: 1,
+    wallet: 1,
+    progression: 1,
+    location: 1,
+    legal_consent: 1,
+    created_at: 1,
+    updated_at: 1,
+  } as any).lean();
+}
+
+async function findGamesUserByIdentifier(identifier: string) {
+  return UserModel.findOne(createUserLookup(identifier) as any, {
+    stats: 1,
+  } as any).lean();
 }
 
 function normalizePaginationValue(value: number, fallback: number) {
@@ -53,8 +75,7 @@ function normalizePaginationValue(value: number, fallback: number) {
   return Math.floor(value);
 }
 
-async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
-  const remainingRooms = await getRemainingRoomsForUser(String(user._id));
+function buildAccountUserBase(user: any): Omit<AccountApiUserPayload, 'daily_room_limit' | 'remaining_rooms'> {
   return {
     ...user,
     _id: String(user._id),
@@ -71,9 +92,20 @@ async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
           terms_accepted_at: user.legal_consent.terms_accepted_at,
         }
       : undefined,
+  };
+}
+
+async function buildAccountUser(user: any): Promise<AccountApiUserPayload> {
+  const remainingRooms = await getRemainingRoomsForUser(String(user._id));
+  return {
+    ...buildAccountUserBase(user),
     daily_room_limit: MAX_DAILY_GAMES_PER_USER,
     remaining_rooms: remainingRooms,
   };
+}
+
+function buildAccountSummaryUser(user: any): AccountApiUserPayload {
+  return buildAccountUserBase(user);
 }
 
 function mapRecentGame(game: any, userId: string): RecentGameResult {
@@ -99,7 +131,28 @@ function mapRecentGame(game: any, userId: string): RecentGameResult {
 async function findRecentGames(userId: string, offset = 0, limit = 5) {
   const safeOffset = normalizePaginationValue(offset, 0);
   const safeLimit = Math.min(normalizePaginationValue(limit, 5), 25);
-  const games = await GameModel.find({ 'players.user_id': userId })
+  if (safeLimit === 0) {
+    return {
+      games: [],
+      has_more: false,
+      offset: safeOffset,
+      limit: safeLimit,
+    };
+  }
+  const games = await GameModel.find(
+    { 'players.user_id': userId },
+    {
+      match_id: 1,
+      room_name: 1,
+      status: 1,
+      room_size: 1,
+      winner_user_id: 1,
+      ended_at: 1,
+      updated_at: 1,
+      bot_count: 1,
+      players: 1,
+    } as any,
+  )
     .sort({ ended_at: -1, updated_at: -1 })
     .skip(safeOffset)
     .limit(safeLimit + 1)
@@ -115,13 +168,49 @@ async function findRecentGames(userId: string, offset = 0, limit = 5) {
 
 // Returns account data plus the recent history needed for the account page.
 export async function getAccountByIdentifier(identifier: string, offset = 0, limit = 5) {
-  const user = await findUserByIdentifier(identifier);
+  const user = await findAccountSummaryByIdentifier(identifier);
   if (!user) return null;
   const userId = String(user._id);
-  await syncUserStats(userId);
-  const refreshedUser = await findUserById(userId);
   const recent_games = await findRecentGames(userId, offset, limit);
-  return { user: await buildAccountUser(refreshedUser ?? user), recent_games_page: recent_games };
+  return { user: await buildAccountUser(user), recent_games_page: recent_games };
+}
+
+export async function getAccountSummaryByIdentifier(identifier: string) {
+  const user = await findAccountSummaryByIdentifier(identifier);
+  if (!user) return null;
+  return { user: buildAccountSummaryUser(user) };
+}
+
+export async function getAccountGamesByIdentifier(identifier: string, offset = 0, limit = 5): Promise<AccountGamesResponse | null> {
+  const isObjectIdIdentifier = Types.ObjectId.isValid(identifier);
+
+  let user: Awaited<ReturnType<typeof findGamesUserByIdentifier>> | null = null;
+  let recent_games: Awaited<ReturnType<typeof findRecentGames>>;
+
+  if (isObjectIdIdentifier) {
+    const results = await Promise.all([
+      findGamesUserByIdentifier(identifier),
+      findRecentGames(identifier, offset, limit),
+    ]);
+    [user, recent_games] = results;
+  } else {
+    user = await findGamesUserByIdentifier(identifier);
+    if (!user) return null;
+    recent_games = await findRecentGames(String(user._id), offset, limit);
+  }
+
+  if (!user) return null;
+  return {
+    user: {
+      _id: String(user._id),
+      stats: user.stats ?? {
+        games_played: 0,
+        wins: 0,
+        losses: 0,
+      },
+    },
+    recent_games_page: recent_games,
+  };
 }
 
 function resolveEmail(identifier: string, payload: AccountPayload) {
@@ -151,7 +240,7 @@ export async function upsertAccountByIdentifier(identifier: string, payload: Acc
       },
     },
     {
-      new: true,
+      returnDocument: 'after',
       upsert: true,
       setDefaultsOnInsert: true,
     },
@@ -202,7 +291,7 @@ export async function upsertAccountWithGeo(identifier: string, payload: AccountP
       },
     },
     {
-      new: true,
+      returnDocument: 'after',
       upsert: true,
       setDefaultsOnInsert: true,
     },
@@ -252,7 +341,19 @@ async function getLeaderboardRank(user: any): Promise<number> {
 
 export async function getLeaderboard(limit = 25, identifier?: string): Promise<LeaderboardResponse> {
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
-  const users = await UserModel.find({ is_active: true } as any)
+  const findEntriesPromise = UserModel.find(
+    { is_active: true } as any,
+    {
+      full_name: 1,
+      profile_image_url: 1,
+      avatar_emoji: 1,
+      location: 1,
+      stats: 1,
+      wallet: 1,
+      progression: 1,
+      created_at: 1,
+    } as any,
+  )
     .sort({
       'wallet.coins_balance': -1,
       'progression.level': -1,
@@ -263,13 +364,21 @@ export async function getLeaderboard(limit = 25, identifier?: string): Promise<L
     .limit(safeLimit)
     .lean();
 
+  const findCurrentUserPromise = identifier
+    ? findUserByIdentifier(identifier)
+    : Promise.resolve(null);
+
+  const [users, currentUser] = await Promise.all([
+    findEntriesPromise,
+    findCurrentUserPromise,
+  ]);
+
   const entries = users.map((user, index) => mapLeaderboardEntry(user, index + 1));
 
   if (!identifier) {
     return { entries };
   }
 
-  const currentUser = await findUserByIdentifier(identifier);
   if (!currentUser || !currentUser.is_active) {
     return { entries };
   }
@@ -298,6 +407,6 @@ export async function deleteAccountByIdentifier(identifier: string) {
         deleted_at: new Date(),
       },
     },
-    { new: true },
+    { returnDocument: 'after' },
   );
 }

@@ -247,6 +247,10 @@ const gameSchema = new Schema(
       ref: 'User',
       index: true,
     },
+    creator_display_name: {
+      type: String,
+      trim: true,
+    },
     players: {
       type: [gamePlayerSchema],
       required: true,
@@ -307,7 +311,8 @@ const gameSchema = new Schema(
   },
 );
 
-gameSchema.index({ 'players.user_id': 1, ended_at: -1 });
+gameSchema.index({ 'players.user_id': 1, ended_at: -1, updated_at: -1 });
+gameSchema.index({ creator_user_id: 1, created_at: -1 });
 
 export type GamePlayerDocument = InferSchemaType<typeof gamePlayerSchema>;
 export type GameDocument = InferSchemaType<typeof gameSchema> & {

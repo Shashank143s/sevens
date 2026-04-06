@@ -3,9 +3,10 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 
 const router = useRouter()
-const { session, clearSession, hydrated } = usePlayerSession()
+const { session, hydrated } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
-const { deleteAccount, getAccount } = useAccountApi()
+const { deleteAccount, getAccountSummary } = useAccountApi()
+const { signOut } = useGoogleLogin()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isSummaryLoading = ref(true)
@@ -67,7 +68,7 @@ async function confirmDeleteAccount() {
 
   try {
     await deleteAccount(accountIdentifier.value)
-    clearSession()
+    await signOut()
     clearAllCredentials()
     router.replace('/')
   } finally {
@@ -76,8 +77,8 @@ async function confirmDeleteAccount() {
   }
 }
 
-function logout() {
-  clearSession()
+async function logout() {
+  await signOut()
   clearAllCredentials()
   router.push('/')
 }
@@ -86,7 +87,7 @@ async function loadAccountSummary() {
   if (!accountIdentifier.value) return
   isSummaryLoading.value = true
   try {
-    const response = await getAccount(accountIdentifier.value, 0, 0)
+    const response = await getAccountSummary(accountIdentifier.value)
     coinsBalance.value = response.user.wallet?.coins_balance ?? null
     playerLevel.value = response.user.progression?.level ?? null
     xpTotal.value = response.user.progression?.xp_total ?? null
@@ -113,12 +114,16 @@ onMounted(() => {
 <template>
   <div
     class="account-page"
-    :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.92)), url(${backgroundGame})` }"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="account-page__header">
-      <NuxtLink to="/" class="account-page__back">
+      <button
+        type="button"
+        class="account-page__back"
+        @click="router.push('/')"
+      >
         ← Home
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 
@@ -279,9 +284,11 @@ onMounted(() => {
 
 <style scoped>
 .account-page {
+  box-sizing: border-box;
   position: relative;
-  min-height: 100vh;
   min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   padding:
     max(1.25rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right))
@@ -290,22 +297,45 @@ onMounted(() => {
   color: #f8fafc;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
 .account-page__header {
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 0.15rem 0;
 }
 
 .account-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
   color: rgba(226, 232, 240, 0.82);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.account-page__back:hover,
+.account-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
 }
 
 .account-page__content {

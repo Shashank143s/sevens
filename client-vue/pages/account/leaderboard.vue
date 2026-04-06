@@ -31,6 +31,20 @@ function medalTone(rank: number) {
   return ''
 }
 
+function medalLabel(rank: number) {
+  if (rank === 1) return 'Gold'
+  if (rank === 2) return 'Silver'
+  if (rank === 3) return 'Bronze'
+  return ''
+}
+
+function medalEmoji(rank: number) {
+  if (rank === 1) return '🥇'
+  if (rank === 2) return '🥈'
+  if (rank === 3) return '🥉'
+  return ''
+}
+
 async function loadLeaderboard() {
   try {
     const response = await getLeaderboard(25, currentUserId.value || undefined)
@@ -57,12 +71,16 @@ onMounted(async () => {
 <template>
   <div
     class="leaderboard-page"
-    :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.94)), url(${backgroundGame})` }"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="leaderboard-page__header">
-      <NuxtLink to="/account" class="leaderboard-page__back">
+      <button
+        type="button"
+        class="leaderboard-page__back"
+        @click="router.push('/account')"
+      >
         ← Account
-      </NuxtLink>
+      </button>
       <AppUserMenu />
     </header>
 
@@ -136,9 +154,19 @@ onMounted(async () => {
                 </p>
               </div>
             </div>
-            <div class="leaderboard-card__rank" :class="medalTone(entry.rank)">
-              <span>RANK</span>
-              <strong>{{ entry.rank }}</strong>
+            <div class="leaderboard-card__rank-wrap">
+              <span
+                v-if="entry.rank <= 3"
+                class="leaderboard-card__side-medal"
+                :title="medalLabel(entry.rank)"
+                aria-hidden="true"
+              >
+                {{ medalEmoji(entry.rank) }}
+              </span>
+              <div class="leaderboard-card__rank" :class="medalTone(entry.rank)">
+                <span>RANK</span>
+                <strong>{{ entry.rank }}</strong>
+              </div>
             </div>
           </div>
 
@@ -211,6 +239,7 @@ onMounted(async () => {
             </div>
           </div>
         </article>
+
       </section>
     </main>
   </div>
@@ -228,22 +257,45 @@ onMounted(async () => {
   color: #f8fafc;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
 .leaderboard-page__header {
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 0.15rem 0;
 }
 
 .leaderboard-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
   color: rgba(226, 232, 240, 0.82);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.leaderboard-page__back:hover,
+.leaderboard-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
 }
 
 .leaderboard-page__content {
@@ -383,11 +435,16 @@ onMounted(async () => {
 }
 
 .leaderboard-card--self {
-  border-color: rgba(56, 189, 248, 0.2);
+  border-color: rgba(34, 211, 238, 0.26);
+  background:
+    radial-gradient(circle at 14% 18%, rgba(34, 211, 238, 0.3), transparent 28%),
+    radial-gradient(circle at 88% 16%, rgba(59, 130, 246, 0.22), transparent 30%),
+    linear-gradient(145deg, rgba(8, 47, 73, 0.98), rgba(14, 116, 144, 0.2) 34%, rgba(15, 23, 42, 0.9) 60%, rgba(2, 6, 23, 0.98));
   box-shadow:
-    0 20px 44px rgba(2, 6, 23, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 0 1px rgba(56, 189, 248, 0.08);
+    0 24px 52px rgba(2, 6, 23, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(125, 211, 252, 0.08),
+    0 0 0 1px rgba(34, 211, 238, 0.1);
 }
 
 .leaderboard-card--pinned {
@@ -426,6 +483,13 @@ onMounted(async () => {
     0 16px 34px rgba(2, 6, 23, 0.16);
   color: #e2e8f0;
   text-align: center;
+}
+
+.leaderboard-card__rank-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
 }
 
 .leaderboard-card__rank span {
@@ -516,6 +580,17 @@ onMounted(async () => {
   line-height: 1;
 }
 
+.leaderboard-card__side-medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  font-size: 2.32rem;
+  line-height: 1;
+  filter: drop-shadow(0 6px 10px rgba(2, 6, 23, 0.22));
+}
+
 .leaderboard-card__meta {
   margin: 0.22rem 0 0;
   color: rgba(148, 163, 184, 0.88);
@@ -534,6 +609,28 @@ onMounted(async () => {
   color: #bae6fd;
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.leaderboard-card--self .leaderboard-card__meta {
+  color: rgba(186, 230, 253, 0.82);
+}
+
+.leaderboard-card--self .leaderboard-card__rank:not(.leaderboard-card__rank--gold):not(.leaderboard-card__rank--silver):not(.leaderboard-card__rank--bronze) {
+  border-color: rgba(125, 211, 252, 0.18);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(125, 211, 252, 0.2), transparent 42%),
+    linear-gradient(180deg, rgba(14, 116, 144, 0.24), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 34px rgba(6, 182, 212, 0.12);
+}
+
+.leaderboard-card--self .leaderboard-card__rank:not(.leaderboard-card__rank--gold):not(.leaderboard-card__rank--silver):not(.leaderboard-card__rank--bronze) span {
+  color: rgba(186, 230, 253, 0.7);
+}
+
+.leaderboard-card--self .leaderboard-card__rank:not(.leaderboard-card__rank--gold):not(.leaderboard-card__rank--silver):not(.leaderboard-card__rank--bronze) strong {
+  color: #cffafe;
 }
 
 .leaderboard-card__stats {
@@ -691,6 +788,16 @@ onMounted(async () => {
 
   .leaderboard-card__rank strong {
     font-size: 1.45rem;
+  }
+
+  .leaderboard-card__rank-wrap {
+    gap: 0.34rem;
+  }
+
+  .leaderboard-card__side-medal {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.95rem;
   }
 }
 </style>

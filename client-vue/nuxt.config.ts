@@ -8,8 +8,25 @@ const clientVueDir = fileURLToPath(new URL('.', import.meta.url))
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-google-auth', '@vite-pwa/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
+  routeRules: {
+    '/sw.js': {
+      headers: {
+        'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    },
+    '/manifest.webmanifest': {
+      headers: {
+        'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    },
+    '/_nuxt/**': {
+      headers: {
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    },
+  },
   // Define runtime config here; access with useRuntimeConfig().public in app. Localhost-only defaults for dev.
   runtimeConfig: {
     public: {
@@ -18,12 +35,6 @@ export default defineNuxtConfig({
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://sevensroyale.com',
     },
-  },
-  googleAuth: {
-    clientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID,
-    autoLoadScript: true,
-    promptOneTap: false,
-    enableServerVerify: false,
   },
   vite: {
     resolve: {
@@ -104,9 +115,103 @@ export default defineNuxtConfig({
           purpose: 'maskable',
         },
       ],
+      screenshots: [
+        {
+          src: '/screenshots/home.png',
+          sizes: '824x1786',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Sevens Royale home screen',
+        },
+        {
+          src: '/screenshots/lobby.png',
+          sizes: '826x1788',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Lobby with live multiplayer rooms',
+        },
+        {
+          src: '/screenshots/join-game.png',
+          sizes: '822x1786',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Join table room flow',
+        },
+        {
+          src: '/screenshots/game-table-start.png',
+          sizes: '832x1784',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Game table at the start of a match',
+        },
+        {
+          src: '/screenshots/game-table-pass.png',
+          sizes: '830x1786',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Game table pass state',
+        },
+        {
+          src: '/screenshots/game-complete.png',
+          sizes: '828x1790',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Winner overlay after match completion',
+        },
+        {
+          src: '/screenshots/game-xp-level.png',
+          sizes: '804x1456',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'XP and level progression screen',
+        },
+        {
+          src: '/screenshots/leaderboard.png',
+          sizes: '830x1790',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Leaderboard with player rankings',
+        },
+        {
+          src: '/screenshots/recent-games.png',
+          sizes: '824x1786',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Recent games history screen',
+        },
+        {
+          src: '/screenshots/accounts.png',
+          sizes: '826x1790',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Player account overview',
+        },
+        {
+          src: '/screenshots/game-instructions.png',
+          sizes: '824x1784',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'How to play instructions page',
+        },
+        {
+          src: '/screenshots/download.png',
+          sizes: '830x1790',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Download page for the Android app',
+        },
+        {
+          src: '/screenshots/contact-us.png',
+          sizes: '824x1786',
+          type: 'image/png',
+          form_factor: 'narrow',
+          label: 'Contact us and support page',
+        },
+      ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+      cleanupOutdatedCaches: true,
+      globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
       navigateFallback: null,
       runtimeCaching: [
         {

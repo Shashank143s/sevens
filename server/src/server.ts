@@ -6,8 +6,10 @@ import { corsMiddleware } from './middleware/cors.middleware';
 import { geoMiddleware } from './middleware/geo.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
 import { accountRoute } from './routes/account.router';
+import { authRoute } from './routes/auth.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
+import { createCleanupRoute } from './routes/cleanup.router';
 import { gameRoute } from './routes/game.router';
 import { leaderboardRoute } from './routes/leaderboard.router';
 import { roomsRoute } from './routes/rooms.router';
@@ -20,12 +22,14 @@ const server = Server({
 function registerRoutes() {
   server.app.use(corsMiddleware);
   server.app.use(geoMiddleware);
+  server.app.use(authRoute);
   server.app.use(accountRoute);
   server.app.use(leaderboardRoute);
   server.app.use(roomsRoute);
   server.app.use(gameRoute);
   server.app.use(joinRoute);
   server.app.use(createDeleteRoute(server as any));
+  server.app.use(createCleanupRoute(server as any));
   server.app.use(loggerMiddleware);
 }
 

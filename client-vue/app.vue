@@ -1,19 +1,25 @@
 <script setup lang="ts">
+import { Capacitor } from '@capacitor/core'
+
 const isOnline = ref(true)
 const pwa = import.meta.client ? usePWA() : undefined
+const mounted = ref(false)
+const nativeApp = ref(false)
 const splashDismissed = ref(false)
 const config = useRuntimeConfig()
 const route = useRoute()
 const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
+const isNativeApp = computed(() => mounted.value && nativeApp.value)
+const showWebSplash = computed(() => mounted.value && !nativeApp.value)
 const isProtectedRoute = computed(() => route.path !== '/')
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
-const appContentReady = computed(() => splashDismissed.value && desktopAuthReady.value && !authRedirecting.value)
 const router = useRouter()
 
 const showInstallBanner = computed(() =>
-  import.meta.client
+  mounted.value
+  && !isNativeApp.value
   && !!pwa?.showInstallPrompt
   && !pwa?.isPWAInstalled,
 )
@@ -63,12 +69,16 @@ async function handleProtectedRouteRedirect() {
 }
 
 onMounted(() => {
+  mounted.value = true
+  nativeApp.value = Capacitor.isNativePlatform()
   hydrateSession()
   syncOnlineState()
   window.addEventListener('online', syncOnlineState)
   window.addEventListener('offline', syncOnlineState)
 
-  if (window.matchMedia('(max-width: 640px)').matches) {
+  if (nativeApp.value) {
+    splashDismissed.value = true
+  } else if (window.matchMedia('(max-width: 640px)').matches) {
     window.setTimeout(() => {
       splashDismissed.value = true
     }, 2000)
@@ -99,84 +109,112 @@ onUnmounted(() => {
 <template>
   <div class="app-shell">
     <NuxtPwaAssets />
+    <NuxtPwaManifest />
 
-    <Transition name="launch-splash">
-      <div
-        class="launch-splash"
-        :class="{ 'launch-splash--hidden': splashDismissed }"
-      >
-        <div class="launch-splash__glow launch-splash__glow--left" />
-        <div class="launch-splash__glow launch-splash__glow--right" />
-        <div class="launch-splash__card">
-          <div class="launch-splash__logo-wrap">
-            <img
-              :src="splashLogoSrc"
-              alt="Sevens Royale"
-              class="launch-splash__logo"
-            >
-          </div>
-          <p class="launch-splash__eyebrow">The Classic Game, Elevated</p>
-          <h1 class="launch-splash__title" aria-label="Sevens">
-            <span class="launch-splash__title-char">S</span>
-            <span class="launch-splash__title-char">E</span>
-            <span class="launch-splash__title-char">V</span>
-            <span class="launch-splash__title-char launch-splash__title-char--mirror">E</span>
-            <span class="launch-splash__title-char launch-splash__title-char--mirror">N</span>
-            <span class="launch-splash__title-char launch-splash__title-char--mirror">S</span>
-          </h1>
-          <p class="launch-splash__subtitle">Let's play!</p>
-        </div>
-      </div>
-    </Transition>
-
-    <div
-      class="app-shell__content"
-      :class="{ 'app-shell__content--ready': appContentReady }"
-    >
-      <Transition name="status-banner">
-        <div v-if="showOfflineBanner" class="status-banner status-banner--offline">
-          <p>Offline mode: cached screens are available, but live multiplayer needs a connection.</p>
-        </div>
-      </Transition>
-
-      <Transition name="status-banner">
-        <div v-if="showInstallBanner" class="status-banner status-banner--install">
-          <p>Install Sevens Royale for a full-screen, app-like experience and faster return visits.</p>
-          <div class="status-banner__actions">
-            <button type="button" class="status-banner__button status-banner__button--primary" @click="installApp">
-              Install
-            </button>
-            <button type="button" class="status-banner__button" @click="dismissInstallBanner">
-              Not now
-            </button>
+    <ClientOnly>
+      <template #fallback>
+        <div class="launch-splash">
+          <div class="launch-splash__glow launch-splash__glow--left" />
+          <div class="launch-splash__glow launch-splash__glow--right" />
+          <div class="launch-splash__card">
+            <div class="launch-splash__logo-wrap">
+              <img
+                :src="splashLogoSrc"
+                alt="Sevens Royale"
+                class="launch-splash__logo"
+              >
+            </div>
+            <p class="launch-splash__eyebrow">The Classic Game, Elevated</p>
+            <h1 class="launch-splash__title" aria-label="Sevens">
+              <span class="launch-splash__title-char">S</span>
+              <span class="launch-splash__title-char">E</span>
+              <span class="launch-splash__title-char">V</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">E</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">N</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">S</span>
+            </h1>
+            <p class="launch-splash__subtitle">Let's play!</p>
           </div>
         </div>
-      </Transition>
-
-      <Transition name="status-banner">
-        <div v-if="showRefreshBanner" class="status-banner status-banner--refresh">
-          <p>A newer version of the app is ready.</p>
-          <div class="status-banner__actions">
-            <button type="button" class="status-banner__button status-banner__button--primary" @click="refreshApp">
-              Refresh
-            </button>
-            <button type="button" class="status-banner__button" @click="dismissStatusBanner">
-              Later
-            </button>
+      </template>
+      <Transition name="launch-splash">
+        <div
+          v-if="showWebSplash"
+          class="launch-splash"
+          :class="{ 'launch-splash--hidden': splashDismissed }"
+        >
+          <div class="launch-splash__glow launch-splash__glow--left" />
+          <div class="launch-splash__glow launch-splash__glow--right" />
+          <div class="launch-splash__card">
+            <div class="launch-splash__logo-wrap">
+              <img
+                :src="splashLogoSrc"
+                alt="Sevens Royale"
+                class="launch-splash__logo"
+              >
+            </div>
+            <p class="launch-splash__eyebrow">The Classic Game, Elevated</p>
+            <h1 class="launch-splash__title" aria-label="Sevens">
+              <span class="launch-splash__title-char">S</span>
+              <span class="launch-splash__title-char">E</span>
+              <span class="launch-splash__title-char">V</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">E</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">N</span>
+              <span class="launch-splash__title-char launch-splash__title-char--mirror">S</span>
+            </h1>
+            <p class="launch-splash__subtitle">Let's play!</p>
           </div>
         </div>
       </Transition>
+    </ClientOnly>
 
-      <Transition name="status-banner">
-        <div v-if="showReadyBanner" class="status-banner status-banner--ready">
-          <p>The app is ready for offline shell access.</p>
-          <div class="status-banner__actions">
-            <button type="button" class="status-banner__button status-banner__button--primary" @click="dismissStatusBanner">
-              Dismiss
-            </button>
+    <div class="app-shell__content app-shell__content--ready">
+      <ClientOnly>
+        <Transition name="status-banner">
+          <div v-if="showOfflineBanner" class="status-banner status-banner--offline">
+            <p>Offline mode: cached screens are available, but live multiplayer needs a connection.</p>
           </div>
-        </div>
-      </Transition>
+        </Transition>
+
+        <Transition name="status-banner">
+          <div v-if="showInstallBanner" class="status-banner status-banner--install">
+            <p>Install Sevens Royale for a full-screen, app-like experience and faster return visits.</p>
+            <div class="status-banner__actions">
+              <button type="button" class="status-banner__button status-banner__button--primary" @click="installApp">
+                Install
+              </button>
+              <button type="button" class="status-banner__button" @click="dismissInstallBanner">
+                Not now
+              </button>
+            </div>
+          </div>
+        </Transition>
+
+        <Transition name="status-banner">
+          <div v-if="showRefreshBanner" class="status-banner status-banner--refresh">
+            <p>A newer version of the app is ready.</p>
+            <div class="status-banner__actions">
+              <button type="button" class="status-banner__button status-banner__button--primary" @click="refreshApp">
+                Refresh
+              </button>
+              <button type="button" class="status-banner__button" @click="dismissStatusBanner">
+                Later
+              </button>
+            </div>
+          </div>
+        </Transition>
+
+        <Transition name="status-banner">
+          <div v-if="showReadyBanner" class="status-banner status-banner--ready">
+            <p>The app is ready for offline shell access.</p>
+            <div class="status-banner__actions">
+              <button type="button" class="status-banner__button status-banner__button--primary" @click="dismissStatusBanner">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </Transition>
+      </ClientOnly>
 
       <NuxtPage />
     </div>
@@ -185,24 +223,21 @@ onUnmounted(() => {
 
 <style scoped>
 .app-shell {
-  min-height: 100dvh;
+  height: 100%;
+  background:
+    radial-gradient(circle at top, rgba(209, 167, 40, 0.16), transparent 34%),
+    linear-gradient(180deg, #04140d 0%, #041a13 42%, #020617 100%);
 }
 
 .app-shell__content {
-  min-height: 100dvh;
+  height: 100%;
 }
 
-.app-shell__content:not(.app-shell__content--ready) {
-  opacity: 0;
-  pointer-events: none;
+.app-shell__content--ready {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-@media (max-width: 640px) {
-  .app-shell__content--ready {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
 .launch-splash {
   position: fixed;
   inset: 0;

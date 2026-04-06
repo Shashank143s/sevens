@@ -72,6 +72,10 @@ type UpsertAccountResponse = {
   user: AccountApiUser
 }
 
+type GoogleSignInResponse = {
+  user: AccountApiUser
+}
+
 export type AccountRecentGame = {
   match_id: string
   room_name?: string
@@ -88,6 +92,27 @@ export type AccountRecentGame = {
 
 type GetAccountResponse = {
   user: AccountApiUser
+  recent_games_page: {
+    games: AccountRecentGame[]
+    offset: number
+    limit: number
+    has_more: boolean
+  }
+}
+
+type GetAccountSummaryResponse = {
+  user: AccountApiUser
+}
+
+type GetAccountGamesResponse = {
+  user: {
+    _id: string
+    stats?: {
+      games_played: number
+      wins: number
+      losses: number
+    }
+  }
   recent_games_page: {
     games: AccountRecentGame[]
     offset: number
@@ -113,10 +138,30 @@ export function useAccountApi() {
     })
   }
 
+  async function getAccountSummary(userID: string) {
+    return $fetch<GetAccountSummaryResponse>(`${buildAccountUrl(userID)}/summary`)
+  }
+
+  async function getAccountGames(userID: string, offset = 0, limit = 5) {
+    return $fetch<GetAccountGamesResponse>(`${buildAccountUrl(userID)}/games`, {
+      query: { offset, limit },
+    })
+  }
+
   async function upsertAccount(userID: string, payload: UpsertAccountPayload) {
     return $fetch<UpsertAccountResponse>(buildAccountUrl(userID), {
       method: 'POST',
       body: payload,
+    })
+  }
+
+  async function signInWithGoogleCredential(credential: string, legalAcceptedAt?: string) {
+    return $fetch<GoogleSignInResponse>(`${config.public.apiBase}/api/auth/google/sign-in`, {
+      method: 'POST',
+      body: {
+        credential,
+        legal_accepted_at: legalAcceptedAt,
+      },
     })
   }
 
@@ -138,7 +183,10 @@ export function useAccountApi() {
   return {
     deleteAccount,
     getAccount,
+    getAccountGames,
+    getAccountSummary,
     getLeaderboard,
+    signInWithGoogleCredential,
     upsertAccount,
   }
 }

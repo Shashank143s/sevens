@@ -206,6 +206,15 @@ const userSchema = new Schema(
   },
 );
 
+userSchema.index({
+  is_active: 1,
+  'wallet.coins_balance': -1,
+  'progression.level': -1,
+  'progression.xp_total': -1,
+  'stats.wins': -1,
+  created_at: 1,
+});
+
 export type UserDocument = InferSchemaType<typeof userSchema>;
 export type UserModelType = Model<UserDocument>;
 
