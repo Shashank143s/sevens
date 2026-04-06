@@ -57,8 +57,12 @@ function goToTerms() {
   router.push('/terms-and-conditions')
 }
 
-function login() {
+async function login() {
   open.value = false
+  if (router.currentRoute.value.path !== '/') {
+    await router.push('/')
+    await nextTick()
+  }
   openAuth()
 }
 
