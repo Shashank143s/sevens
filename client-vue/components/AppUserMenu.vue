@@ -12,8 +12,10 @@ const displayName = computed(() => {
   if (!isLoggedIn.value) return 'Login'
   const name = session.value?.name?.trim() ?? 'Player'
   const first = name.split(/\s+/)[0]
-  return `Welcome, ${first}`
+  return first
 })
+
+const triggerEyebrow = computed(() => (isLoggedIn.value ? 'Account' : 'Ready to play?'))
 
 const avatarLabel = computed(() => {
   if (!isLoggedIn.value) return '↗'
@@ -74,80 +76,104 @@ onMounted(() => {
       :aria-expanded="open ? 'true' : 'false'"
       @click="open = !open"
     >
-      <span class="user-menu__label">{{ displayName }}</span>
-      <span class="user-menu__avatar">
+      <span class="user-menu__copy">
+        <span class="user-menu__eyebrow">{{ triggerEyebrow }}</span>
+        <span class="user-menu__label">{{ displayName }}</span>
+      </span>
+      <span v-if="isLoggedIn" class="user-menu__avatar">
         <img
-          v-if="isLoggedIn && session?.image"
+          v-if="session?.image"
           :src="session.image"
           :alt="session.name"
           class="user-menu__image"
         >
         <span v-else>{{ avatarLabel }}</span>
       </span>
+      <span
+        class="user-menu__chevron"
+        :class="{ 'user-menu__chevron--open': open }"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 8 4 4 4-4" />
+        </svg>
+      </span>
     </button>
 
     <Transition name="user-menu-panel">
       <div v-if="open" class="user-menu__panel">
-        <button
-          v-if="!isLoggedIn"
-          type="button"
-          class="user-menu__action user-menu__action--login"
-          @click="login"
-        >
-          Login
-        </button>
-        <button
-          v-if="isLoggedIn"
-          type="button"
-          class="user-menu__action user-menu__action--neutral"
-          @click="goToAccount"
-        >
-          Account
-        </button>
-        <button
-          type="button"
-          class="user-menu__action user-menu__action--neutral user-menu__action--download"
-          @click="goToDownloads"
-        >
-          <span>Downloads</span>
-        </button>
-        <button
-          type="button"
-          class="user-menu__action user-menu__action--neutral"
-          @click="goToInstructions"
-        >
-          Instructions
-        </button>
-        <button
-          type="button"
-          class="user-menu__action user-menu__action--neutral"
-          @click="goToContact"
-        >
-          Contact Us
-        </button>
-        <button
-          type="button"
-          class="user-menu__action user-menu__action--neutral user-menu__action--desktop"
-          @click="goToBlog"
-        >
-          Blog
-        </button>
-        <div class="user-menu__divider" />
-        <div class="user-menu__legal">
+        <div class="user-menu__section">
+          <p class="user-menu__section-label">{{ isLoggedIn ? 'Profile' : 'Start here' }}</p>
+          <button
+            v-if="!isLoggedIn"
+            type="button"
+            class="user-menu__action user-menu__action--login"
+            @click="login"
+          >
+            <span>Login</span>
+            <span class="user-menu__action-arrow">→</span>
+          </button>
+          <button
+            v-if="isLoggedIn"
+            type="button"
+            class="user-menu__action user-menu__action--primary"
+            @click="goToAccount"
+          >
+            <span>Account</span>
+            <span class="user-menu__action-arrow">→</span>
+          </button>
+        </div>
+
+        <div class="user-menu__section">
+          <p class="user-menu__section-label">Explore</p>
           <button
             type="button"
-            class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-            @click="goToPrivacyPolicy"
+            class="user-menu__action user-menu__action--neutral"
+            @click="goToDownloads"
           >
-            Privacy Policy
+            <span>Downloads</span>
           </button>
           <button
             type="button"
-            class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-            @click="goToTerms"
+            class="user-menu__action user-menu__action--neutral"
+            @click="goToInstructions"
           >
-            Terms &amp; Conditions
+            <span>Instructions</span>
           </button>
+          <button
+            type="button"
+            class="user-menu__action user-menu__action--neutral"
+            @click="goToContact"
+          >
+            <span>Contact</span>
+          </button>
+          <button
+            type="button"
+            class="user-menu__action user-menu__action--neutral user-menu__action--desktop"
+            @click="goToBlog"
+          >
+            <span>Blog</span>
+          </button>
+        </div>
+
+        <div class="user-menu__section">
+          <p class="user-menu__section-label">Legal</p>
+          <div class="user-menu__legal">
+            <button
+              type="button"
+              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
+              @click="goToPrivacyPolicy"
+            >
+              Privacy Policy
+            </button>
+            <button
+              type="button"
+              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
+              @click="goToTerms"
+            >
+              Terms &amp; Conditions
+            </button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -161,26 +187,57 @@ onMounted(() => {
 }
 
 .user-menu__toggle {
-  min-height: 3.5rem;
-  padding: 0.65rem 0.8rem 0.65rem 1rem;
-  border: 1px solid rgba(245, 158, 11, 0.18);
-  border-radius: 1.15rem;
-  background: rgba(15, 23, 42, 0.84);
+  min-height: 3.6rem;
+  padding: 0.55rem 0.8rem 0.55rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.82));
   color: #f8fafc;
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.3);
-  backdrop-filter: blur(16px);
+  gap: 0.7rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(18px);
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .user-menu__toggle--open {
-  background: rgba(30, 41, 59, 0.96);
+  border-color: rgba(212, 175, 55, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.16), transparent 42%),
+    linear-gradient(145deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.92));
+}
+
+.user-menu__toggle:hover,
+.user-menu__toggle:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.user-menu__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.user-menu__eyebrow {
+  color: rgba(250, 204, 21, 0.78);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .user-menu__label {
+  margin-top: 0.18rem;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -198,6 +255,26 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
+.user-menu__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: rgba(226, 232, 240, 0.72);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.user-menu__chevron svg {
+  width: 100%;
+  height: 100%;
+}
+
+.user-menu__chevron--open {
+  transform: rotate(180deg);
+  color: #f8fafc;
+}
+
 .user-menu__image {
   width: 100%;
   height: 100%;
@@ -209,44 +286,75 @@ onMounted(() => {
   top: calc(100% + 0.5rem);
   right: 0;
   z-index: 81;
-  min-width: 10rem;
-  padding: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(245, 158, 11, 0.14);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.92));
-  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.34);
-  backdrop-filter: blur(16px);
+  min-width: 15rem;
+  padding: 0.65rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94));
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.38);
+  backdrop-filter: blur(18px);
+}
+
+.user-menu__section + .user-menu__section {
+  margin-top: 0.65rem;
+}
+
+.user-menu__section-label {
+  margin: 0 0 0.45rem;
+  padding: 0 0.45rem;
+  color: rgba(148, 163, 184, 0.72);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .user-menu__action {
   width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.7rem;
+  padding: 0.72rem 0.85rem;
+  border-radius: 0.85rem;
   color: #e2e8f0;
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(148, 163, 184, 0.08);
   text-align: left;
   font-size: 0.88rem;
   font-weight: 700;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .user-menu__action + .user-menu__action {
-  margin-top: 0.4rem;
+  margin-top: 0.34rem;
 }
 
 .user-menu__action:hover {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.16);
+  transform: translateY(-1px);
 }
 
-.user-menu__action--download {
-  color: #dcfce7;
+.user-menu__action--primary {
+  color: #17120a;
+  background: linear-gradient(180deg, #e0bd39, #d1a728);
+  box-shadow: 0 12px 28px rgba(209, 167, 40, 0.18);
 }
 
 .user-menu__action--login {
   color: #17120a;
   background: linear-gradient(180deg, #e0bd39, #d1a728);
+  box-shadow: 0 12px 28px rgba(209, 167, 40, 0.18);
+}
+
+.user-menu__action--primary:hover,
+.user-menu__action--login:hover {
+  background: linear-gradient(180deg, #ebc94f, #d9ad2f);
+}
+
+.user-menu__action-arrow {
+  color: rgba(15, 23, 42, 0.72);
 }
 
 .user-menu__divider {
@@ -292,8 +400,12 @@ onMounted(() => {
 @media (max-width: 640px) {
   .user-menu__toggle {
     min-height: 3.15rem;
-    padding: 0.55rem 0.7rem 0.55rem 0.85rem;
-    gap: 0.65rem;
+    padding: 0.5rem 0.68rem 0.5rem 0.8rem;
+    gap: 0.55rem;
+  }
+
+  .user-menu__eyebrow {
+    font-size: 0.58rem;
   }
 
   .user-menu__label {
@@ -303,6 +415,11 @@ onMounted(() => {
   .user-menu__avatar {
     width: 2.1rem;
     height: 2.1rem;
+  }
+
+  .user-menu__panel {
+    min-width: 14rem;
+    padding: 0.55rem;
   }
 }
 </style>

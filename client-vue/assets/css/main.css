@@ -14,11 +14,14 @@ body {
   height: 100%;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overscroll-behavior: none;
+  background: #020617;
+  color: #f8fafc;
   /* Prevent pull-to-refresh overscroll on mobile */
 }
 
 body > div#__nuxt {
   height: 100%;
+  background: #020617;
 }
 
 /* Safe area insets for notched devices (PWA) */

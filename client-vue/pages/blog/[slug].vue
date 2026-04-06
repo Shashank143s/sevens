@@ -43,7 +43,7 @@ useHead(() => ({
   <div
     v-if="post"
     class="blog-article-page"
-    :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.76), rgba(2, 6, 23, 0.95)), url(${backgroundGame})` }"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="blog-article-page__header">
       <button type="button" class="blog-article-page__back" @click="router.push('/blog')">← Blog</button>
@@ -169,21 +169,46 @@ useHead(() => ({
   color: #f8fafc;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
 .blog-article-page__header {
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: 74rem;
-  margin: 0 auto 1.4rem;
+  width: 100%;
+  margin: 0 0 1.4rem;
+  padding: 0.15rem 0;
 }
 
 .blog-article-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
   color: rgba(226, 232, 240, 0.82);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.blog-article-page__back:hover,
+.blog-article-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
 }
 
 .blog-article-page__content {

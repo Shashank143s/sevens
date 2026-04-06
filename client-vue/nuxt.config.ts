@@ -8,7 +8,7 @@ const clientVueDir = fileURLToPath(new URL('.', import.meta.url))
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', 'nuxt-google-auth', '@vite-pwa/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
   routeRules: {
     '/sw.js': {
@@ -35,12 +35,6 @@ export default defineNuxtConfig({
       googleClientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID || '',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://sevensroyale.com',
     },
-  },
-  googleAuth: {
-    clientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID,
-    autoLoadScript: true,
-    promptOneTap: false,
-    enableServerVerify: false,
   },
   vite: {
     resolve: {

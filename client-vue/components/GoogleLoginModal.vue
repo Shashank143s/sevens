@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { isOpen, closeAuth, handleGoogleSuccess } = useGoogleLogin()
+const { isOpen, isNativePlatform, closeAuth, handleGoogleSuccess, signInWithNativeGoogle } = useGoogleLogin()
 const acceptedLegal = ref(false)
 
 function onError(err: unknown) {
@@ -9,6 +9,17 @@ function onError(err: unknown) {
 function onGoogleSuccess(e: { credential: string; claims: Record<string, unknown> }) {
   if (!acceptedLegal.value) return
   void handleGoogleSuccess(e, new Date().toISOString())
+}
+
+async function onNativeGoogleSignIn() {
+  if (!acceptedLegal.value) return
+
+  try {
+    await signInWithNativeGoogle(new Date().toISOString())
+  } catch (error) {
+    if ((error as { code?: string } | null)?.code === 'SIGN_IN_CANCELED') return
+    onError(error)
+  }
 }
 
 watch(isOpen, (open) => {
@@ -109,7 +120,17 @@ watch(isOpen, (open) => {
 
               <div v-if="acceptedLegal" class="auth-modal__button-wrap">
                 <ClientOnly>
-                  <GoogleLoginButton
+                  <button
+                    v-if="isNativePlatform"
+                    type="button"
+                    class="auth-native-button"
+                    @click="onNativeGoogleSignIn"
+                  >
+                    <span class="auth-native-button__logo">G</span>
+                    <span>Continue with Google</span>
+                  </button>
+                  <GoogleWebLoginButton
+                    v-else
                     :options="{ theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'rectangular' }"
                     @success="onGoogleSuccess"
                     @error="onError"
@@ -218,7 +239,38 @@ watch(isOpen, (open) => {
   display: flex;
   justify-content: center;
   margin-top: 1rem;
+  width: 100%;
   min-width: 200px;
+}
+
+.auth-native-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: min(100%, 24rem);
+  min-height: 2.75rem;
+  padding: 0.8rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f8fafc 0%, #dbe4f0 100%);
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 800;
+  box-shadow: 0 16px 34px rgba(2, 6, 23, 0.32);
+}
+
+.auth-native-button__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #4285f4;
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .auth-legal {

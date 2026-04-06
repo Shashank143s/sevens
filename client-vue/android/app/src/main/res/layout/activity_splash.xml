@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/splash_screen_background">
+
+    <View
+        android:layout_width="288dp"
+        android:layout_height="288dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="-64dp"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/splash_glow_left"
+        android:alpha="0.6" />
+
+    <View
+        android:layout_width="288dp"
+        android:layout_height="288dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="-80dp"
+        android:background="@drawable/splash_glow_right"
+        android:alpha="0.7" />
+
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/splash_card_background"
+        android:elevation="12dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <FrameLayout
+            android:layout_width="92dp"
+            android:layout_height="92dp"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/splash_logo_background"
+            android:padding="12dp">
+
+            <WebView
+                android:id="@+id/splashBrandMark"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/app_name"
+                android:overScrollMode="never"
+                android:scrollbars="none" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.25"
+            android:text="THE CLASSIC GAME, ELEVATED"
+            android:textAllCaps="true"
+            android:textColor="#D4AF37"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="S"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="E"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="V"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:scaleX="-1"
+                android:text="E"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:scaleX="-1"
+                android:text="N"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:scaleX="-1"
+                android:text="S"
+                android:textColor="#F8F4EC"
+                android:textSize="46sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:fontFamily="sans-serif"
+            android:text="Let's play!"
+            android:textColor="#B8C3D1"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+</FrameLayout>

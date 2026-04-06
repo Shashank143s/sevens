@@ -95,7 +95,7 @@ onMounted(async () => {
 <template>
   <div
     class="games-page"
-    :style="{ backgroundImage: `linear-gradient(180deg, rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.94)), url(${backgroundGame})` }"
+    :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <header class="games-page__header">
       <button
@@ -193,7 +193,7 @@ onMounted(async () => {
 <style scoped>
 .games-page {
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
   padding:
@@ -204,6 +204,9 @@ onMounted(async () => {
   color: #f8fafc;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
 .games-page::before,
@@ -234,19 +237,39 @@ onMounted(async () => {
 }
 
 .games-page__header {
-  position: relative;
-  z-index: 20;
+  position: sticky;
+  top: max(0.65rem, env(safe-area-inset-top));
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 0.15rem 0;
 }
 
 .games-page__back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
   color: rgba(226, 232, 240, 0.82);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.games-page__back:hover,
+.games-page__back:focus-visible {
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border-color: rgba(212, 175, 55, 0.22);
 }
 
 .games-page__content {

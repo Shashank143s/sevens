@@ -1,7 +1,10 @@
+import { Capacitor } from '@capacitor/core'
+
 const ADSENSE_CLIENT = 'ca-pub-7523880309915043'
 
 function isStandaloneAppSession() {
   if (typeof window === 'undefined') return false
+  if (Capacitor.isNativePlatform()) return true
 
   const isStandaloneDisplayMode = window.matchMedia('(display-mode: standalone)').matches
     || window.matchMedia('(display-mode: window-controls-overlay)').matches
