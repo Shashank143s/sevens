@@ -5,6 +5,7 @@ import { Sevens } from './game';
 import { PORT } from './config';
 
 const INTERNAL_SERVER_URL = `http://127.0.0.1:${PORT}`;
+const BOT_TURN_DELAY_MS = 1000;
 
 function createSevensBot() {
   const enumerate = (Sevens as { ai?: { enumerate: (G: unknown, ctx: { currentPlayer: string }, playerID: string) => unknown[] } }).ai?.enumerate;
@@ -134,8 +135,8 @@ export function runBot(matchID: string, playerID: string, credentials: string): 
       }
       console.log(`[Sevens Bot] My turn: match=${matchID} player=${playerID} turn=${ctx.turn ?? 'unknown'} moves=${nMoves}`);
     }
-    // Attempt immediately, then keep retrying if needed.
-    scheduleTick(80);
+    // Wait a little before the bot acts so turns feel more natural.
+    scheduleTick(BOT_TURN_DELAY_MS);
   });
 
   client.start();

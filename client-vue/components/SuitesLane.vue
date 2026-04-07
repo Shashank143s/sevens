@@ -17,6 +17,8 @@ const { suit, pile, ranks, getCardImageSrc } = toRefs(props)
       v-for="rank in ranks"
       :key="`${suit}-${rank}`"
       class="suites-lane__slot"
+      :data-suit="suit"
+      :data-rank="rank"
     >
       <Motion
         v-if="

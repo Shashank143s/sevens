@@ -3,6 +3,11 @@ import { getMatchUrl } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import cardShuffleSound from '~/assets/audio/card_shuffle_sound.mp3'
+import sevenSpades from '~/assets/images/cards/spades-7.png'
+import sevenHearts from '~/assets/images/cards/hearts-7.png'
+import sevenDiamonds from '~/assets/images/cards/diamonds-7.png'
+import sevenClubs from '~/assets/images/cards/clubs-7.png'
 
 const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
@@ -28,6 +33,52 @@ const roomName = ref('')
 const roomStake = ref<number | null>(null)
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
+const tablePrepVisible = ref(false)
+const tablePrepComplete = ref(false)
+
+let prepCompleteTimer: ReturnType<typeof setTimeout> | null = null
+let shuffleAudio: HTMLAudioElement | null = null
+
+const canMountBoard = computed(() => Boolean(matchID.value && playerID.value && playerCredentials.value))
+const showGameBoard = computed(() => canMountBoard.value && tablePrepComplete.value)
+const showTablePrepOverlay = computed(() => canMountBoard.value && tablePrepVisible.value)
+
+function clearTablePrepTimers() {
+  if (prepCompleteTimer) {
+    clearTimeout(prepCompleteTimer)
+    prepCompleteTimer = null
+  }
+}
+
+function stopShuffleAudio() {
+  if (!shuffleAudio) return
+  shuffleAudio.pause()
+  shuffleAudio.currentTime = 0
+}
+
+function playShuffleAudio() {
+  if (!import.meta.client) return
+  stopShuffleAudio()
+  shuffleAudio = new Audio(cardShuffleSound)
+  shuffleAudio.volume = 0.7
+  shuffleAudio.play().catch(() => {
+    // Some browsers gate autoplay until user interaction; the overlay still works without audio.
+  })
+}
+
+function beginTablePreparation() {
+  if (!import.meta.client || tablePrepVisible.value || tablePrepComplete.value || !canMountBoard.value) return
+
+  tablePrepVisible.value = true
+  playShuffleAudio()
+  clearTablePrepTimers()
+
+  prepCompleteTimer = setTimeout(() => {
+    tablePrepVisible.value = false
+    tablePrepComplete.value = true
+    stopShuffleAudio()
+  }, 4000)
+}
 
 function sendToWrongTable() {
   return showError({
@@ -112,6 +163,8 @@ function startPolling() {
 
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
+  clearTablePrepTimers()
+  stopShuffleAudio()
 })
 
 // Pre-fill from session; restore already-joined state so user cannot join the same game again
@@ -270,12 +323,27 @@ watch(allPlayersJoined, async (ready) => {
   await syncGameStart()
 })
 
+watch(
+  [allPlayersJoined, canMountBoard],
+  ([ready, boardReady]) => {
+    if (!ready || !boardReady) return
+    beginTablePreparation()
+  },
+  { immediate: true },
+)
+
 const joinedCount = computed(() => {
   if (!matchMeta.value?.players) return 0
   return matchMeta.value.players.filter(p => p.name != null && p.name !== '').length
 })
 const totalPlayers = computed(() => matchMeta.value?.players?.length ?? 0)
 const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slate-900/70 text-slate-200' : 'border-red-400/20 bg-red-950/40 text-red-100'))
+const loadingCards = [
+  { src: sevenSpades, alt: '7 of spades' },
+  { src: sevenHearts, alt: '7 of hearts' },
+  { src: sevenDiamonds, alt: '7 of diamonds' },
+  { src: sevenClubs, alt: '7 of clubs' },
+]
 </script>
 
 <template>
@@ -367,22 +435,202 @@ const roomBannerTone = computed(() => (isOnline.value ? 'border-white/10 bg-slat
 
   <!-- All players joined: show game -->
   <ClientOnly v-else>
-    <SevensGameBoard
-      v-if="matchID && playerID && playerCredentials"
-      :match-id="matchID"
-      :player-id="playerID"
-      :credentials="playerCredentials"
-    />
+    <div v-if="canMountBoard" class="room-table-stage">
+      <SevensGameBoard
+        v-if="showGameBoard"
+        :match-id="matchID"
+        :player-id="playerID"
+        :credentials="playerCredentials"
+      />
+      <Transition name="table-prep-fade">
+        <div
+          v-if="showTablePrepOverlay"
+          class="room-table-stage__overlay min-h-screen bg-slate-900 bg-cover bg-center bg-no-repeat text-white p-4 sm:p-6 safe-area-padding"
+          :style="{ backgroundImage: `url(${backgroundGame})` }"
+        >
+          <div class="room-table-stage__scrim" />
+          <div class="room-table-stage__dialog text-center">
+            <div class="room-table-stage__spinner" aria-hidden="true">
+              <span class="room-table-stage__spinner-ring room-table-stage__spinner-ring--outer" />
+              <span class="room-table-stage__spinner-ring room-table-stage__spinner-ring--inner" />
+              <div class="room-table-stage__card-stack">
+                <img
+                  v-for="(card, index) in loadingCards"
+                  :key="card.alt"
+                  :src="card.src"
+                  :alt="card.alt"
+                  class="room-table-stage__card"
+                  :style="{ animationDelay: `${index * 0.8}s` }"
+                >
+              </div>
+            </div>
+            <h2 class="mt-6 text-xl font-bold text-white">Shuffling cards</h2>
+            <p class="mt-2 text-sm text-slate-300">
+              Dealing the next hand...
+            </p>
+          </div>
+        </div>
+      </Transition>
+    </div>
     <template #fallback>
       <div
         class="min-h-screen bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center text-white p-4 sm:p-6 safe-area-padding"
         :style="{ backgroundImage: `url(${backgroundGame})` }"
       >
-        <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-600 text-center">
-          <h2 class="text-xl font-bold text-white mb-2">Preparing the table</h2>
-          <p class="text-slate-400 text-sm">Loading the game board...</p>
+        <div class="text-center">
+          <div class="room-table-stage__spinner mx-auto" aria-hidden="true">
+            <span class="room-table-stage__spinner-ring room-table-stage__spinner-ring--outer" />
+            <span class="room-table-stage__spinner-ring room-table-stage__spinner-ring--inner" />
+            <div class="room-table-stage__card-stack">
+              <img
+                v-for="(card, index) in loadingCards"
+                :key="card.alt"
+                :src="card.src"
+                :alt="card.alt"
+                class="room-table-stage__card"
+                :style="{ animationDelay: `${index * 0.8}s` }"
+              >
+            </div>
+          </div>
+          <h2 class="text-xl font-bold text-white mb-2">Shuffling cards</h2>
+          <p class="text-slate-300 text-sm">Preparing the table for the next hand...</p>
         </div>
       </div>
     </template>
   </ClientOnly>
 </template>
+
+<style scoped>
+.room-table-stage {
+  position: relative;
+}
+
+.room-table-stage__overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.room-table-stage__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top, rgba(15, 23, 42, 0.18), rgba(2, 6, 23, 0.84) 72%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.5), rgba(2, 6, 23, 0.82));
+  backdrop-filter: blur(4px);
+}
+
+.room-table-stage__dialog {
+  position: relative;
+  z-index: 1;
+}
+
+.room-table-stage__spinner {
+  position: relative;
+  width: 12rem;
+  height: 12rem;
+  margin: 0 auto;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(34, 197, 94, 0.12), transparent 34%),
+    radial-gradient(circle at 70% 70%, rgba(5, 150, 105, 0.1), transparent 40%),
+    radial-gradient(circle, rgba(20, 83, 45, 0.92) 0%, rgba(6, 78, 59, 0.94) 54%, rgba(2, 24, 19, 0.98) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(187, 247, 208, 0.08),
+    inset 0 18px 34px rgba(74, 222, 128, 0.05),
+    0 24px 60px rgba(2, 24, 19, 0.48);
+}
+
+.room-table-stage__spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border-style: solid;
+  animation: table-prep-spin 1.25s linear infinite;
+}
+
+.room-table-stage__spinner-ring--outer {
+  border-width: 4px;
+  border-color: rgba(134, 239, 172, 0.14);
+  border-top-color: rgba(250, 204, 21, 0.92);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.16);
+  animation-duration: 2.2s;
+}
+
+.room-table-stage__spinner-ring--inner {
+  inset: 1rem;
+  border-width: 3px;
+  border-color: rgba(167, 243, 208, 0.14);
+  border-bottom-color: rgba(220, 252, 231, 0.92);
+  animation-direction: reverse;
+  animation-duration: 1.8s;
+}
+
+.room-table-stage__card-stack {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.room-table-stage__card {
+  position: absolute;
+  width: 3.25rem;
+  filter: drop-shadow(0 14px 22px rgba(15, 23, 42, 0.45));
+  opacity: 0;
+  transform: translateY(16px) scale(0.9) rotate(-14deg);
+  transform-origin: 50% 82%;
+  animation: table-prep-card-cycle 3.2s ease-in-out infinite;
+}
+
+.table-prep-fade-enter-active,
+.table-prep-fade-leave-active {
+  transition: opacity 260ms ease;
+}
+
+.table-prep-fade-enter-from,
+.table-prep-fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes table-prep-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes table-prep-card-cycle {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9) rotate(-16deg);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateY(4px) scale(0.98) rotate(-6deg);
+  }
+
+  24% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+
+  42% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96) rotate(14deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96) rotate(14deg);
+  }
+}
+</style>
