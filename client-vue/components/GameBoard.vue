@@ -28,6 +28,7 @@ export interface PlayerInfo {
   id: number
   name?: string | null
   avatar?: string
+  isBot?: boolean
 }
 
 const props = defineProps<{
@@ -360,7 +361,7 @@ function getPlayerDisplay(index: number) {
   const p = list?.find((x) => x.id === index) ?? list?.[index]
   return {
     name: p?.name ?? `Player ${index}`,
-    avatar: p?.avatar ?? '👤',
+    avatar: p?.isBot ? '🤖' : (p?.avatar ?? '👤'),
   }
 }
 

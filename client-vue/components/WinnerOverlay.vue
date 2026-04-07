@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import coinSoundSrc from '~/assets/audio/coin.mp3'
+import winSoundSrc from '~/assets/audio/win_sound.mp3'
+import loseSoundSrc from '~/assets/audio/lose_sound.mp3'
 
 const props = defineProps<{
   avatar: string
@@ -17,11 +19,27 @@ const emit = defineEmits<{
 const showCoinTransfer = computed(() => props.didIWin && (props.wonCoins ?? 0) > 0 && props.totalCoins != null)
 const coinTrail = Array.from({ length: 5 }, (_, index) => index)
 let coinAudio: HTMLAudioElement | null = null
+let outcomeAudio: HTMLAudioElement | null = null
+let coinSoundDelayTimer: ReturnType<typeof setTimeout> | null = null
 
 function stopCoinSound() {
   if (coinAudio) {
     coinAudio.pause()
     coinAudio.currentTime = 0
+  }
+}
+
+function stopOutcomeSound() {
+  if (outcomeAudio) {
+    outcomeAudio.pause()
+    outcomeAudio.currentTime = 0
+  }
+}
+
+function clearCoinSoundDelay() {
+  if (coinSoundDelayTimer) {
+    clearTimeout(coinSoundDelayTimer)
+    coinSoundDelayTimer = null
   }
 }
 
@@ -40,13 +58,43 @@ function playCoinRewardSound() {
   }
 }
 
+function playOutcomeSound() {
+  if (!import.meta.client || typeof window === 'undefined') return
+  try {
+    stopOutcomeSound()
+    outcomeAudio = new Audio(props.didIWin ? winSoundSrc : loseSoundSrc)
+    outcomeAudio.preload = 'auto'
+    outcomeAudio.volume = props.didIWin ? 0.72 : 0.68
+    void outcomeAudio.play().catch(() => {})
+  } catch {
+    // ignore audio failures
+  }
+}
+
+watch(
+  () => props.didIWin,
+  (_, __, onCleanup) => {
+    playOutcomeSound()
+    onCleanup(() => {
+      stopOutcomeSound()
+    })
+  },
+  { immediate: true },
+)
+
 watch(showCoinTransfer, (active, wasActive) => {
   if (!active || wasActive) return
-  playCoinRewardSound()
+  clearCoinSoundDelay()
+  coinSoundDelayTimer = setTimeout(() => {
+    playCoinRewardSound()
+    coinSoundDelayTimer = null
+  }, 520)
 }, { immediate: true })
 
 onUnmounted(() => {
+  clearCoinSoundDelay()
   stopCoinSound()
+  stopOutcomeSound()
 })
 </script>
 

@@ -8,7 +8,6 @@ import type { JoinRouteContext, RouteNext } from '../types/route.types';
 import type { GameDetails, JoinGameResponse } from '../types/service.types';
 import { readJsonBody } from '../utils/common.util';
 
-const BOT_NAME_PREFIX = '🤖 ';
 const BOT_CELEBRITY_NAMES = [
   'Tom Hanks',
   'John Cena',
@@ -54,18 +53,28 @@ const BOT_CELEBRITY_NAMES = [
 
 function normalizeBotCandidate(name?: string | null) {
   return String(name ?? '')
-    .replace(BOT_NAME_PREFIX, '')
     .trim()
     .toLowerCase()
 }
 
+function shuffleNames<T>(items: T[]) {
+  const shuffled = [...items]
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+  }
+  return shuffled
+}
+
 function pickBotNames(existingNames: Array<string | null | undefined>, count: number) {
   const used = new Set(existingNames.map(normalizeBotCandidate).filter(Boolean))
-  const available = BOT_CELEBRITY_NAMES.filter((name) => !used.has(name.toLowerCase()))
+  const available = shuffleNames(
+    BOT_CELEBRITY_NAMES.filter((name) => !used.has(name.toLowerCase())),
+  )
   return Array.from({ length: count }, (_, index) => {
     const name = available[index] ?? `Celebrity Bot ${index + 1}`
     used.add(name.toLowerCase())
-    return `${BOT_NAME_PREFIX}${name}`
+    return name
   })
 }
 
@@ -117,7 +126,7 @@ export async function joinRoute(ctx: JoinRouteContext, next: RouteNext): Promise
       const joinRes = await joinGame(matchID, {
         playerID: String(slot.id),
         playerName: botName,
-        data: {},
+        data: { avatar: '🤖' },
       });
 
       if (!joinRes.ok) {
