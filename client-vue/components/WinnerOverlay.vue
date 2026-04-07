@@ -48,16 +48,10 @@ function playOutcomeSound() {
   })
 }
 
-watch(
-  () => props.didIWin,
-  (_, __, onCleanup) => {
-    playOutcomeSound()
-    onCleanup(() => {
-      stopOutcomeSound()
-    })
-  },
-  { immediate: true },
-)
+watch(() => props.didIWin, (next, prev) => {
+  if (next === prev) return
+  playOutcomeSound()
+})
 
 watch(showCoinTransfer, (active, wasActive) => {
   if (!active || wasActive) return
@@ -78,6 +72,7 @@ onMounted(() => {
   registerSound(coinSoundSrc, { volume: 0.6 })
   registerSound(winSoundSrc, { volume: 0.72 })
   registerSound(loseSoundSrc, { volume: 0.68 })
+  playOutcomeSound()
 })
 </script>
 
