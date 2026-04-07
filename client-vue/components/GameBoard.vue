@@ -2,6 +2,7 @@
 import type { Card, Suit } from '@shared/types'
 import SuitesLane from './SuitesLane.vue'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import cardPlaySoundSrc from '~/assets/audio/card_play_sound.mp3'
 
 type PileLike = { started?: boolean; low: number | null; high: number | null }
 
@@ -59,6 +60,7 @@ const invalidCardId = ref<string | null>(null)
 const animatingCardId = ref<string | null>(null)
 let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
 let playAnimationTimer: ReturnType<typeof setTimeout> | null = null
+let cardPlayAudio: HTMLAudioElement | null = null
 
 type FlyingCardState = {
   id: string
@@ -121,6 +123,7 @@ function runAutoPlayOrPass() {
   clearTurnTimer()
   const cards = getPlayableCards(myHand.value, G.value.piles as Record<Suit, PileLike>)
   if (cards.length > 0) {
+    playCardSound()
     moves.value.playCard(cards[0])
   } else {
     moves.value.pass()
@@ -142,6 +145,29 @@ function clearPlayAnimation() {
   }
   flyingCard.value = null
   animatingCardId.value = null
+}
+
+function stopCardPlaySound() {
+  if (!cardPlayAudio) return
+  cardPlayAudio.pause()
+  cardPlayAudio.currentTime = 0
+}
+
+function playCardSound() {
+  if (import.meta.server || typeof window === 'undefined') return
+
+  try {
+    if (!cardPlayAudio) {
+      cardPlayAudio = new Audio(cardPlaySoundSrc)
+      cardPlayAudio.preload = 'auto'
+      cardPlayAudio.volume = 0.72
+    }
+
+    cardPlayAudio.currentTime = 0
+    void cardPlayAudio.play().catch(() => {})
+  } catch {
+    // ignore audio failures
+  }
 }
 
 function triggerIllegalMoveHaptics() {
@@ -182,6 +208,7 @@ function getTargetRank(card: Card) {
 
 function animatePlayedCard(card: Card) {
   if (import.meta.server || typeof document === 'undefined' || typeof window === 'undefined') {
+    playCardSound()
     moves.value.playCard(card)
     return
   }
@@ -192,6 +219,7 @@ function animatePlayedCard(card: Card) {
   const targetEl = isMobile.value ? (mobileTarget ?? desktopTarget) : (desktopTarget ?? mobileTarget)
 
   if (!sourceEl || !targetEl) {
+    playCardSound()
     moves.value.playCard(card)
     return
   }
@@ -237,6 +265,7 @@ function animatePlayedCard(card: Card) {
     }
   })
 
+  playCardSound()
   moves.value.playCard(card)
   playAnimationTimer = setTimeout(() => {
     clearPlayAnimation()
@@ -266,6 +295,7 @@ onUnmounted(() => {
   clearTurnTimer()
   clearInvalidCardFeedback()
   clearPlayAnimation()
+  stopCardPlaySound()
 })
 
 const suitSymbols: Record<Suit, string> = {
