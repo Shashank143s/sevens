@@ -15,25 +15,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   goLobby: []
 }>()
+const { registerSound, playSound, stopSound } = useSoundEffects()
 
 const showCoinTransfer = computed(() => props.didIWin && (props.wonCoins ?? 0) > 0 && props.totalCoins != null)
 const coinTrail = Array.from({ length: 5 }, (_, index) => index)
-let coinAudio: HTMLAudioElement | null = null
-let outcomeAudio: HTMLAudioElement | null = null
 let coinSoundDelayTimer: ReturnType<typeof setTimeout> | null = null
 
 function stopCoinSound() {
-  if (coinAudio) {
-    coinAudio.pause()
-    coinAudio.currentTime = 0
-  }
+  stopSound(coinSoundSrc)
 }
 
 function stopOutcomeSound() {
-  if (outcomeAudio) {
-    outcomeAudio.pause()
-    outcomeAudio.currentTime = 0
-  }
+  stopSound(winSoundSrc)
+  stopSound(loseSoundSrc)
 }
 
 function clearCoinSoundDelay() {
@@ -44,31 +38,14 @@ function clearCoinSoundDelay() {
 }
 
 function playCoinRewardSound() {
-  if (!import.meta.client || typeof window === 'undefined') return
-  try {
-    if (!coinAudio) {
-      coinAudio = new Audio(coinSoundSrc)
-      coinAudio.preload = 'auto'
-      coinAudio.volume = 0.6
-    }
-    coinAudio.currentTime = 0
-    void coinAudio.play().catch(() => {})
-  } catch {
-    // ignore audio failures
-  }
+  void playSound(coinSoundSrc, { volume: 0.6 })
 }
 
 function playOutcomeSound() {
-  if (!import.meta.client || typeof window === 'undefined') return
-  try {
-    stopOutcomeSound()
-    outcomeAudio = new Audio(props.didIWin ? winSoundSrc : loseSoundSrc)
-    outcomeAudio.preload = 'auto'
-    outcomeAudio.volume = props.didIWin ? 0.72 : 0.68
-    void outcomeAudio.play().catch(() => {})
-  } catch {
-    // ignore audio failures
-  }
+  stopOutcomeSound()
+  void playSound(props.didIWin ? winSoundSrc : loseSoundSrc, {
+    volume: props.didIWin ? 0.72 : 0.68,
+  })
 }
 
 watch(
@@ -95,6 +72,12 @@ onUnmounted(() => {
   clearCoinSoundDelay()
   stopCoinSound()
   stopOutcomeSound()
+})
+
+onMounted(() => {
+  registerSound(coinSoundSrc, { volume: 0.6 })
+  registerSound(winSoundSrc, { volume: 0.72 })
+  registerSound(loseSoundSrc, { volume: 0.68 })
 })
 </script>
 

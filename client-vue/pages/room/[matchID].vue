@@ -15,6 +15,7 @@ const { session } = usePlayerSession()
 const { getCredentials, getRoomMeta, setCredentials } = useRoomCredentials()
 const { authorizeJoin, getGameRecord, registerJoinedPlayer, markGameInProgress } = useGameApi()
 const { isOnline } = useOnlineStatus()
+const { registerSound, playSound, stopSound } = useSoundEffects()
 
 const joined = ref(false)
 const rejoining = ref(false)
@@ -37,7 +38,6 @@ const tablePrepVisible = ref(false)
 const tablePrepComplete = ref(false)
 
 let prepCompleteTimer: ReturnType<typeof setTimeout> | null = null
-let shuffleAudio: HTMLAudioElement | null = null
 
 const canMountBoard = computed(() => Boolean(matchID.value && playerID.value && playerCredentials.value))
 const showGameBoard = computed(() => canMountBoard.value && tablePrepComplete.value)
@@ -51,19 +51,12 @@ function clearTablePrepTimers() {
 }
 
 function stopShuffleAudio() {
-  if (!shuffleAudio) return
-  shuffleAudio.pause()
-  shuffleAudio.currentTime = 0
+  stopSound(cardShuffleSound)
 }
 
 function playShuffleAudio() {
   if (!import.meta.client) return
-  stopShuffleAudio()
-  shuffleAudio = new Audio(cardShuffleSound)
-  shuffleAudio.volume = 0.7
-  shuffleAudio.play().catch(() => {
-    // Some browsers gate autoplay until user interaction; the overlay still works without audio.
-  })
+  void playSound(cardShuffleSound, { volume: 0.7 })
 }
 
 function beginTablePreparation() {
@@ -169,6 +162,7 @@ onUnmounted(() => {
 
 // Pre-fill from session; restore already-joined state so user cannot join the same game again
 onMounted(async () => {
+  registerSound(cardShuffleSound, { volume: 0.7 })
   if (session.value) {
     playerName.value = session.value.name
     avatar.value = session.value.avatar

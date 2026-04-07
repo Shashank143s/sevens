@@ -44,6 +44,7 @@ const props = defineProps<{
 }>()
 
 const { G, ctx, moves, playerId } = toRefs(props)
+const { registerSound, playSound, stopSound } = useSoundEffects()
 
 const playerIndex = computed(() =>
   playerId.value != null ? parseInt(playerId.value, 10) : -1
@@ -62,7 +63,6 @@ const animatingCardId = ref<string | null>(null)
 const landingCardKey = ref<string | null>(null)
 let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
 let playAnimationTimer: ReturnType<typeof setTimeout> | null = null
-let cardPlayAudio: HTMLAudioElement | null = null
 
 type FlyingCardState = {
   id: string
@@ -150,27 +150,8 @@ function clearPlayAnimation() {
   landingCardKey.value = null
 }
 
-function stopCardPlaySound() {
-  if (!cardPlayAudio) return
-  cardPlayAudio.pause()
-  cardPlayAudio.currentTime = 0
-}
-
 function playCardSound() {
-  if (import.meta.server || typeof window === 'undefined') return
-
-  try {
-    if (!cardPlayAudio) {
-      cardPlayAudio = new Audio(cardPlaySoundSrc)
-      cardPlayAudio.preload = 'auto'
-      cardPlayAudio.volume = 0.72
-    }
-
-    cardPlayAudio.currentTime = 0
-    void cardPlayAudio.play().catch(() => {})
-  } catch {
-    // ignore audio failures
-  }
+  void playSound(cardPlaySoundSrc, { volume: 0.72 })
 }
 
 function triggerIllegalMoveHaptics() {
@@ -299,7 +280,7 @@ onUnmounted(() => {
   clearTurnTimer()
   clearInvalidCardFeedback()
   clearPlayAnimation()
-  stopCardPlaySound()
+  stopSound(cardPlaySoundSrc)
 })
 
 const suitSymbols: Record<Suit, string> = {
@@ -371,6 +352,7 @@ let onMobileMqlChange: ((e: MediaQueryListEvent) => void) | null = null
 
 onMounted(() => {
   if (typeof window === 'undefined') return
+  registerSound(cardPlaySoundSrc, { volume: 0.72 })
   mobileMql = window.matchMedia('(max-width: 640px)')
   const set = (v: boolean) => (isMobile.value = v)
   set(mobileMql.matches)

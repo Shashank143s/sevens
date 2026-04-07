@@ -37,6 +37,7 @@ const createRoomPassword = ref('')
 const createRoomName = ref('')
 const roomNameTouched = ref(false)
 const stakeTouched = ref(false)
+const createRoomNameInput = ref<HTMLInputElement | null>(null)
 
 const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
 const botOptions = computed(() => {
@@ -293,6 +294,13 @@ watch(createNumPlayers, () => {
   if (createAiBots.value > maxBots) {
     createAiBots.value = maxBots
   }
+})
+
+watch(showCreateModal, async (open) => {
+  if (!open) return
+  await nextTick()
+  createRoomNameInput.value?.focus()
+  createRoomNameInput.value?.select()
 })
 
 // Redirect if no session
@@ -554,6 +562,7 @@ onMounted(() => {
         <div class="p-5">
         <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Name</label>
         <input
+          ref="createRoomNameInput"
           v-model="createRoomName"
           type="text"
           maxlength="40"
