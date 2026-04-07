@@ -56,7 +56,18 @@ const myHand = computed(() => {
 
 const isPlayableCardAvailable = computed(() => getPlayableCards(myHand.value, G.value.piles).length > 0)
 const invalidCardId = ref<string | null>(null)
+const animatingCardId = ref<string | null>(null)
 let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
+let playAnimationTimer: ReturnType<typeof setTimeout> | null = null
+
+type FlyingCardState = {
+  id: string
+  src: string
+  alt: string
+  style: Record<string, string>
+}
+
+const flyingCard = ref<FlyingCardState | null>(null)
 
 type SortMode = 'byRank' | 'bySuit'
 const sortMode = ref<SortMode>('byRank')
@@ -124,6 +135,15 @@ function clearInvalidCardFeedback() {
   invalidCardId.value = null
 }
 
+function clearPlayAnimation() {
+  if (playAnimationTimer != null) {
+    clearTimeout(playAnimationTimer)
+    playAnimationTimer = null
+  }
+  flyingCard.value = null
+  animatingCardId.value = null
+}
+
 function triggerIllegalMoveHaptics() {
   if (import.meta.server || typeof navigator === 'undefined') return
   if (typeof navigator.vibrate !== 'function') return
@@ -148,11 +168,79 @@ function triggerIllegalCardFeedback(cardId: string) {
 function handleCardClick(card: Card) {
   if (isGameFinished.value) return
   if (!isMyTurn.value) return
+  if (animatingCardId.value) return
   if (!isPlayable(card, G.value.piles[card.suit])) {
     triggerIllegalCardFeedback(card.id)
     return
   }
+  animatePlayedCard(card)
+}
+
+function getTargetRank(card: Card) {
+  return card.rank
+}
+
+function animatePlayedCard(card: Card) {
+  if (import.meta.server || typeof document === 'undefined' || typeof window === 'undefined') {
+    moves.value.playCard(card)
+    return
+  }
+
+  const sourceEl = document.querySelector<HTMLElement>(`[data-hand-card-id="${card.id}"]`)
+  const desktopTarget = document.querySelector<HTMLElement>(`.suites-lane__slot[data-suit="${card.suit}"][data-rank="${getTargetRank(card)}"]`)
+  const mobileTarget = document.querySelector<HTMLElement>(`.mobile-pile[data-mobile-pile="${card.suit}"]`)
+  const targetEl = isMobile.value ? (mobileTarget ?? desktopTarget) : (desktopTarget ?? mobileTarget)
+
+  if (!sourceEl || !targetEl) {
+    moves.value.playCard(card)
+    return
+  }
+
+  const sourceRect = sourceEl.getBoundingClientRect()
+  const targetRect = targetEl.getBoundingClientRect()
+  const targetWidth = isMobile.value ? targetRect.width * 0.42 : targetRect.width
+  const targetHeight = targetWidth * (sourceRect.height / sourceRect.width)
+  const targetLeft = targetRect.left + (targetRect.width - targetWidth) / 2
+  const targetTop = targetRect.top + (targetRect.height - targetHeight) / 2
+
+  const startStyle = {
+    left: `${sourceRect.left}px`,
+    top: `${sourceRect.top}px`,
+    width: `${sourceRect.width}px`,
+    height: `${sourceRect.height}px`,
+    transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)',
+    opacity: '1',
+  }
+
+  const endStyle = {
+    left: `${sourceRect.left}px`,
+    top: `${sourceRect.top}px`,
+    width: `${sourceRect.width}px`,
+    height: `${sourceRect.height}px`,
+    transform: `translate3d(${targetLeft - sourceRect.left}px, ${targetTop - sourceRect.top}px, 0) rotate(${isMobile.value ? 4 : 2}deg) scale(${targetWidth / sourceRect.width})`,
+    opacity: '0.92',
+  }
+
+  animatingCardId.value = card.id
+  flyingCard.value = {
+    id: card.id,
+    src: getCardImageSrc(card),
+    alt: `${card.rank} of ${card.suit}`,
+    style: startStyle,
+  }
+
+  requestAnimationFrame(() => {
+    if (!flyingCard.value || flyingCard.value.id !== card.id) return
+    flyingCard.value = {
+      ...flyingCard.value,
+      style: endStyle,
+    }
+  })
+
   moves.value.playCard(card)
+  playAnimationTimer = setTimeout(() => {
+    clearPlayAnimation()
+  }, 360)
 }
 
 watch(
@@ -177,6 +265,7 @@ watch(
 onUnmounted(() => {
   clearTurnTimer()
   clearInvalidCardFeedback()
+  clearPlayAnimation()
 })
 
 const suitSymbols: Record<Suit, string> = {
@@ -332,7 +421,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="mobile-pile">
+            <div class="mobile-pile" :data-mobile-pile="p.suit">
               <div v-if="p.ranks.length === 0" class="mobile-pile__empty" />
               <div v-else class="mobile-pile__stack" aria-hidden="true">
                   <div
@@ -396,7 +485,8 @@ onUnmounted(() => {
           v-for="card in sortedHand"
           :key="card.id"
           class="hand-card w-16 h-24 sm:w-28 sm:h-36 bg-transparent rounded-l shadow-2xl flex-shrink-0 flex items-center justify-center border-4 border-transparent cursor-grab active:cursor-grabbing sm:snap-center sm:hover:scale-100 sm:hover:rotate-3 sm:hover:z-10 active:scale-110"
-          :class="{ 'hand-card--illegal': invalidCardId === card.id }"
+          :class="{ 'hand-card--illegal': invalidCardId === card.id, 'hand-card--animating': animatingCardId === card.id }"
+          :data-hand-card-id="card.id"
           @click="handleCardClick(card)"
         >
           <img
@@ -420,6 +510,16 @@ onUnmounted(() => {
           PASS
       </button>
      </Motion>  
+
+    <Teleport to="body">
+      <img
+        v-if="flyingCard"
+        :src="flyingCard.src"
+        :alt="flyingCard.alt"
+        class="flying-play-card"
+        :style="flyingCard.style"
+      >
+    </Teleport>
   </div>
 
   <Teleport to="body">
@@ -688,6 +788,16 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
+.hand-card {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.hand-card--animating {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
 .hand-card--illegal {
   animation: illegal-card-shake 320ms ease;
 }
@@ -713,6 +823,20 @@ onUnmounted(() => {
   80% {
     transform: translateX(2px) rotate(0.5deg);
   }
+}
+
+.flying-play-card {
+  position: fixed;
+  z-index: 120;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 22px 42px rgba(2, 6, 23, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  will-change: transform, opacity;
+  transition:
+    transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 340ms ease;
 }
 
 /* Sidebar widget: top-right on desktop; in top bar on mobile */
