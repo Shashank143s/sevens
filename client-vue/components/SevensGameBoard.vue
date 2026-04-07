@@ -65,6 +65,8 @@ const didIWin = computed(() => {
 const redirectSeconds = ref(30)
 const winnerCoinsDelta = ref<number | null>(null)
 const winnerTotalCoins = ref<number | null>(null)
+const startingCoinsBalance = ref<number | null>(null)
+const finalizedGame = ref<Awaited<ReturnType<typeof completeGameRecord>> | null>(null)
 const gameFinishedLocally = ref(false)
 const redirectDeadline = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
@@ -136,25 +138,65 @@ async function loadWinnerEconomy() {
   const accountIdentifier = session.value.id || session.value.email?.trim()
   if (!accountIdentifier) return
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
+  const finalizedWinner = finalizedGame.value?.game.players?.find((entry) => entry.user_id === session.value?.id)
+  const finalizedDelta = finalizedWinner?.coins?.delta ?? null
+  if (typeof finalizedDelta === 'number' && finalizedDelta > 0) {
+    winnerCoinsDelta.value = finalizedDelta
+  }
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
       const [accountResponse, gameResponse] = await Promise.all([
         getAccount(accountIdentifier, 0, 0),
-        getGameRecord(props.matchId),
+        attempt === 0 && finalizedGame.value ? Promise.resolve(finalizedGame.value) : getGameRecord(props.matchId),
       ])
 
-      winnerTotalCoins.value = accountResponse.user.wallet?.coins_balance ?? null
+      const latestBalance = accountResponse.user.wallet?.coins_balance ?? null
       const player = gameResponse.game.players?.find((entry) => entry.user_id === session.value?.id)
-      winnerCoinsDelta.value = player?.coins?.delta ?? null
+      const latestDelta = player?.coins?.delta ?? null
+      const effectiveDelta = (
+        typeof finalizedDelta === 'number' && finalizedDelta > 0
+          ? finalizedDelta
+          : latestDelta
+      )
 
-      if (winnerTotalCoins.value != null && winnerCoinsDelta.value != null) {
+      if (typeof effectiveDelta === 'number' && effectiveDelta > 0) {
+        winnerCoinsDelta.value = effectiveDelta
+      }
+
+      const expectedBalance = (
+        startingCoinsBalance.value != null
+        && typeof winnerCoinsDelta.value === 'number'
+        && winnerCoinsDelta.value > 0
+      )
+        ? startingCoinsBalance.value + winnerCoinsDelta.value
+        : null
+
+      const walletSettled = latestBalance != null
+        && (
+          expectedBalance == null
+          || latestBalance >= expectedBalance
+        )
+
+      if (walletSettled) {
+        winnerTotalCoins.value = latestBalance
+      }
+
+      if (winnerTotalCoins.value != null && typeof winnerCoinsDelta.value === 'number' && winnerCoinsDelta.value > 0) {
         return
       }
     } catch (error) {
       console.error('[game-board] Failed to load winner economy:', error)
     }
 
-    await new Promise(resolve => setTimeout(resolve, 400))
+    await new Promise(resolve => setTimeout(resolve, 550))
+  }
+
+  if (winnerTotalCoins.value != null && startingCoinsBalance.value != null && winnerCoinsDelta.value != null) {
+    const expectedBalance = startingCoinsBalance.value + winnerCoinsDelta.value
+    if (winnerTotalCoins.value < expectedBalance) {
+      winnerTotalCoins.value = null
+    }
   }
 }
 
@@ -162,7 +204,7 @@ async function syncCompletedGame() {
   if (completionSynced || winnerID.value == null || !shouldFinalizeGame.value) return
   completionSynced = true
   try {
-    await completeGameRecord(props.matchId, String(winnerID.value))
+    finalizedGame.value = await completeGameRecord(props.matchId, String(winnerID.value))
   } catch (error) {
     completionSynced = false
     console.error('[game-board] Failed to finalize game record:', error)
@@ -210,6 +252,24 @@ watch(isOnline, (online, wasOnline) => {
   if (online && wasOnline === false) {
     fetchMatchPlayers()
   }
+})
+
+async function captureStartingCoinsBalance() {
+  if (!session.value?.id) return
+
+  const accountIdentifier = session.value.id || session.value.email?.trim()
+  if (!accountIdentifier) return
+
+  try {
+    const accountResponse = await getAccount(accountIdentifier, 0, 0)
+    startingCoinsBalance.value = accountResponse.user.wallet?.coins_balance ?? null
+  } catch (error) {
+    console.error('[game-board] Failed to capture starting wallet balance:', error)
+  }
+}
+
+onMounted(() => {
+  void captureStartingCoinsBalance()
 })
 </script>
 
