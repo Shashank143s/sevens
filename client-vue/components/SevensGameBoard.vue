@@ -6,6 +6,7 @@ export interface PlayerInfo {
   id: number
   name?: string | null
   avatar?: string
+  isBot?: boolean
 }
 
 const props = defineProps<{
@@ -47,7 +48,7 @@ const winnerDisplay = computed(() => {
 })
 const humanPlayerIds = computed(() => {
   return players.value
-    .filter((player) => player.name && !player.name.startsWith('Bot '))
+    .filter((player) => player.name && !player.isBot)
     .map((player) => player.id)
     .sort((left, right) => left - right)
 })
@@ -72,6 +73,19 @@ const redirectDeadline = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
 let deleteRequested = false
 let completionSynced = false
+
+function inferWinnerCoinDelta(game?: Awaited<ReturnType<typeof getGameRecord>>['game'] | null) {
+  if (!game || !didIWin.value) return null
+
+  const playersInGame = game.players ?? []
+  const stake = Math.max(game.coin_rules?.stake ?? 10, 10)
+  const humanPlayers = playersInGame.filter((player) => !player.is_bot)
+  const botCount = playersInGame.filter((player) => player.is_bot).length
+
+  if (humanPlayers.length === 0) return null
+
+  return Math.max(0, (humanPlayers.length - 1) * stake + botCount * 10)
+}
 
 function clearRedirectTimer() {
   if (redirectTimer != null) {
@@ -137,12 +151,31 @@ async function loadWinnerEconomy() {
 
   const accountIdentifier = session.value.id || session.value.email?.trim()
   if (!accountIdentifier) return
+  const mySeatId = state.value?.playerID != null ? String(state.value.playerID) : null
 
-  const finalizedWinner = finalizedGame.value?.game.players?.find((entry) => entry.user_id === session.value?.id)
+  const finalizedWinner = finalizedGame.value?.game.players?.find((entry) =>
+    entry.user_id === session.value?.id || (mySeatId != null && entry.player_id === mySeatId),
+  )
   const finalizedDelta = finalizedWinner?.coins?.delta ?? null
+  let resolvedDelta: number | null = null
+
   if (typeof finalizedDelta === 'number' && finalizedDelta > 0) {
-    winnerCoinsDelta.value = finalizedDelta
+    resolvedDelta = finalizedDelta
+  } else {
+    const inferredFinalizedDelta = inferWinnerCoinDelta(finalizedGame.value?.game ?? null)
+    if (typeof inferredFinalizedDelta === 'number' && inferredFinalizedDelta > 0) {
+      resolvedDelta = inferredFinalizedDelta
+    }
   }
+
+  if (resolvedDelta != null) {
+    winnerCoinsDelta.value = resolvedDelta
+    if (startingCoinsBalance.value != null) {
+      winnerTotalCoins.value = startingCoinsBalance.value + resolvedDelta
+    }
+  }
+
+  let latestObservedBalance: number | null = null
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
@@ -152,34 +185,45 @@ async function loadWinnerEconomy() {
       ])
 
       const latestBalance = accountResponse.user.wallet?.coins_balance ?? null
-      const player = gameResponse.game.players?.find((entry) => entry.user_id === session.value?.id)
+      latestObservedBalance = latestBalance ?? latestObservedBalance
+      const player = gameResponse.game.players?.find((entry) =>
+        entry.user_id === session.value?.id || (mySeatId != null && entry.player_id === mySeatId),
+      )
       const latestDelta = player?.coins?.delta ?? null
       const effectiveDelta = (
         typeof finalizedDelta === 'number' && finalizedDelta > 0
           ? finalizedDelta
-          : latestDelta
+          : (typeof latestDelta === 'number' && latestDelta > 0
+            ? latestDelta
+            : inferWinnerCoinDelta(gameResponse.game))
       )
 
       if (typeof effectiveDelta === 'number' && effectiveDelta > 0) {
+        resolvedDelta = effectiveDelta
         winnerCoinsDelta.value = effectiveDelta
       }
 
       const expectedBalance = (
         startingCoinsBalance.value != null
-        && typeof winnerCoinsDelta.value === 'number'
-        && winnerCoinsDelta.value > 0
-      )
-        ? startingCoinsBalance.value + winnerCoinsDelta.value
-        : null
+        && typeof resolvedDelta === 'number'
+        && resolvedDelta > 0
+      ) ? startingCoinsBalance.value + resolvedDelta : null
 
-      const walletSettled = latestBalance != null
-        && (
-          expectedBalance == null
-          || latestBalance >= expectedBalance
-        )
-
-      if (walletSettled) {
+      if (expectedBalance != null) {
+        winnerTotalCoins.value = latestBalance != null
+          ? Math.max(latestBalance, expectedBalance)
+          : expectedBalance
+      } else if (latestBalance != null) {
         winnerTotalCoins.value = latestBalance
+      }
+
+      if ((winnerCoinsDelta.value == null || winnerCoinsDelta.value <= 0) && startingCoinsBalance.value != null && latestBalance != null) {
+        const inferredDeltaFromWallet = latestBalance - startingCoinsBalance.value
+        if (inferredDeltaFromWallet > 0) {
+          resolvedDelta = inferredDeltaFromWallet
+          winnerCoinsDelta.value = inferredDeltaFromWallet
+          winnerTotalCoins.value = latestBalance
+        }
       }
 
       if (winnerTotalCoins.value != null && typeof winnerCoinsDelta.value === 'number' && winnerCoinsDelta.value > 0) {
@@ -192,10 +236,11 @@ async function loadWinnerEconomy() {
     await new Promise(resolve => setTimeout(resolve, 550))
   }
 
-  if (winnerTotalCoins.value != null && startingCoinsBalance.value != null && winnerCoinsDelta.value != null) {
-    const expectedBalance = startingCoinsBalance.value + winnerCoinsDelta.value
-    if (winnerTotalCoins.value < expectedBalance) {
-      winnerTotalCoins.value = null
+  if (winnerTotalCoins.value == null) {
+    if (startingCoinsBalance.value != null && typeof winnerCoinsDelta.value === 'number' && winnerCoinsDelta.value > 0) {
+      winnerTotalCoins.value = startingCoinsBalance.value + winnerCoinsDelta.value
+    } else if (latestObservedBalance != null) {
+      winnerTotalCoins.value = latestObservedBalance
     }
   }
 }
@@ -231,13 +276,14 @@ async function fetchMatchPlayers() {
     const res = await fetch(`${useRuntimeConfig().public.apiBase}/games/sevens/${props.matchId}`)
     if (!res.ok) return
     const data = await res.json() as {
-      players?: Array<{ id?: number; name?: string | null; data?: { avatar?: string } }>
+      players?: Array<{ id?: number; name?: string | null; data?: { avatar?: string }; is_bot?: boolean }>
     }
     if (Array.isArray(data.players)) {
       players.value = data.players.map((p, i) => ({
         id: p.id ?? i,
         name: p.name ?? null,
         avatar: p.data?.avatar,
+        isBot: p.is_bot ?? false,
       }))
     }
   } catch {

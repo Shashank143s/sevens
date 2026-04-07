@@ -6,9 +6,10 @@ const props = defineProps<{
   pile: { low: number | null; high: number | null }
   ranks: number[]
   getCardImageSrc: (card: { suit: Suit; rank: number }) => string
+  hiddenCardKey?: string | null
 }>()
 
-const { suit, pile, ranks, getCardImageSrc } = toRefs(props)
+const { suit, pile, ranks, getCardImageSrc, hiddenCardKey } = toRefs(props)
 </script>
 
 <template>
@@ -25,7 +26,8 @@ const { suit, pile, ranks, getCardImageSrc } = toRefs(props)
           pile.low != null &&
           pile.high != null &&
           rank >= pile.low &&
-          rank <= pile.high
+          rank <= pile.high &&
+          hiddenCardKey !== `${suit}-${rank}`
         "
         is="img"
         :src="getCardImageSrc({ suit, rank })"

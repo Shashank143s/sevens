@@ -8,6 +8,67 @@ import type { JoinRouteContext, RouteNext } from '../types/route.types';
 import type { GameDetails, JoinGameResponse } from '../types/service.types';
 import { readJsonBody } from '../utils/common.util';
 
+const BOT_NAME_PREFIX = '🤖 ';
+const BOT_CELEBRITY_NAMES = [
+  'Tom Hanks',
+  'John Cena',
+  'Taylor Swift',
+  'Dwayne Johnson',
+  'Beyonce',
+  'Keanu Reeves',
+  'Rihanna',
+  'Leonardo DiCaprio',
+  'Ariana Grande',
+  'Will Smith',
+  'Emma Stone',
+  'Chris Evans',
+  'Scarlett Johansson',
+  'Bruno Mars',
+  'Jennifer Lawrence',
+  'Shah Rukh Khan',
+  'Zendaya',
+  'Ryan Reynolds',
+  'Margot Robbie',
+  'Selena Gomez',
+  'Robert Downey Jr',
+  'Lady Gaga',
+  'Pedro Pascal',
+  'Billie Eilish',
+  'Chris Hemsworth',
+  'Megan Fox',
+  'Drake',
+  'Daniel Craig',
+  'Priyanka Chopra',
+  'Miley Cyrus',
+  'Jason Momoa',
+  'Gal Gadot',
+  'Anne Hathaway',
+  'Hugh Jackman',
+  'Dua Lipa',
+  'Idris Elba',
+  'Sandra Bullock',
+  'Tom Cruise',
+  'Katy Perry',
+  'Morgan Freeman',
+]
+
+function normalizeBotCandidate(name?: string | null) {
+  return String(name ?? '')
+    .replace(BOT_NAME_PREFIX, '')
+    .trim()
+    .toLowerCase()
+}
+
+function pickBotNames(existingNames: Array<string | null | undefined>, count: number) {
+  const used = new Set(existingNames.map(normalizeBotCandidate).filter(Boolean))
+  const available = BOT_CELEBRITY_NAMES.filter((name) => !used.has(name.toLowerCase()))
+  return Array.from({ length: count }, (_, index) => {
+    const name = available[index] ?? `Celebrity Bot ${index + 1}`
+    used.add(name.toLowerCase())
+    return `${BOT_NAME_PREFIX}${name}`
+  })
+}
+
 export async function joinRoute(ctx: JoinRouteContext, next: RouteNext): Promise<void> {
   const match = ctx.path.match(/^\/api\/bot\/join\/([^/]+)$/);
   if (ctx.method !== 'POST' || !match) {
@@ -48,11 +109,14 @@ export async function joinRoute(ctx: JoinRouteContext, next: RouteNext): Promise
       return;
     }
 
+    const botNames = pickBotNames(players.map((player) => player.name), botsToJoin)
+
     for (let index = 0; index < botsToJoin; index += 1) {
       const slot = emptySlots[index];
+      const botName = botNames[index]
       const joinRes = await joinGame(matchID, {
         playerID: String(slot.id),
-        playerName: `Bot ${index + 1}`,
+        playerName: botName,
         data: {},
       });
 
@@ -68,7 +132,7 @@ export async function joinRoute(ctx: JoinRouteContext, next: RouteNext): Promise
       await updateGameRecord(matchID, {
         joined_player: {
           player_id: joinData.playerID,
-          display_name: `Bot ${index + 1}`,
+          display_name: botName,
           is_bot: true,
           joined_at: new Date().toISOString(),
         },

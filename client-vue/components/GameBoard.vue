@@ -58,6 +58,7 @@ const myHand = computed(() => {
 const isPlayableCardAvailable = computed(() => getPlayableCards(myHand.value, G.value.piles).length > 0)
 const invalidCardId = ref<string | null>(null)
 const animatingCardId = ref<string | null>(null)
+const landingCardKey = ref<string | null>(null)
 let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
 let playAnimationTimer: ReturnType<typeof setTimeout> | null = null
 let cardPlayAudio: HTMLAudioElement | null = null
@@ -145,6 +146,7 @@ function clearPlayAnimation() {
   }
   flyingCard.value = null
   animatingCardId.value = null
+  landingCardKey.value = null
 }
 
 function stopCardPlaySound() {
@@ -250,6 +252,7 @@ function animatePlayedCard(card: Card) {
   }
 
   animatingCardId.value = card.id
+  landingCardKey.value = `${card.suit}-${getTargetRank(card)}`
   flyingCard.value = {
     id: card.id,
     src: getCardImageSrc(card),
@@ -402,24 +405,28 @@ onUnmounted(() => {
             :pile="G.piles.spades"
             :ranks="ranks"
             :getCardImageSrc="getCardImageSrc"
+            :hidden-card-key="landingCardKey"
           />
           <SuitesLane
             suit="hearts"
             :pile="G.piles.hearts"
             :ranks="ranks"
             :getCardImageSrc="getCardImageSrc"
+            :hidden-card-key="landingCardKey"
           />
           <SuitesLane
             suit="diamonds"
             :pile="G.piles.diamonds"
             :ranks="ranks"
             :getCardImageSrc="getCardImageSrc"
+            :hidden-card-key="landingCardKey"
           />
           <SuitesLane
             suit="clubs"
             :pile="G.piles.clubs"
             :ranks="ranks"
             :getCardImageSrc="getCardImageSrc"
+            :hidden-card-key="landingCardKey"
           />
         </div>
       </div>
@@ -457,6 +464,7 @@ onUnmounted(() => {
                   <div
                     v-for="(rank, idx) in p.ranks"
                     :key="`${p.suit}-${rank}`"
+                    v-show="landingCardKey !== `${p.suit}-${rank}`"
                     class="mobile-pile__card"
                     :style="getMobilePileCardStyle(idx, p.ranks.length)"
                   >
