@@ -4,6 +4,7 @@ type SoundOptions = {
 }
 
 const audioRegistry = new Map<string, HTMLAudioElement>()
+const pendingPlayback = new Map<string, SoundOptions | undefined>()
 let unlockInitialized = false
 let audioUnlocked = false
 
@@ -20,6 +21,7 @@ function getAudio(src: string, options?: SoundOptions) {
   if (!audio) {
     audio = new Audio(src)
     audio.preload = options?.preload ?? 'auto'
+    audio.playsInline = true
     if (typeof options?.volume === 'number') {
       audio.volume = options.volume
     }
@@ -29,6 +31,44 @@ function getAudio(src: string, options?: SoundOptions) {
   }
 
   return audio
+}
+
+async function warmRegisteredAudio() {
+  if (!canUseAudio()) return
+
+  for (const audio of audioRegistry.values()) {
+    try {
+      const previousMuted = audio.muted
+      const previousTime = audio.currentTime
+      audio.muted = true
+      audio.currentTime = 0
+      await audio.play()
+      audio.pause()
+      audio.currentTime = previousTime
+      audio.muted = previousMuted
+    } catch {
+      // Ignore warm-up failures for individual files.
+    }
+  }
+}
+
+async function flushPendingPlayback() {
+  if (!canUseAudio() || !audioUnlocked || pendingPlayback.size === 0) return
+
+  const queued = Array.from(pendingPlayback.entries())
+  pendingPlayback.clear()
+
+  for (const [src, options] of queued) {
+    const audio = getAudio(src, options)
+    if (!audio) continue
+
+    try {
+      audio.currentTime = 0
+      await audio.play()
+    } catch {
+      pendingPlayback.set(src, options)
+    }
+  }
 }
 
 async function unlockAudioPlayback() {
@@ -48,6 +88,8 @@ async function unlockAudioPlayback() {
   }
 
   audioUnlocked = true
+  await warmRegisteredAudio()
+  await flushPendingPlayback()
 }
 
 export function useSoundEffects() {
@@ -83,8 +125,10 @@ export function useSoundEffects() {
     try {
       audio.currentTime = 0
       await audio.play()
+      pendingPlayback.delete(src)
       return true
     } catch {
+      pendingPlayback.set(src, options)
       return false
     }
   }
@@ -94,6 +138,7 @@ export function useSoundEffects() {
     if (!audio) return
     audio.pause()
     audio.currentTime = 0
+    pendingPlayback.delete(src)
   }
 
   return {
