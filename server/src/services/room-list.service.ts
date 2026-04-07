@@ -71,7 +71,7 @@ function buildRoomItem(match: RoomMatchPayload, gameMap: ReturnType<typeof build
 
 function shouldIncludeRoom(match: RoomMatchPayload, gameMap: ReturnType<typeof buildGameMap>) {
   const game = gameMap.get(match.matchID);
-  if (!game) return true;
+  if (!game) return false;
   return !['completed', 'abandoned'].includes(game.status);
 }
 
