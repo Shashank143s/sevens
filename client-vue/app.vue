@@ -11,10 +11,12 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
+const appSource = computed(() => config.public.appSource || 'web')
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
 const normalizedRoutePath = computed(() => normalizePath(route.path))
-const isNativeApp = computed(() => mounted.value && nativeApp.value)
-const showWebSplash = computed(() => mounted.value && !nativeApp.value)
+const isAndroidBuild = computed(() => appSource.value === 'android')
+const isNativeApp = computed(() => isAndroidBuild.value || (mounted.value && nativeApp.value))
+const showWebSplash = computed(() => appSource.value === 'web' && mounted.value && !nativeApp.value)
 const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
 const router = useRouter()
@@ -115,28 +117,34 @@ onUnmounted(() => {
 
     <ClientOnly>
       <template #fallback>
-        <div class="launch-splash">
-          <div class="launch-splash__glow launch-splash__glow--left" />
-          <div class="launch-splash__glow launch-splash__glow--right" />
-          <div class="launch-splash__card">
-            <div class="launch-splash__logo-wrap">
-              <img
-                :src="splashLogoSrc"
-                alt="Sevens Royale"
-                class="launch-splash__logo"
-              >
+        <div
+          class="launch-splash"
+          :class="{ 'launch-splash--neutral': isAndroidBuild }"
+          aria-hidden="true"
+        >
+          <template v-if="!isAndroidBuild">
+            <div class="launch-splash__glow launch-splash__glow--left" />
+            <div class="launch-splash__glow launch-splash__glow--right" />
+            <div class="launch-splash__card">
+              <div class="launch-splash__logo-wrap">
+                <img
+                  :src="splashLogoSrc"
+                  alt="Sevens Royale"
+                  class="launch-splash__logo"
+                >
+              </div>
+              <p class="launch-splash__eyebrow">The Classic Game, Elevated</p>
+              <h1 class="launch-splash__title" aria-label="Sevens">
+                <span class="launch-splash__title-char">S</span>
+                <span class="launch-splash__title-char">E</span>
+                <span class="launch-splash__title-char">V</span>
+                <span class="launch-splash__title-char launch-splash__title-char--mirror">E</span>
+                <span class="launch-splash__title-char launch-splash__title-char--mirror">N</span>
+                <span class="launch-splash__title-char launch-splash__title-char--mirror">S</span>
+              </h1>
+              <p class="launch-splash__subtitle">Let's play!</p>
             </div>
-            <p class="launch-splash__eyebrow">The Classic Game, Elevated</p>
-            <h1 class="launch-splash__title" aria-label="Sevens">
-              <span class="launch-splash__title-char">S</span>
-              <span class="launch-splash__title-char">E</span>
-              <span class="launch-splash__title-char">V</span>
-              <span class="launch-splash__title-char launch-splash__title-char--mirror">E</span>
-              <span class="launch-splash__title-char launch-splash__title-char--mirror">N</span>
-              <span class="launch-splash__title-char launch-splash__title-char--mirror">S</span>
-            </h1>
-            <p class="launch-splash__subtitle">Let's play!</p>
-          </div>
+          </template>
         </div>
       </template>
       <Transition name="launch-splash">
@@ -256,6 +264,14 @@ onUnmounted(() => {
 .launch-splash--hidden {
   opacity: 0;
   pointer-events: none;
+}
+
+.launch-splash--neutral {
+  background: #020617;
+}
+
+.launch-splash--fallback {
+  z-index: 110;
 }
 
 @media (min-width: 641px) {

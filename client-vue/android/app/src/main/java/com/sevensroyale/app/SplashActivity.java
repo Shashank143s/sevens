@@ -24,7 +24,7 @@ public class SplashActivity extends AppCompatActivity {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            overridePendingTransition(R.anim.main_activity_fade_in, R.anim.splash_activity_fade_out);
         }, SPLASH_DELAY_MS);
     }
 
