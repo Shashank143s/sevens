@@ -1,9 +1,13 @@
+import { normalizePath } from '~/utils/normalizePath'
+
 export default defineNuxtRouteMiddleware((to) => {
   if (import.meta.server) return
 
+  const path = normalizePath(to.path)
+
   if (
-    ['/', '/privacy-policy', '/terms-and-conditions', '/contact', '/downloads', '/instructions', '/blog'].includes(to.path)
-    || to.path.startsWith('/blog/')
+    ['/', '/privacy-policy', '/terms-and-conditions', '/contact', '/downloads', '/instructions', '/blog'].includes(path)
+    || path.startsWith('/blog/')
   ) return
 
   const { session, hydrateSession } = usePlayerSession()

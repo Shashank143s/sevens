@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Capacitor } from '@capacitor/core'
+import { normalizePath } from '~/utils/normalizePath'
 
 const isOnline = ref(true)
 const pwa = import.meta.client ? usePWA() : undefined
@@ -11,9 +12,10 @@ const route = useRoute()
 const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
+const normalizedRoutePath = computed(() => normalizePath(route.path))
 const isNativeApp = computed(() => mounted.value && nativeApp.value)
 const showWebSplash = computed(() => mounted.value && !nativeApp.value)
-const isProtectedRoute = computed(() => route.path !== '/')
+const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
 const router = useRouter()
 
@@ -50,7 +52,7 @@ function syncOnlineState() {
 }
 
 function releaseAuthRedirect() {
-  if (!import.meta.client || route.path !== '/') return
+  if (!import.meta.client || normalizedRoutePath.value !== '/') return
   window.requestAnimationFrame(() => {
     authRedirecting.value = false
   })
