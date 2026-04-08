@@ -6,7 +6,11 @@ import { blogPosts } from '~/data/blog'
 const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
-const canonicalUrl = computed(() => new URL(route.path || '/blog', config.public.siteUrl).toString())
+const canonicalPath = computed(() => {
+  const path = route.path || '/blog'
+  return path.endsWith('/') ? path : `${path}/`
+})
+const canonicalUrl = computed(() => new URL(canonicalPath.value, config.public.siteUrl).toString())
 const lightboxImage = ref<{ src: string; alt: string } | null>(null)
 
 function openLightbox(src: string, alt: string) {

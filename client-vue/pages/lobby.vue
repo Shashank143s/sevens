@@ -38,6 +38,7 @@ const createRoomName = ref('')
 const roomNameTouched = ref(false)
 const stakeTouched = ref(false)
 const createRoomNameInput = ref<HTMLInputElement | null>(null)
+const showBotsInfo = ref(false)
 
 const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
 const botOptions = computed(() => {
@@ -152,11 +153,13 @@ async function openCreateModal() {
   stakeTouched.value = false
   createPrivateRoom.value = false
   createRoomPassword.value = ''
+  showBotsInfo.value = false
   showCreateModal.value = true
 }
 
 function closeCreateModal() {
   showCreateModal.value = false
+  showBotsInfo.value = false
 }
 
 function adjustStake(direction: 'up' | 'down') {
@@ -578,7 +581,7 @@ onMounted(() => {
 
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Players</label>
+            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Size</label>
             <div class="relative">
               <select
                 v-model.number="createNumPlayers"
@@ -606,7 +609,33 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Bots</label>
+            <div class="mb-1.5 flex items-center gap-2">
+              <label class="block text-sm font-semibold text-slate-300">Bots</label>
+              <div class="relative">
+                <button
+                  type="button"
+                  class="lobby-page__info-trigger"
+                  aria-label="Explain bots and room size"
+                  :aria-expanded="showBotsInfo ? 'true' : 'false'"
+                  @click="showBotsInfo = !showBotsInfo"
+                  @mouseenter="showBotsInfo = true"
+                  @mouseleave="showBotsInfo = false"
+                  @focus="showBotsInfo = true"
+                  @blur="showBotsInfo = false"
+                >
+                  i
+                </button>
+                <Transition name="lobby-page__tooltip">
+                  <div
+                    v-if="showBotsInfo"
+                    class="lobby-page__tooltip"
+                    role="tooltip"
+                  >
+                    Room size includes bots. Example: 4 seats + 2 bots = 2 human players.
+                  </div>
+                </Transition>
+              </div>
+            </div>
             <div class="relative">
               <select
                 v-model.number="createAiBots"
@@ -756,5 +785,55 @@ onMounted(() => {
   background: rgba(30, 41, 59, 0.9);
   color: #f8fafc;
   border-color: rgba(212, 175, 55, 0.22);
+}
+
+.lobby-page__info-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  background: rgba(250, 204, 21, 0.12);
+  color: rgba(253, 230, 138, 0.95);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.lobby-page__info-trigger:hover,
+.lobby-page__info-trigger:focus-visible {
+  background: rgba(250, 204, 21, 0.2);
+  border-color: rgba(250, 204, 21, 0.42);
+  color: #fef3c7;
+}
+
+.lobby-page__tooltip {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 10;
+  width: min(13rem, calc(100vw - 4rem));
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
+  box-shadow: 0 20px 42px rgba(2, 6, 23, 0.38);
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.lobby-page__tooltip-enter-active,
+.lobby-page__tooltip-leave-active {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.lobby-page__tooltip-enter-from,
+.lobby-page__tooltip-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

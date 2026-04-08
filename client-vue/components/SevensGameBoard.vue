@@ -46,17 +46,6 @@ const winnerDisplay = computed(() => {
     avatar: p?.avatar ?? '🏆',
   }
 })
-const humanPlayerIds = computed(() => {
-  return players.value
-    .filter((player) => player.name && !player.isBot)
-    .map((player) => player.id)
-    .sort((left, right) => left - right)
-})
-const shouldFinalizeGame = computed(() => {
-  if (state.value?.playerID == null) return false
-  const currentPlayerId = Number(state.value.playerID)
-  return humanPlayerIds.value[0] === currentPlayerId
-})
 const didIWin = computed(() => {
   const id = winnerID.value
   if (id == null) return false
@@ -246,7 +235,7 @@ async function loadWinnerEconomy() {
 }
 
 async function syncCompletedGame() {
-  if (completionSynced || winnerID.value == null || !shouldFinalizeGame.value) return
+  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
   try {
     finalizedGame.value = await completeGameRecord(props.matchId, String(winnerID.value))

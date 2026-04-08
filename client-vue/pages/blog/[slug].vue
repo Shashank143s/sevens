@@ -7,7 +7,11 @@ const route = useRoute()
 const config = useRuntimeConfig()
 const slug = computed(() => String(route.params.slug || ''))
 const post = computed(() => getBlogPost(slug.value))
-const canonicalUrl = computed(() => new URL(route.path || `/blog/${slug.value}`, config.public.siteUrl).toString())
+const canonicalPath = computed(() => {
+  const path = route.path || `/blog/${slug.value}`
+  return path.endsWith('/') ? path : `${path}/`
+})
+const canonicalUrl = computed(() => new URL(canonicalPath.value, config.public.siteUrl).toString())
 const relatedPosts = computed(() => blogPosts.filter(entry => entry.slug !== slug.value).slice(0, 3))
 const lightboxImage = ref<{ src: string; alt: string } | null>(null)
 
