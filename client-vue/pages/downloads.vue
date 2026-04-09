@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
-import apkUrl from '~/assets/downloads/Sevens.apk?url'
 
 const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
+const apkUrl = 'https://github.com/Shashank143s/sevens/releases/download/apk-1.0.2/sevensroyale.apk'
 
 useHead(() => ({
   link: [
