@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RoomCard from '~/components/RoomCard.vue'
 import { listMatches, createMatch, joinBots } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
@@ -37,7 +38,6 @@ const createRoomPassword = ref('')
 const createRoomName = ref('')
 const roomNameTouched = ref(false)
 const stakeTouched = ref(false)
-const createRoomNameInput = ref<HTMLInputElement | null>(null)
 const showBotsInfo = ref(false)
 
 const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
@@ -299,13 +299,6 @@ watch(createNumPlayers, () => {
   }
 })
 
-watch(showCreateModal, async (open) => {
-  if (!open) return
-  await nextTick()
-  createRoomNameInput.value?.focus()
-  createRoomNameInput.value?.select()
-})
-
 // Redirect if no session
 onMounted(() => {
   if (!session.value?.name?.trim()) {
@@ -436,418 +429,54 @@ onMounted(() => {
         </div>
         <div v-else class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.05),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-3 sm:p-4">
           <div class="space-y-3">
-            <article
+            <RoomCard
               v-for="room in rooms"
               :key="room.matchID"
-              class="rounded-2xl border border-white/10 bg-slate-800/55 px-4 py-4 shadow-[0_20px_45px_rgba(2,6,23,0.22)] backdrop-blur-sm transition hover:border-white/15 hover:bg-slate-800/70"
-            >
-          <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-stretch gap-3">
-                <span
-                  v-if="room.is_private"
-                  class="inline-flex min-h-full w-7 shrink-0 items-center justify-center self-stretch text-amber-100"
-                  aria-label="Private room"
-                  title="Private room"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    class="h-6 w-6"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <rect x="5" y="11" width="14" height="10" rx="2" ry="2" />
-                    <path d="M8 11V8a4 4 0 1 1 8 0v3" />
-                  </svg>
-                </span>
-                <div class="min-w-0">
-                  <h3 class="truncate text-base font-semibold text-slate-50 sm:text-lg">
-                    {{ room.room_name || displayRoomID(room.matchID) }}
-                  </h3>
-                  <p v-if="room.creator_name" class="mt-1 font-mono text-xs text-slate-400">
-                    {{ room.creator_name }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="shrink-0">
-              <button
-                v-if="!hasJoinedRoom(room.matchID)"
-                type="button"
-                class="inline-flex min-h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-emerald-600"
-                :disabled="isRoomFull(room)"
-                @click="joinRoom(room.matchID)"
-              >
-                Join
-              </button>
-              <NuxtLink
-                v-else
-                :to="`/room/${room.matchID}`"
-                class="inline-flex min-h-10 items-center justify-center rounded-lg bg-slate-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-500"
-              >
-                Rejoin
-              </NuxtLink>
-            </div>
-          </div>
-
-          <div class="mt-4 grid grid-cols-3 gap-3 text-sm">
-              <div class="flex min-w-0 flex-col items-center text-center">
-                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Players</p>
-                <p class="mt-1 text-base font-semibold text-slate-100">
-                  {{ joinedCount(room) }} / {{ totalPlayers(room) }}
-                </p>
-              </div>
-              <div class="flex flex-col items-center text-center">
-                <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Stake</p>
-                <p class="mt-1 inline-flex items-center justify-center gap-2 text-base font-semibold text-amber-200">
-                  {{ room.coin_stake ?? 10 }}
-                  <IconsCoinIcon class="h-4 w-4" />
-                </p>
-              </div>
-            <div class="flex min-w-0 flex-col items-center text-center">
-              <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Status</p>
-              <div class="mt-2 flex w-full items-center justify-center">
-                <span class="inline-flex h-4 w-4 rounded-full" :class="roomStatusDotClass(room)" />
-              </div>
-            </div>
-          </div>
-            </article>
+              :room="room"
+              :joined-count="joinedCount(room)"
+              :total-players="totalPlayers(room)"
+              :has-joined="hasJoinedRoom(room.matchID)"
+              :is-full="isRoomFull(room)"
+              :status-dot-class="roomStatusDotClass(room)"
+              :display-title="room.room_name || displayRoomID(room.matchID)"
+              @join="joinRoom"
+            />
           </div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- Create Room modal -->
-  <Teleport to="body">
-    <div
-      v-if="showCreateModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      @click.self="closeCreateModal"
-    >
-      <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
-        <div class="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4">
-          <div class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-amber-300/80">New Table</p>
-              <h2 class="mt-1 text-xl font-bold text-white">Create a Room</h2>
-            </div>
-            <div class="flex items-center gap-2">
-              <div class="inline-flex items-center rounded-full border border-amber-300/15 bg-white/5 px-3 py-1 text-sm font-semibold text-amber-100">
-                <IconsCoinIcon class="mr-2 h-4 w-4" />
-                {{ coinsBalanceLabel ?? '—' }}
-              </div>
-              <button
-                type="button"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xl leading-none text-slate-400 transition hover:bg-white/8 hover:text-white"
-                aria-label="Close"
-                @click="closeCreateModal"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="p-5">
-        <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Name</label>
-        <input
-          ref="createRoomNameInput"
-          v-model="createRoomName"
-          type="text"
-          maxlength="40"
-          placeholder="Friday Night Table"
-          class="w-full bg-slate-800/80 rounded-2xl px-4 py-3 text-white mb-1.5 focus:outline-none focus:ring-2"
-          :class="roomNameError
-            ? 'border border-red-400/70 focus:ring-red-400'
-            : 'border border-slate-600 focus:ring-amber-500'"
-          @blur="roomNameTouched = true"
-        >
-        <p v-if="roomNameError" class="mb-4 text-xs font-semibold text-red-300">{{ roomNameError }}</p>
-        <div v-else class="mb-4" />
-
-        <div class="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <label class="lobby-page__field-label">Room Size</label>
-            <div class="relative">
-              <select
-                v-model.number="createNumPlayers"
-                class="w-full appearance-none bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option :value="2">2 Players</option>
-                <option :value="3">3 Players</option>
-                <option :value="4">4 Players</option>
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300">
-                <svg
-                  viewBox="0 0 20 20"
-                  class="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m5 7.5 5 5 5-5" />
-                </svg>
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <div class="lobby-page__field-label lobby-page__field-label--with-icon">
-              <span>Bots</span>
-              <div class="relative">
-                <button
-                  type="button"
-                  class="lobby-page__info-trigger"
-                  aria-label="Explain bots and room size"
-                  :aria-expanded="showBotsInfo ? 'true' : 'false'"
-                  @click="showBotsInfo = !showBotsInfo"
-                  @mouseenter="showBotsInfo = true"
-                  @mouseleave="showBotsInfo = false"
-                  @focus="showBotsInfo = true"
-                  @blur="showBotsInfo = false"
-                >
-                  i
-                </button>
-                <Transition name="lobby-page__tooltip">
-                  <div
-                    v-if="showBotsInfo"
-                    class="lobby-page__tooltip"
-                    role="tooltip"
-                  >
-                    Room size includes bots. Example: 4 seats + 2 bots = 2 human players.
-                  </div>
-                </Transition>
-              </div>
-            </div>
-            <div class="relative">
-              <select
-                v-model.number="createAiBots"
-                class="w-full appearance-none bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option
-                  v-for="option in botOptions"
-                  :key="option"
-                  :value="option"
-                >
-                  {{ option === 0 ? 'None' : `${option}` }}
-                </option>
-              </select>
-              <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300">
-                <svg
-                  viewBox="0 0 20 20"
-                  class="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m5 7.5 5 5 5-5" />
-                </svg>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <label class="block text-sm font-semibold text-slate-200">Stake per Player</label>
-              <p class="mt-1 text-xs text-slate-400">Minimum 10 coins. Must not exceed your balance.</p>
-            </div>
-            <div class="flex flex-col items-center">
-              <div class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/70 p-1">
-                <button
-                  type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
-                  aria-label="Decrease stake"
-                  @click="adjustStake('down')"
-                >
-                  −
-                </button>
-                <input
-                  v-model.number="createStake"
-                  type="number"
-                  min="10"
-                  step="10"
-                  class="w-14 bg-transparent px-1 text-center text-base font-bold text-amber-100 focus:outline-none"
-                  @blur="normalizeStakeInput"
-                  @input="stakeTouched = true"
-                >
-                <button
-                  type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
-                  aria-label="Increase stake"
-                  @click="adjustStake('up')"
-                >
-                  +
-                </button>
-              </div>
-              <p v-if="stakeError" class="mt-2 text-xs font-semibold text-red-300">{{ stakeError }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-          <div>
-            <p class="text-sm font-semibold text-slate-200">Private room</p>
-            <p class="mt-1 text-xs text-slate-400">Only players with the password can join.</p>
-          </div>
-          <button
-            type="button"
-            class="relative inline-flex h-7 w-12 items-center rounded-full border transition"
-            :class="createPrivateRoom ? 'border-amber-300/40 bg-amber-400/80' : 'border-white/10 bg-slate-800/80'"
-            role="switch"
-            :aria-checked="createPrivateRoom"
-            aria-label="Toggle private room"
-            @click="createPrivateRoom = !createPrivateRoom"
-          >
-            <span
-              class="inline-flex h-5 w-5 transform rounded-full bg-white shadow transition"
-              :class="createPrivateRoom ? 'translate-x-6' : 'translate-x-1'"
-            />
-          </button>
-        </div>
-
-        <div v-if="createPrivateRoom" class="grid gap-3 mb-5">
-          <input
-            v-model="createRoomPassword"
-            type="password"
-            placeholder="Room password"
-            class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-        </div>
-
-        <button
-          type="button"
-          class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-2xl touch-manipulation flex items-center justify-center gap-2 disabled:opacity-50"
-          :disabled="creating || !!roomNameError || !!stakeError"
-          @click="doCreateRoom"
-        >
-          Create Room
-        </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <CreateRoomModal
+    :visible="showCreateModal"
+    :coins-balance-label="coinsBalanceLabel"
+    :bot-options="botOptions"
+    :creating="creating"
+    :create-num-players="createNumPlayers"
+    :create-ai-bots="createAiBots"
+    :create-stake="createStake"
+    :create-private-room="createPrivateRoom"
+    :create-room-password="createRoomPassword"
+    :create-room-name="createRoomName"
+    :room-name-error="roomNameError"
+    :stake-error="stakeError"
+    :show-bots-info="showBotsInfo"
+    @close="closeCreateModal"
+    @submit="doCreateRoom"
+    @room-name-blur="roomNameTouched = true"
+    @normalize-stake-input="normalizeStakeInput"
+    @mark-stake-touched="stakeTouched = true"
+    @decrement-stake="adjustStake('down')"
+    @increment-stake="adjustStake('up')"
+    @update:create-num-players="createNumPlayers = $event"
+    @update:create-ai-bots="createAiBots = $event"
+    @update:create-stake="createStake = $event"
+    @update:create-private-room="createPrivateRoom = $event"
+    @update:create-room-password="createRoomPassword = $event"
+    @update:create-room-name="createRoomName = $event"
+    @update:show-bots-info="showBotsInfo = $event"
+  />
 </template>
 
 <style scoped>
-.lobby-page__header {
-  position: sticky;
-  top: max(0.65rem, env(safe-area-inset-top));
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.15rem 0;
-}
-
-.lobby-page__back {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.72);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 18px 40px rgba(2, 6, 23, 0.24);
-  backdrop-filter: blur(16px);
-  color: rgba(226, 232, 240, 0.82);
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.lobby-page__back:hover,
-.lobby-page__back:focus-visible {
-  background: rgba(30, 41, 59, 0.9);
-  color: #f8fafc;
-  border-color: rgba(212, 175, 55, 0.22);
-}
-
-.lobby-page__field-label {
-  display: block;
-  margin-bottom: 0.375rem;
-  color: rgb(203 213 225);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.25rem;
-}
-
-.lobby-page__field-label--inline {
-  margin-bottom: 0;
-}
-
-.lobby-page__field-label--with-icon {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-height: 1.25rem;
-}
-
-.lobby-page__info-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.82rem;
-  height: 0.82rem;
-  padding: 0;
-  margin-top: -0.05rem;
-  border-radius: 999px;
-  border: 1px solid rgba(250, 204, 21, 0.28);
-  background: rgba(250, 204, 21, 0.12);
-  color: rgba(253, 230, 138, 0.95);
-  font-size: 0.56rem;
-  font-weight: 800;
-  line-height: 1;
-  vertical-align: middle;
-  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
-}
-
-.lobby-page__info-trigger:hover,
-.lobby-page__info-trigger:focus-visible {
-  background: rgba(250, 204, 21, 0.2);
-  border-color: rgba(250, 204, 21, 0.42);
-  color: #fef3c7;
-}
-
-.lobby-page__tooltip {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
-  z-index: 10;
-  width: min(13rem, calc(100vw - 4rem));
-  padding: 0.8rem 0.9rem;
-  border-radius: 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
-  box-shadow: 0 20px 42px rgba(2, 6, 23, 0.38);
-  color: rgba(226, 232, 240, 0.92);
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-.lobby-page__tooltip-enter-active,
-.lobby-page__tooltip-leave-active {
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.lobby-page__tooltip-enter-from,
-.lobby-page__tooltip-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
 </style>

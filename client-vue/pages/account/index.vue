@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
@@ -235,41 +236,12 @@ onMounted(() => {
       </section>
     </main>
 
-    <div
-      v-if="isDeleteDialogOpen"
-      class="account-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-account-title"
-    >
-      <div class="account-dialog__backdrop" @click="closeDeleteDialog" />
-      <section class="account-dialog__panel">
-        <p class="account-card__eyebrow">Confirm</p>
-        <h2 id="delete-account-title">Delete your account?</h2>
-        <p class="account-dialog__copy">
-          This will deactivate your account and sign you out of Sevens Royale on this device.
-        </p>
-
-        <div class="account-dialog__actions">
-          <button
-            type="button"
-            class="account-card__secondary"
-            :disabled="isDeleting"
-            @click="closeDeleteDialog"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="account-card__danger"
-            :disabled="isDeleting"
-            @click="confirmDeleteAccount"
-          >
-            {{ isDeleting ? 'Deleting...' : 'Delete Account' }}
-          </button>
-        </div>
-      </section>
-    </div>
+    <DeleteAccountModal
+      :open="isDeleteDialogOpen"
+      :deleting="isDeleting"
+      @close="closeDeleteDialog"
+      @confirm="confirmDeleteAccount"
+    />
   </div>
 </template>
 
@@ -705,50 +677,6 @@ onMounted(() => {
   background: rgba(127, 29, 29, 0.2);
   border: 1px solid rgba(248, 113, 113, 0.22);
   color: #fecaca;
-}
-
-.account-dialog {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.account-dialog__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.72);
-  backdrop-filter: blur(8px);
-}
-
-.account-dialog__panel {
-  position: relative;
-  width: min(100%, 28rem);
-  padding: 1.4rem;
-  border-radius: 1.5rem;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(248, 113, 113, 0.16);
-  box-shadow: 0 24px 55px rgba(2, 6, 23, 0.45);
-}
-
-.account-dialog__panel h2 {
-  margin: 0.35rem 0 0;
-  color: #f8f4ec;
-}
-
-.account-dialog__copy {
-  margin: 0.9rem 0 0;
-  line-height: 1.65;
-  color: rgba(203, 213, 225, 0.86);
-}
-
-.account-dialog__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-  margin-top: 1.25rem;
 }
 
 @media (min-width: 768px) {
