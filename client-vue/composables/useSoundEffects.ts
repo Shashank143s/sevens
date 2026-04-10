@@ -1,6 +1,7 @@
 type SoundOptions = {
   volume?: number
   preload?: 'auto' | 'metadata' | 'none'
+  loop?: boolean
 }
 
 const audioRegistry = new Map<string, HTMLAudioElement>()
@@ -25,9 +26,17 @@ function getAudio(src: string, options?: SoundOptions) {
     if (typeof options?.volume === 'number') {
       audio.volume = options.volume
     }
+    if (typeof options?.loop === 'boolean') {
+      audio.loop = options.loop
+    }
     audioRegistry.set(src, audio)
-  } else if (typeof options?.volume === 'number') {
-    audio.volume = options.volume
+  } else {
+    if (typeof options?.volume === 'number') {
+      audio.volume = options.volume
+    }
+    if (typeof options?.loop === 'boolean') {
+      audio.loop = options.loop
+    }
   }
 
   return audio

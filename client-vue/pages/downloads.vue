@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
-const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
@@ -28,16 +27,7 @@ useSeoMeta({
     class="downloads-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="downloads-page__header">
-      <button
-        type="button"
-        class="downloads-page__back"
-        @click="router.push('/account')"
-      >
-        ← Account
-      </button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/account" back-label="Account" />
 
     <main class="downloads-page__content">
       <section class="downloads-card">

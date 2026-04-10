@@ -3,7 +3,6 @@ const blogLobbyScreenshot = '/screenshots/lobby.png'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { blogPosts } from '~/data/blog'
 
-const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalPath = computed(() => {
@@ -42,10 +41,7 @@ useHead(() => ({
     class="blog-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="blog-page__header">
-      <button type="button" class="blog-page__back" @click="router.push('/')">← Home</button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="blog-page__content">
       <section class="blog-hero">

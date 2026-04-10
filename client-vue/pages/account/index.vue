@@ -116,16 +116,7 @@ onMounted(() => {
     class="account-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="account-page__header">
-      <button
-        type="button"
-        class="account-page__back"
-        @click="router.push('/')"
-      >
-        ← Home
-      </button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="account-page__content">
       <section class="account-card">

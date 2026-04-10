@@ -321,16 +321,7 @@ onMounted(() => {
     class="box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="lobby-page__header">
-      <button
-        type="button"
-        class="lobby-page__back"
-        @click="router.push('/')"
-      >
-        ← Back
-      </button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/" back-label="Back" />
 
     <div class="mx-auto w-full max-w-5xl">
       <div
@@ -581,7 +572,7 @@ onMounted(() => {
 
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Size</label>
+            <label class="lobby-page__field-label">Room Size</label>
             <div class="relative">
               <select
                 v-model.number="createNumPlayers"
@@ -609,8 +600,8 @@ onMounted(() => {
           </div>
 
           <div>
-            <div class="mb-1.5 flex items-center gap-2">
-              <label class="block text-sm font-semibold text-slate-300">Bots</label>
+            <div class="lobby-page__field-label lobby-page__field-label--with-icon">
+              <span>Bots</span>
               <div class="relative">
                 <button
                   type="button"
@@ -787,19 +778,42 @@ onMounted(() => {
   border-color: rgba(212, 175, 55, 0.22);
 }
 
+.lobby-page__field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: rgb(203 213 225);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+.lobby-page__field-label--inline {
+  margin-bottom: 0;
+}
+
+.lobby-page__field-label--with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.25rem;
+}
+
 .lobby-page__info-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 0.82rem;
+  height: 0.82rem;
+  padding: 0;
+  margin-top: -0.05rem;
   border-radius: 999px;
   border: 1px solid rgba(250, 204, 21, 0.28);
   background: rgba(250, 204, 21, 0.12);
   color: rgba(253, 230, 138, 0.95);
-  font-size: 0.75rem;
+  font-size: 0.56rem;
   font-weight: 800;
   line-height: 1;
+  vertical-align: middle;
   transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 

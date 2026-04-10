@@ -87,9 +87,7 @@ async function handleInstallApp() {
     class="home-shell box-border min-h-[100dvh] overflow-x-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <div class="absolute top-0 right-0 z-10 p-4 sm:p-6">
-      <AppUserMenu />
-    </div>
+    <AppTopBar />
 
     <section class="mobile-home">
       <div class="mobile-home__content">
@@ -167,6 +165,10 @@ async function handleInstallApp() {
 .home-shell {
   display: flex;
   flex-direction: column;
+}
+
+:deep(.app-topbar) {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .mobile-home {

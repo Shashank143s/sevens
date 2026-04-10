@@ -2,7 +2,6 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
-const router = useRouter()
 const config = useRuntimeConfig()
 const { session, hydrated } = usePlayerSession()
 const mounted = ref(false)
@@ -87,10 +86,6 @@ const coinRules = [
 onMounted(() => {
   mounted.value = true
 })
-
-function goToPrimaryCta() {
-  router.push(primaryCta.value.to)
-}
 </script>
 
 <template>
@@ -98,16 +93,7 @@ function goToPrimaryCta() {
     class="instructions-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="instructions-page__header">
-      <button
-        type="button"
-        class="instructions-page__back"
-        @click="goToPrimaryCta"
-      >
-        ← {{ primaryCta.label }}
-      </button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar :back-to="primaryCta.to" :back-label="primaryCta.label" />
 
     <main class="instructions-page__content">
       <section class="instructions-hero">

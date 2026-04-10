@@ -3,6 +3,7 @@ import type { Card, Suit } from '@shared/types'
 import SuitesLane from './SuitesLane.vue'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import cardPlaySoundSrc from '~/assets/audio/card_play_sound.mp3'
+import countdownSoundSrc from '~/assets/audio/time_countdown_sound.mp3'
 
 type PileLike = { started?: boolean; low: number | null; high: number | null }
 
@@ -63,6 +64,7 @@ const animatingCardId = ref<string | null>(null)
 const landingCardKey = ref<string | null>(null)
 let invalidCardTimer: ReturnType<typeof setTimeout> | null = null
 let playAnimationTimer: ReturnType<typeof setTimeout> | null = null
+const isCountdownSoundPlaying = ref(false)
 
 type FlyingCardState = {
   id: string
@@ -123,6 +125,7 @@ function clearTurnTimer() {
 function runAutoPlayOrPass() {
   if (isGameFinished.value) return
   clearTurnTimer()
+  stopCountdownSound()
   const cards = getPlayableCards(myHand.value, G.value.piles as Record<Suit, PileLike>)
   if (cards.length > 0) {
     playCardSound()
@@ -154,6 +157,18 @@ function playCardSound() {
   void playSound(cardPlaySoundSrc, { volume: 0.72 })
 }
 
+function startCountdownSound() {
+  if (isCountdownSoundPlaying.value) return
+  isCountdownSoundPlaying.value = true
+  void playSound(countdownSoundSrc, { volume: 0.65, loop: true })
+}
+
+function stopCountdownSound() {
+  if (!isCountdownSoundPlaying.value) return
+  isCountdownSoundPlaying.value = false
+  stopSound(countdownSoundSrc)
+}
+
 function triggerIllegalMoveHaptics() {
   if (import.meta.server || typeof navigator === 'undefined') return
   if (typeof navigator.vibrate !== 'function') return
@@ -183,6 +198,7 @@ function handleCardClick(card: Card) {
     triggerIllegalCardFeedback(card.id)
     return
   }
+  stopCountdownSound()
   animatePlayedCard(card)
 }
 
@@ -261,6 +277,7 @@ watch(
   [isMyTurn, currentPlayerIndex, isGameFinished],
   () => {
     clearTurnTimer()
+    stopCountdownSound()
     if (!isMyTurn.value || isGameFinished.value) {
       timeLeft.value = TURN_SECONDS
       return
@@ -276,11 +293,27 @@ watch(
   { immediate: true },
 )
 
+watch([timeLeft, isMyTurn, isGameFinished], ([nextTimeLeft, myTurn, gameFinished]) => {
+  if (gameFinished || !myTurn) {
+    stopCountdownSound()
+    return
+  }
+
+  if (nextTimeLeft <= 5 && nextTimeLeft > 0) {
+    startCountdownSound()
+    return
+  }
+
+  stopCountdownSound()
+})
+
 onUnmounted(() => {
   clearTurnTimer()
   clearInvalidCardFeedback()
   clearPlayAnimation()
   stopSound(cardPlaySoundSrc)
+  stopCountdownSound()
+  stopSound(countdownSoundSrc)
 })
 
 const suitSymbols: Record<Suit, string> = {
@@ -353,6 +386,7 @@ let onMobileMqlChange: ((e: MediaQueryListEvent) => void) | null = null
 onMounted(() => {
   if (typeof window === 'undefined') return
   registerSound(cardPlaySoundSrc, { volume: 0.72 })
+  registerSound(countdownSoundSrc, { volume: 0.65, loop: true })
   mobileMql = window.matchMedia('(max-width: 640px)')
   const set = (v: boolean) => (isMobile.value = v)
   set(mobileMql.matches)
@@ -526,7 +560,7 @@ onUnmounted(() => {
           v-if="!isGameFinished && playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
           type="button"
           class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
-          @click="moves.pass()"
+          @click="stopCountdownSound(); moves.pass()"
         >
           PASS
       </button>

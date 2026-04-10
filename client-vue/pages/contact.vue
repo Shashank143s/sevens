@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
-const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/contact', config.public.siteUrl).toString())
@@ -27,16 +26,7 @@ useSeoMeta({
     class="contact-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="contact-page__header">
-      <button
-        type="button"
-        class="contact-page__back"
-        @click="router.push('/')"
-      >
-        ← Home
-      </button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="contact-page__content">
       <section class="contact-card contact-card--hero">

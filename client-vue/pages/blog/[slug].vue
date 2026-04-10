@@ -2,7 +2,6 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { blogPosts, getBlogPost } from '~/data/blog'
 
-const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const slug = computed(() => String(route.params.slug || ''))
@@ -49,10 +48,7 @@ useHead(() => ({
     class="blog-article-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <header class="blog-article-page__header">
-      <button type="button" class="blog-article-page__back" @click="router.push('/blog')">← Blog</button>
-      <AppUserMenu />
-    </header>
+    <AppTopBar back-to="/blog" back-label="Blog" />
 
     <main class="blog-article-page__content">
       <section class="blog-article-hero">
