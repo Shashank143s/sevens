@@ -7,7 +7,7 @@ const XP_WIN = 20;
 const XP_LOSS = 5;
 
 type EconomyPlayer = {
-  user_id?: string;
+  user_id?: string | Types.ObjectId;
   player_id: string;
   is_bot?: boolean;
   coins?: {

@@ -73,6 +73,22 @@ async function findGameDocument(matchID: string) {
   return GameModel.findOne({ match_id: matchID });
 }
 
+async function claimCoinSettlement(matchID: string) {
+  return GameModel.findOneAndUpdate(
+    {
+      match_id: matchID,
+      'coin_settlement.status': 'pending',
+    } as any,
+    {
+      $set: {
+        'coin_settlement.status': 'settling',
+        'xp_settlement.status': 'settling',
+      },
+    } as any,
+    { returnDocument: 'after', lean: true },
+  );
+}
+
 function countPlayers(players: ReturnType<typeof normalizePlayers>) {
   return players.filter((player) => !player.is_bot).length;
 }
@@ -230,10 +246,6 @@ async function reserveJoinedPlayerCoins(game: any, payload: UpdateGamePayload) {
 }
 
 async function applySettlementIfNeeded(game: any, payload: UpdateGamePayload, players: any[]) {
-  if (payload.status === 'completed' && game.coin_settlement?.status === 'pending') {
-    return settleCompletedEconomy(game, players, resolveWinnerSeatId(payload));
-  }
-
   if (payload.status === 'abandoned' && game.coin_settlement?.status === 'pending') {
     return voidEconomySettlement(game, players);
   }
@@ -291,7 +303,16 @@ export async function updateGameRecord(matchID: string, payload: UpdateGamePaylo
   if (!game) return null;
   await reserveJoinedPlayerCoins(game, payload);
   const players = buildUpdatedPlayers(game.players, payload);
-  const settlement = await applySettlementIfNeeded(game, payload, players);
+  if (payload.status === 'completed') {
+    const settlementClaim = await claimCoinSettlement(matchID);
+    if (!settlementClaim) {
+      return GameModel.findOne({ match_id: matchID }).lean();
+    }
+  }
+
+  const settlement = payload.status === 'completed'
+    ? await settleCompletedEconomy(game, players, resolveWinnerSeatId(payload))
+    : await applySettlementIfNeeded(game, payload, players);
   const finalPlayers = settlement.players;
   const winnerUserId = resolveWinnerUserId(finalPlayers, payload);
   const updatedGame = await GameModel.findOneAndUpdate(

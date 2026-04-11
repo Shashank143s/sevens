@@ -235,7 +235,7 @@ async function loadWinnerEconomy() {
 }
 
 async function syncCompletedGame() {
-  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
+  if (completionSynced || winnerID.value == null || state.value?.playerID == null || !didIWin.value) return
   completionSynced = true
   try {
     finalizedGame.value = await completeGameRecord(props.matchId, String(winnerID.value))

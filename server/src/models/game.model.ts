@@ -142,7 +142,7 @@ const gameCoinSettlementSchema = new Schema(
   {
     status: {
       type: String,
-      enum: ['pending', 'completed', 'void'],
+      enum: ['pending', 'settling', 'completed', 'void'],
       required: true,
       default: 'pending',
     },
@@ -183,7 +183,7 @@ const gameXpSettlementSchema = new Schema(
   {
     status: {
       type: String,
-      enum: ['pending', 'completed', 'void'],
+      enum: ['pending', 'settling', 'completed', 'void'],
       required: true,
       default: 'pending',
     },

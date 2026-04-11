@@ -11,10 +11,10 @@ type CleanupTargetGame = {
   updated_at?: Date | string;
   players: any[];
   coin_settlement?: {
-    status?: 'pending' | 'completed' | 'void';
+    status?: 'pending' | 'settling' | 'completed' | 'void';
   };
   xp_settlement?: {
-    status?: 'pending' | 'completed' | 'void';
+    status?: 'pending' | 'settling' | 'completed' | 'void';
   };
   coin_rules?: {
     stake?: number;
