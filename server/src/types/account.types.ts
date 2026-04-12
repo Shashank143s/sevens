@@ -116,3 +116,8 @@ export type GoogleSignInPayload = {
   credential?: string;
   legal_accepted_at?: string | number | Date;
 };
+
+export type RewardCoinsPayload = {
+  amount?: number;
+  source?: string;
+};
