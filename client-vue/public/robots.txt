@@ -8,4 +8,7 @@ Disallow: /lobby/
 Disallow: /room
 Disallow: /room/
 
+User-agent: Google-adstxt
+Disallow:
+
 Sitemap: https://sevensroyale.com/sitemap.xml
