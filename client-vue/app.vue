@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Capacitor } from '@capacitor/core'
 import WebSplashScreen from '~/components/WebSplashScreen.vue'
+import { useAppSource } from '~/composables/useAppSource'
 import { normalizePath } from '~/utils/normalizePath'
 
 const isOnline = ref(true)
@@ -12,10 +13,10 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
-const appSource = computed(() => config.public.appSource || 'web')
+const { appSource, isAndroidApp } = useAppSource()
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
 const normalizedRoutePath = computed(() => normalizePath(route.path))
-const isAndroidBuild = computed(() => appSource.value === 'android')
+const isAndroidBuild = isAndroidApp
 const isNativeApp = computed(() => isAndroidBuild.value || (mounted.value && nativeApp.value))
 const showWebSplash = computed(() => appSource.value === 'web' && mounted.value && !nativeApp.value)
 const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')

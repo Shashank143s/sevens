@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSevensClient } from '~/composables/useSevensClient'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import { useAdMob } from '~/composables/useAdMob'
 
 export interface PlayerInfo {
   id: number
@@ -21,8 +22,9 @@ const { state } = useSevensClient(
   props.credentials ?? undefined,
 )
 const { session } = usePlayerSession()
-const { getAccount } = useAccountApi()
+const { getAccount, rewardCoins } = useAccountApi()
 const { completeGameRecord, getGameRecord } = useGameApi()
+const admob = useAdMob()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -52,10 +54,14 @@ const didIWin = computed(() => {
   return state.value?.playerID != null && Number(state.value.playerID) === id
 })
 
-const redirectSeconds = ref(30)
+const redirectSeconds = ref(30000)
 const winnerCoinsDelta = ref<number | null>(null)
 const winnerTotalCoins = ref<number | null>(null)
 const startingCoinsBalance = ref<number | null>(null)
+const rewardStatus = ref<string | null>(null)
+const rewardLoading = ref(false)
+const rewardClaimed = ref(false)
+const rewardCoinBurstKey = ref(0)
 const finalizedGame = ref<Awaited<ReturnType<typeof completeGameRecord>> | null>(null)
 const gameFinishedLocally = ref(false)
 const redirectDeadline = ref<number | null>(null)
@@ -83,6 +89,19 @@ function clearRedirectTimer() {
   }
 }
 
+function pauseRedirectTimer() {
+  clearRedirectTimer()
+}
+
+function resumeRedirectTimer() {
+  if (!gameFinishedLocally.value || redirectDeadline.value == null) return
+  clearRedirectTimer()
+  redirectTimer = setInterval(() => {
+    void syncRedirectState()
+  }, 1000)
+  void syncRedirectState()
+}
+
 async function syncRedirectState() {
   if (!redirectDeadline.value) return
 
@@ -108,11 +127,18 @@ watch(
     if (!over) {
       gameFinishedLocally.value = false
       redirectDeadline.value = null
+      rewardStatus.value = null
+      rewardLoading.value = false
+      rewardClaimed.value = false
       return
     }
     gameFinishedLocally.value = true
     winnerCoinsDelta.value = null
     winnerTotalCoins.value = null
+    rewardStatus.value = null
+    rewardLoading.value = false
+    rewardClaimed.value = false
+    rewardCoinBurstKey.value = 0
     redirectDeadline.value = Date.now() + 30_000
     redirectSeconds.value = 30
     // Clear stored creds so user can re-join next game cleanly.
@@ -127,10 +153,7 @@ watch(
         headers: { 'Content-Type': 'application/json' },
       }).catch(() => {})
     }
-    redirectTimer = setInterval(() => {
-      void syncRedirectState()
-    }, 1000)
-    await syncRedirectState()
+    resumeRedirectTimer()
   },
   { immediate: true },
 )
@@ -231,6 +254,86 @@ async function loadWinnerEconomy() {
     } else if (latestObservedBalance != null) {
       winnerTotalCoins.value = latestObservedBalance
     }
+  }
+}
+
+async function watchRewardVideo() {
+  if (rewardLoading.value || rewardClaimed.value || !session.value?.id || !admob.canUseAdMob.value) return
+
+  const accountIdentifier = session.value.id || session.value.email?.trim()
+  if (!accountIdentifier) {
+    rewardStatus.value = 'No signed-in account is available to credit.'
+    return
+  }
+
+  pauseRedirectTimer()
+  rewardLoading.value = true
+  rewardStatus.value = 'Preparing reward video...'
+
+  let rewardGranted = false
+  let cleanupRewardListeners: null | (() => Promise<void>) = null
+
+  try {
+    cleanupRewardListeners = await admob.registerEventListeners({
+      onRewardShowed: () => {
+        rewardStatus.value = 'Reward video is playing...'
+      },
+      onRewarded: () => {
+        rewardGranted = true
+        rewardStatus.value = 'Reward earned. Crediting 5 bonus coins...'
+      },
+      onRewardFailed: (message) => {
+        if (!rewardGranted) {
+          rewardStatus.value = message ? `Reward video failed: ${message}` : 'Reward video failed to load.'
+        }
+      },
+    })
+
+    const reward = await admob.showRewarded().catch((error) => {
+      console.error('[game-board] Rewarded video could not be shown:', error)
+      return null
+    })
+
+    if (!rewardGranted && !reward) {
+      rewardStatus.value = 'Reward video was skipped or interrupted.'
+      return
+    }
+
+    rewardStatus.value = 'Reward earned. Crediting 5 bonus coins...'
+    const response = await rewardCoins(accountIdentifier, 5, 'rewarded_video')
+    rewardClaimed.value = true
+    rewardCoinBurstKey.value += 1
+
+    const responseBalance = response.user.wallet?.coins_balance ?? null
+    if (responseBalance != null) {
+      winnerTotalCoins.value = responseBalance
+    } else if (winnerTotalCoins.value != null) {
+      winnerTotalCoins.value += 5
+    } else if (startingCoinsBalance.value != null) {
+      winnerTotalCoins.value = startingCoinsBalance.value + 5
+    }
+
+    try {
+      const refreshedAccount = await getAccount(accountIdentifier, 0, 0)
+      const refreshedBalance = refreshedAccount.user.wallet?.coins_balance ?? null
+      if (refreshedBalance != null) {
+        winnerTotalCoins.value = refreshedBalance
+      }
+    } catch (error) {
+      console.error('[game-board] Failed to refresh rewarded wallet balance:', error)
+    }
+
+    winnerCoinsDelta.value = (winnerCoinsDelta.value ?? 0) + 5
+    rewardStatus.value = `5 bonus coins added. Balance: ${winnerTotalCoins.value ?? '—'}`
+  } catch (error) {
+    console.error('[game-board] Failed to show or credit reward video:', error)
+    rewardStatus.value = rewardEarned
+      ? 'Reward earned, but coin credit failed.'
+      : 'Reward video was skipped or interrupted.'
+  } finally {
+    await cleanupRewardListeners?.()
+    rewardLoading.value = false
+    resumeRedirectTimer()
   }
 }
 
@@ -338,7 +441,13 @@ onMounted(() => {
       :redirect-seconds="redirectSeconds"
       :won-coins="winnerCoinsDelta"
       :total-coins="winnerTotalCoins"
+      :reward-available="admob.canUseAdMob"
+      :reward-loading="rewardLoading"
+      :reward-claimed="rewardClaimed"
+      :reward-status="rewardStatus"
+      :reward-coin-burst-key="rewardCoinBurstKey"
       @go-lobby="router.push('/lobby')"
+      @watch-reward="watchRewardVideo"
     />
     <GameBoard
       :G="state.G"

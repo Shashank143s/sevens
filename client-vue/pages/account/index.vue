@@ -2,12 +2,14 @@
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
+import AdMobBottomBanner from '~/components/AdMobBottomBanner.vue'
 
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccountSummary } = useAccountApi()
 const { signOut } = useGoogleLogin()
+const admob = useAdMob()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isSummaryLoading = ref(true)
@@ -16,6 +18,7 @@ const playerLevel = ref<number | null>(null)
 const xpTotal = ref<number | null>(null)
 const mounted = ref(false)
 const progressionExpanded = ref(false)
+const isInterstitialNavigating = ref(false)
 
 const sessionReady = computed(() => mounted.value && hydrated.value)
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
@@ -98,6 +101,23 @@ async function loadAccountSummary() {
     xpTotal.value = null
   } finally {
     isSummaryLoading.value = false
+  }
+}
+
+async function goToAccountSection(path: string) {
+  if (isInterstitialNavigating.value) return
+  isInterstitialNavigating.value = true
+
+  try {
+    if (admob.canUseAdMob.value) {
+      await admob.showInterstitial().catch((error) => {
+        console.error('[account-page] Failed to show interstitial ad:', error)
+      })
+    }
+
+    await router.push(path)
+  } finally {
+    isInterstitialNavigating.value = false
   }
 }
 
@@ -196,7 +216,8 @@ onMounted(() => {
             <button
               type="button"
               class="account-history__link"
-              @click="router.push('/account/games')"
+              :disabled="isInterstitialNavigating"
+              @click="goToAccountSection('/account/games')"
             >
               <span class="account-history__title">Recent Games</span>
               <span class="account-history__arrow">→</span>
@@ -204,7 +225,8 @@ onMounted(() => {
             <button
               type="button"
               class="account-history__link"
-              @click="router.push('/account/leaderboard')"
+              :disabled="isInterstitialNavigating"
+              @click="goToAccountSection('/account/leaderboard')"
             >
               <span class="account-history__title">Leaderboard</span>
               <span class="account-history__arrow">→</span>
@@ -233,8 +255,11 @@ onMounted(() => {
             Delete Account
           </button>
         </div>
+
       </section>
     </main>
+
+    <AdMobBottomBanner />
 
     <DeleteAccountModal
       :open="isDeleteDialogOpen"
@@ -624,6 +649,12 @@ onMounted(() => {
 .account-history__link:hover {
   background-color: rgba(255, 255, 255, 0.04);
   transform: translateY(-1px);
+}
+
+.account-history__link:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
 }
 
 .account-history__title {

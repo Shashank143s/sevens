@@ -13,6 +13,7 @@
     "cap:build": "npm run generate && npx cap sync android"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
     "@capawesome/capacitor-google-sign-in": "^0.1.2",
     "@vueuse/motion": "^2.2.0",
     "boardgame.io": "^0.50.2",

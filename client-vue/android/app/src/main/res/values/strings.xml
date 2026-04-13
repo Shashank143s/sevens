@@ -4,4 +4,6 @@
     <string name="title_activity_main">Sevens Royale</string>
     <string name="package_name">com.sevensroyale.app</string>
     <string name="custom_url_scheme">com.sevensroyale.app</string>
+    <!-- Google sample AdMob app ID for test ads only. Replace with the real app ID before production. -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
 </resources>
