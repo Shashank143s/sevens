@@ -5,6 +5,7 @@ import PermissionsModal from '~/components/PermissionsModal.vue'
 const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isAndroidApp } = useAppSource()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
 const { isSupported: notificationsSupported, isGranted: notificationsGranted, refreshPermission } = useNotificationPermission()
@@ -92,6 +93,8 @@ function closePermissionsModal() {
 onMounted(async () => {
   if (permissionPromptCheckedThisLaunch.value) return
   permissionPromptCheckedThisLaunch.value = true
+
+  if (!isAndroidApp.value) return
 
   await refreshPermission()
   if (notificationsSupported.value && !notificationsGranted.value) {
