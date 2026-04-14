@@ -102,11 +102,6 @@ onMounted(async () => {
   }
 })
 
-watch(notificationsGranted, (granted) => {
-  if (granted) {
-    showPermissionsModal.value = false
-  }
-})
 </script>
 
 <template>
