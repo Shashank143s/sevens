@@ -47,7 +47,7 @@ const props = defineProps<{
 const { G, ctx, moves, playerId } = toRefs(props)
 const { registerSound, playSound, stopSound } = useSoundEffects()
 const { isAndroidApp } = useAppSource()
-const gameSafeTopInset = computed(() => (isAndroidApp.value ? '0px' : 'env(safe-area-inset-top)'))
+const gameSafeTopInset = computed(() => (isAndroidApp.value ? '2.0rem' : 'env(safe-area-inset-top)'))
 
 const playerIndex = computed(() =>
   playerId.value != null ? parseInt(playerId.value, 10) : -1

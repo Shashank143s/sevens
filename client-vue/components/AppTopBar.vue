@@ -43,7 +43,7 @@ function goBack() {
 }
 
 .app-topbar--native-android {
-  --app-topbar-safe-top: 1.25rem;
+  --app-topbar-safe-top: 2.0rem;
 }
 
 .app-topbar__header {

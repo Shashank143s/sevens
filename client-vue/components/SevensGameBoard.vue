@@ -35,7 +35,7 @@ const isGameOver = computed(() => winnerID.value != null)
 const isSocketConnected = computed(() => state.value?.isConnected !== false)
 const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
 const reconnectNoticeStyle = computed(() => ({
-  top: isAndroidApp.value ? '1rem' : 'max(1rem, env(safe-area-inset-top))',
+  top: isAndroidApp.value ? '2.0rem' : 'max(1rem, env(safe-area-inset-top))',
 }))
 const reconnectLabel = computed(() => {
   if (!isOnline.value) return 'You are offline. The table will sync when your network returns.'
