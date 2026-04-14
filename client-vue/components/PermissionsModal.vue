@@ -177,7 +177,7 @@ async function toggleNotifications() {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  width: 2.9rem;
+  width: 4.2rem;
   height: 1.7rem;
   margin-top: 0.08rem;
   padding: 0;
@@ -205,18 +205,26 @@ async function toggleNotifications() {
 }
 
 .permissions-modal__switch--on .permissions-modal__switch-thumb {
-  transform: translateX(1.16rem);
+  transform: translateX(2.62rem);
 }
 
 .permissions-modal__switch-label {
   position: absolute;
-  left: calc(100% + 0.45rem);
+  right: 0.42rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #dbe8f3;
-  font-size: 0.78rem;
+  color: #f8fafc;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.permissions-modal__switch--on .permissions-modal__switch-label {
+  right: auto;
+  left: 0.42rem;
 }
 
 .permissions-modal__done {
