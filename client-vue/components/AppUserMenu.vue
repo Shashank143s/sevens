@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UserAvatar from '~/components/UserAvatar.vue'
+
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
@@ -16,11 +18,6 @@ const displayName = computed(() => {
 })
 
 const triggerEyebrow = computed(() => (isLoggedIn.value ? 'Account' : 'Ready to play?'))
-
-const avatarLabel = computed(() => {
-  if (!isLoggedIn.value) return '↗'
-  return session.value?.avatar ?? '🐶'
-})
 
 function goToInstructions() {
   open.value = false
@@ -84,15 +81,12 @@ onMounted(() => {
         <span class="user-menu__eyebrow">{{ triggerEyebrow }}</span>
         <span class="user-menu__label">{{ displayName }}</span>
       </span>
-      <span v-if="isLoggedIn" class="user-menu__avatar">
-        <img
-          v-if="session?.image"
-          :src="session.image"
-          :alt="session.name"
-          class="user-menu__image"
-        >
-        <span v-else>{{ avatarLabel }}</span>
-      </span>
+      <UserAvatar
+        v-if="isLoggedIn"
+        class="user-menu__avatar"
+        :name="session?.name"
+        :image-src="session?.image"
+      />
       <span
         class="user-menu__chevron"
         :class="{ 'user-menu__chevron--open': open }"
@@ -277,12 +271,6 @@ onMounted(() => {
 .user-menu__chevron--open {
   transform: rotate(180deg);
   color: #f8fafc;
-}
-
-.user-menu__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .user-menu__panel {

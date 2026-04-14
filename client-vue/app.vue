@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Capacitor } from '@capacitor/core'
 import WebSplashScreen from '~/components/WebSplashScreen.vue'
+import { useAppSource } from '~/composables/useAppSource'
 import { normalizePath } from '~/utils/normalizePath'
 
 const isOnline = ref(true)
@@ -12,12 +13,11 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const { hydrated: sessionHydrated, hydrateSession } = usePlayerSession()
 const authRedirecting = useState<boolean>('auth-redirecting', () => false)
-const appSource = computed(() => config.public.appSource || 'web')
+const { isAndroidApp, isWebApp } = useAppSource()
 const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven-suits-mark.svg`)
 const normalizedRoutePath = computed(() => normalizePath(route.path))
-const isAndroidBuild = computed(() => appSource.value === 'android')
-const isNativeApp = computed(() => isAndroidBuild.value || (mounted.value && nativeApp.value))
-const showWebSplash = computed(() => appSource.value === 'web' && mounted.value && !nativeApp.value)
+const isNativeApp = computed(() => isAndroidApp.value || (mounted.value && nativeApp.value))
+const showWebSplash = computed(() => isWebApp.value && mounted.value && !nativeApp.value)
 const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
 const router = useRouter()
@@ -29,9 +29,7 @@ const showInstallBanner = computed(() =>
   && !pwa?.isPWAInstalled,
 )
 
-const showOfflineBanner = computed(() => import.meta.client && !isOnline.value)
 const showRefreshBanner = computed(() => import.meta.client && !!pwa?.needRefresh)
-const showReadyBanner = computed(() => import.meta.client && !!pwa?.offlineReady && isOnline.value)
 
 async function installApp() {
   await pwa?.install()
@@ -118,7 +116,7 @@ onUnmounted(() => {
 
     <ClientOnly>
       <template #fallback>
-        <WebSplashScreen :logo-src="splashLogoSrc" :neutral="isAndroidBuild" />
+        <WebSplashScreen :logo-src="splashLogoSrc" :neutral="isAndroidApp" />
       </template>
       <Transition name="launch-splash">
         <WebSplashScreen
@@ -131,12 +129,6 @@ onUnmounted(() => {
 
     <div class="app-shell__content app-shell__content--ready">
       <ClientOnly>
-        <Transition name="status-banner">
-          <div v-if="showOfflineBanner" class="status-banner status-banner--offline">
-            <p>Offline mode: cached screens are available, but live multiplayer needs a connection.</p>
-          </div>
-        </Transition>
-
         <Transition name="status-banner">
           <div v-if="showInstallBanner" class="status-banner status-banner--install">
             <p>Install Sevens Royale for a full-screen, app-like experience and faster return visits.</p>
@@ -165,16 +157,6 @@ onUnmounted(() => {
           </div>
         </Transition>
 
-        <Transition name="status-banner">
-          <div v-if="showReadyBanner" class="status-banner status-banner--ready">
-            <p>The app is ready for offline shell access.</p>
-            <div class="status-banner__actions">
-              <button type="button" class="status-banner__button status-banner__button--primary" @click="dismissStatusBanner">
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </Transition>
       </ClientOnly>
 
       <NuxtPage />

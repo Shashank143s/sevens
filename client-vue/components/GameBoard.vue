@@ -46,6 +46,8 @@ const props = defineProps<{
 
 const { G, ctx, moves, playerId } = toRefs(props)
 const { registerSound, playSound, stopSound } = useSoundEffects()
+const { isAndroidApp } = useAppSource()
+const gameSafeTopInset = computed(() => (isAndroidApp.value ? '0px' : 'env(safe-area-inset-top)'))
 
 const playerIndex = computed(() =>
   playerId.value != null ? parseInt(playerId.value, 10) : -1
@@ -578,7 +580,7 @@ onUnmounted(() => {
   </div>
 
   <Teleport to="body">
-    <div class="top-bar">
+    <div class="top-bar" :style="{ '--game-safe-top': gameSafeTopInset }">
       <div
         class="turn-toast"
         :class="{
@@ -690,7 +692,7 @@ onUnmounted(() => {
 
 .top-bar {
   position: fixed;
-  top: max(0.35rem, env(safe-area-inset-top));
+  top: max(0.35rem, var(--game-safe-top, env(safe-area-inset-top)));
   left: 0.75rem;
   right: 0.75rem;
   z-index: 80;
@@ -1000,7 +1002,7 @@ onUnmounted(() => {
 
   .sidebar-widget {
     position: fixed;
-    top: max(0.35rem, env(safe-area-inset-top));
+    top: max(0.35rem, var(--game-safe-top, env(safe-area-inset-top)));
     right: 0.75rem;
   }
 }
