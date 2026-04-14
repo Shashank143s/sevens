@@ -8,6 +8,7 @@ const props = withDefaults(defineProps<{
 })
 
 const router = useRouter()
+const { isAndroidApp } = useAppSource()
 const showBack = computed(() => !!props.backTo && !!props.backLabel)
 
 function goBack() {
@@ -17,7 +18,7 @@ function goBack() {
 </script>
 
 <template>
-  <div class="app-topbar">
+  <div class="app-topbar" :class="{ 'app-topbar--native-android': isAndroidApp }">
     <header class="app-topbar__header">
       <button
         v-if="showBack"
@@ -36,8 +37,13 @@ function goBack() {
 
 <style scoped>
 .app-topbar {
+  --app-topbar-safe-top: env(safe-area-inset-top);
   position: relative;
   z-index: 60;
+}
+
+.app-topbar--native-android {
+  --app-topbar-safe-top: 0px;
 }
 
 .app-topbar__header {
@@ -51,7 +57,7 @@ function goBack() {
   justify-content: space-between;
   gap: 1rem;
   padding:
-    max(0.9rem, env(safe-area-inset-top))
+    max(0.9rem, var(--app-topbar-safe-top))
     max(1rem, env(safe-area-inset-right))
     0
     max(1rem, env(safe-area-inset-left));
@@ -88,6 +94,6 @@ function goBack() {
 }
 
 .app-topbar__spacer {
-  height: calc(max(0.9rem, env(safe-area-inset-top)) + 2.75rem + 1.1rem);
+  height: calc(max(0.9rem, var(--app-topbar-safe-top)) + 2.75rem + 1.1rem);
 }
 </style>

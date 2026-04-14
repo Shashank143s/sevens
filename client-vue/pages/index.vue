@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import PermissionsModal from '~/components/PermissionsModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
+const { isSupported: notificationsSupported, isGranted: notificationsGranted, refreshPermission } = useNotificationPermission()
 const pwa = import.meta.client ? usePWA() : undefined
+const showPermissionsModal = ref(false)
+const permissionPromptCheckedThisLaunch = useState<boolean>('permission-prompt-checked-this-launch', () => false)
 const canonicalUrl = computed(() => new URL(route.path || '/', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -80,6 +84,26 @@ function handleHomeCta() {
 async function handleInstallApp() {
   await pwa?.install()
 }
+
+function closePermissionsModal() {
+  showPermissionsModal.value = false
+}
+
+onMounted(async () => {
+  if (permissionPromptCheckedThisLaunch.value) return
+  permissionPromptCheckedThisLaunch.value = true
+
+  await refreshPermission()
+  if (notificationsSupported.value && !notificationsGranted.value) {
+    showPermissionsModal.value = true
+  }
+})
+
+watch(notificationsGranted, (granted) => {
+  if (granted) {
+    showPermissionsModal.value = false
+  }
+})
 </script>
 
 <template>
@@ -126,6 +150,7 @@ async function handleInstallApp() {
   </div>
 
   <GoogleLoginModal />
+  <PermissionsModal :open="showPermissionsModal" @close="closePermissionsModal" />
 </template>
 
 <style scoped>

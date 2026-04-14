@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useAccountApi, type LeaderboardEntry } from '~/composables/useAccountApi'
+import UserAvatar from '~/components/UserAvatar.vue'
 
 const router = useRouter()
 const { session } = usePlayerSession()
@@ -121,14 +122,11 @@ onMounted(async () => {
         >
           <div class="leaderboard-card__top">
             <div class="leaderboard-card__main">
-              <div class="leaderboard-card__avatar">
-                <img
-                  v-if="entry.profile_image_url"
-                  :src="entry.profile_image_url"
-                  :alt="entry.full_name"
-                >
-                <span v-else>{{ entry.avatar_emoji || '👤' }}</span>
-              </div>
+              <UserAvatar
+                class="leaderboard-card__avatar"
+                :name="entry.full_name"
+                :image-src="entry.profile_image_url"
+              />
               <div class="leaderboard-card__identity">
                 <div class="leaderboard-card__name-row">
                   <h2>{{ entry.full_name }}</h2>
@@ -187,14 +185,11 @@ onMounted(async () => {
         >
           <div class="leaderboard-card__top">
             <div class="leaderboard-card__main">
-              <div class="leaderboard-card__avatar">
-                <img
-                  v-if="currentUserEntry.profile_image_url"
-                  :src="currentUserEntry.profile_image_url"
-                  :alt="currentUserEntry.full_name"
-                >
-                <span v-else>{{ currentUserEntry.avatar_emoji || '👤' }}</span>
-              </div>
+              <UserAvatar
+                class="leaderboard-card__avatar"
+                :name="currentUserEntry.full_name"
+                :image-src="currentUserEntry.profile_image_url"
+              />
               <div class="leaderboard-card__identity">
                 <div class="leaderboard-card__name-row">
                   <h2>{{ currentUserEntry.full_name }}</h2>
@@ -541,12 +536,6 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 1.35rem;
-}
-
-.leaderboard-card__avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .leaderboard-card__identity {
