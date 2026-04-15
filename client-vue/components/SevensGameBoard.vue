@@ -23,7 +23,7 @@ const { state } = useSevensClient(
 const { session } = usePlayerSession()
 const { getAccount } = useAccountApi()
 const { completeGameRecord, getGameRecord } = useGameApi()
-const { isAndroidApp } = useAppSource()
+const { topInsetCss } = useAndroidViewportInsets()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -35,7 +35,7 @@ const isGameOver = computed(() => winnerID.value != null)
 const isSocketConnected = computed(() => state.value?.isConnected !== false)
 const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
 const reconnectNoticeStyle = computed(() => ({
-  top: isAndroidApp.value ? '2.0rem' : 'max(1rem, env(safe-area-inset-top))',
+  top: `max(1rem, ${topInsetCss.value})`,
 }))
 const reconnectLabel = computed(() => {
   if (!isOnline.value) return 'You are offline. The table will sync when your network returns.'

@@ -109,7 +109,7 @@ onMounted(async () => {
     class="home-shell box-border min-h-[100dvh] overflow-x-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar />
+    <AppTopBar :reserve-space="false" />
 
     <section class="mobile-home">
       <div class="mobile-home__content">

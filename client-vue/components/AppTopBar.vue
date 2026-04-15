@@ -2,13 +2,15 @@
 const props = withDefaults(defineProps<{
   backTo?: string
   backLabel?: string
+  reserveSpace?: boolean
 }>(), {
   backTo: '',
   backLabel: '',
+  reserveSpace: true,
 })
 
 const router = useRouter()
-const { isAndroidApp } = useAppSource()
+const { topInsetCss } = useAndroidViewportInsets()
 const showBack = computed(() => !!props.backTo && !!props.backLabel)
 
 function goBack() {
@@ -18,7 +20,7 @@ function goBack() {
 </script>
 
 <template>
-  <div class="app-topbar" :class="{ 'app-topbar--native-android': isAndroidApp }">
+  <div class="app-topbar" :style="{ '--app-topbar-safe-top': topInsetCss }">
     <header class="app-topbar__header">
       <button
         v-if="showBack"
@@ -31,7 +33,7 @@ function goBack() {
       <div v-else class="app-topbar__back app-topbar__back--ghost" aria-hidden="true" />
       <AppUserMenu />
     </header>
-    <div class="app-topbar__spacer" aria-hidden="true" />
+    <div v-if="reserveSpace" class="app-topbar__spacer" aria-hidden="true" />
   </div>
 </template>
 
@@ -40,10 +42,6 @@ function goBack() {
   --app-topbar-safe-top: env(safe-area-inset-top);
   position: relative;
   z-index: 60;
-}
-
-.app-topbar--native-android {
-  --app-topbar-safe-top: 2.0rem;
 }
 
 .app-topbar__header {

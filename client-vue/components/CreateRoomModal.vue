@@ -76,7 +76,7 @@ watch(() => props.visible, async (open) => {
   <Teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4"
       @click.self="emit('close')"
     >
       <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
