@@ -17,6 +17,11 @@ const GOOGLE_AUTH_CLIENT_IDS = (process.env.GOOGLE_AUTH_CLIENT_IDS ?? '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
+const ANDROID_LATEST_VERSION_CODE = Number(process.env.ANDROID_LATEST_VERSION_CODE ?? 7);
+const ANDROID_MIN_SUPPORTED_VERSION_CODE = Number(process.env.ANDROID_MIN_SUPPORTED_VERSION_CODE ?? 7);
+const ANDROID_UPDATE_MODE_RAW = (process.env.ANDROID_UPDATE_MODE ?? 'flexible').trim().toLowerCase();
+const ANDROID_UPDATE_MODE = ANDROID_UPDATE_MODE_RAW === 'immediate' ? 'immediate' : 'flexible';
+const ANDROID_UPDATE_MESSAGE = (process.env.ANDROID_UPDATE_MESSAGE ?? '').trim();
 
 export {
   HOST,
@@ -31,4 +36,8 @@ export {
   CLEANUP_CRON_SECRET,
   STALE_ROOM_CUTOFF_MINUTES,
   GOOGLE_AUTH_CLIENT_IDS,
+  ANDROID_LATEST_VERSION_CODE,
+  ANDROID_MIN_SUPPORTED_VERSION_CODE,
+  ANDROID_UPDATE_MODE,
+  ANDROID_UPDATE_MESSAGE,
 };
