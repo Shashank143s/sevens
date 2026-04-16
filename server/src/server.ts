@@ -13,6 +13,7 @@ import { createCleanupRoute } from './routes/cleanup.router';
 import { gameRoute } from './routes/game.router';
 import { leaderboardRoute } from './routes/leaderboard.router';
 import { roomsRoute } from './routes/rooms.router';
+import { appRoute } from './routes/app.router';
 
 const server = Server({
   games: [Sevens],
@@ -26,6 +27,7 @@ function registerRoutes() {
   server.app.use(accountRoute);
   server.app.use(leaderboardRoute);
   server.app.use(roomsRoute);
+  server.app.use(appRoute);
   server.app.use(gameRoute);
   server.app.use(joinRoute);
   server.app.use(createDeleteRoute(server as any));

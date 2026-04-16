@@ -46,6 +46,8 @@ const props = defineProps<{
 
 const { G, ctx, moves, playerId } = toRefs(props)
 const { registerSound, playSound, stopSound } = useSoundEffects()
+const { isAndroidApp } = useAppSource()
+const { topInsetCss: gameSafeTopInset, bottomInsetCss: gameSafeBottomInset } = useAndroidViewportInsets()
 
 const playerIndex = computed(() =>
   playerId.value != null ? parseInt(playerId.value, 10) : -1
@@ -448,7 +450,12 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else class="board-stage__mobile absolute inset-0 flex items-center justify-center">
+      <div
+        v-else
+        class="board-stage__mobile absolute inset-0 flex items-center justify-center"
+        :class="{ 'board-stage__mobile--android-offset': isAndroidApp }"
+        :style="{ '--game-safe-top': gameSafeTopInset }"
+      >
         <div class="w-full max-w-[420px] grid grid-cols-2 gap-3">
           <div
             v-for="p in mobileSuitCards"
@@ -499,7 +506,10 @@ onUnmounted(() => {
     </div>
 
     <!-- Bottom Hand -->
-    <div class="fixed bottom-0 left-0 right-0 max-w-6xl mx-auto w-full rounded-t-[1.75rem] border border-amber-200/15 bg-slate-900/72 px-4 sm:px-6 py-3 sm:py-4 shadow-[0_-18px_45px_rgba(2,6,23,0.42)] backdrop-blur-xl">
+    <div
+      class="game-hand-tray fixed bottom-0 left-0 right-0 max-w-6xl mx-auto w-full rounded-t-[1.75rem] border border-amber-200/15 bg-slate-900/72 px-4 sm:px-6 py-3 sm:py-4 shadow-[0_-18px_45px_rgba(2,6,23,0.42)] backdrop-blur-xl"
+      :style="{ '--game-safe-bottom': gameSafeBottomInset }"
+    >
       <div class="flex justify-between items-center mb-3 sm:mb-4 text-base sm:text-lg font-bold text-slate-100 flex-wrap gap-2">
         <span class="text-white">Your hand</span>
         <div class="flex gap-2 text-sm font-semibold">
@@ -559,7 +569,8 @@ onUnmounted(() => {
           is="button"
           v-if="!isGameFinished && playerIndex === currentPlayerIndex && !isPlayableCardAvailable && myHand.length > 0"
           type="button"
-          class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
+          class="game-pass-btn fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-red-500 bg-opacity-90 hover:bg-red-600 text-white px-5 py-2 sm:px-8 sm:py-3 rounded-xl text-base sm:text-lg font-bold shadow-xl transition"
+          :style="{ '--game-safe-bottom': gameSafeBottomInset }"
           @click="stopCountdownSound(); moves.pass()"
         >
           PASS
@@ -578,7 +589,7 @@ onUnmounted(() => {
   </div>
 
   <Teleport to="body">
-    <div class="top-bar">
+    <div class="top-bar" :style="{ '--game-safe-top': gameSafeTopInset }">
       <div
         class="turn-toast"
         :class="{
@@ -684,13 +695,25 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
+.board-stage__mobile--android-offset {
+  padding-top: calc(3.5rem + var(--game-safe-top, env(safe-area-inset-top)));
+}
+
+.game-hand-tray {
+  bottom: var(--game-safe-bottom, env(safe-area-inset-bottom));
+}
+
+.game-pass-btn {
+  bottom: calc(var(--game-safe-bottom, env(safe-area-inset-bottom)) + 1rem);
+}
+
 .desktop-table {
   gap: 1.25rem;
 }
 
 .top-bar {
   position: fixed;
-  top: max(0.35rem, env(safe-area-inset-top));
+  top: max(0.35rem, var(--game-safe-top, env(safe-area-inset-top)));
   left: 0.75rem;
   right: 0.75rem;
   z-index: 80;
@@ -1000,7 +1023,7 @@ onUnmounted(() => {
 
   .sidebar-widget {
     position: fixed;
-    top: max(0.35rem, env(safe-area-inset-top));
+    top: max(0.35rem, var(--game-safe-top, env(safe-area-inset-top)));
     right: 0.75rem;
   }
 }
@@ -1073,6 +1096,12 @@ onUnmounted(() => {
   }
   .sidebar-widget__panel--mobile .sidebar-widget__body {
     padding: 0 0.85rem 0.85rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .game-pass-btn {
+    bottom: calc(var(--game-safe-bottom, env(safe-area-inset-bottom)) + 1.5rem);
   }
 }
 

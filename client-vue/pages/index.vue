@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import PermissionsModal from '~/components/PermissionsModal.vue'
 
 const router = useRouter()
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isAndroidApp } = useAppSource()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
+const { isSupported: notificationsSupported, isGranted: notificationsGranted, refreshPermission } = useNotificationPermission()
 const pwa = import.meta.client ? usePWA() : undefined
+const showPermissionsModal = ref(false)
+const permissionPromptCheckedThisLaunch = useState<boolean>('permission-prompt-checked-this-launch', () => false)
 const canonicalUrl = computed(() => new URL(route.path || '/', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -80,6 +85,23 @@ function handleHomeCta() {
 async function handleInstallApp() {
   await pwa?.install()
 }
+
+function closePermissionsModal() {
+  showPermissionsModal.value = false
+}
+
+onMounted(async () => {
+  if (permissionPromptCheckedThisLaunch.value) return
+  permissionPromptCheckedThisLaunch.value = true
+
+  if (!isAndroidApp.value) return
+
+  await refreshPermission()
+  if (notificationsSupported.value && !notificationsGranted.value) {
+    showPermissionsModal.value = true
+  }
+})
+
 </script>
 
 <template>
@@ -87,7 +109,7 @@ async function handleInstallApp() {
     class="home-shell box-border min-h-[100dvh] overflow-x-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar />
+    <AppTopBar :reserve-space="false" />
 
     <section class="mobile-home">
       <div class="mobile-home__content">
@@ -126,6 +148,7 @@ async function handleInstallApp() {
   </div>
 
   <GoogleLoginModal />
+  <PermissionsModal :open="showPermissionsModal" @close="closePermissionsModal" />
 </template>
 
 <style scoped>

@@ -25,6 +25,7 @@ const { session } = usePlayerSession()
 const { getAccount, rewardCoins } = useAccountApi()
 const { completeGameRecord, getGameRecord } = useGameApi()
 const admob = useAdMob()
+const { topInsetCss } = useAndroidViewportInsets()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -35,6 +36,9 @@ const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
 const isSocketConnected = computed(() => state.value?.isConnected !== false)
 const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
+const reconnectNoticeStyle = computed(() => ({
+  top: `max(1rem, ${topInsetCss.value})`,
+}))
 const reconnectLabel = computed(() => {
   if (!isOnline.value) return 'You are offline. The table will sync when your network returns.'
   return 'Reconnecting to the game server...'
@@ -415,7 +419,8 @@ onMounted(() => {
   <div v-if="state" class="sevens-game-wrapper">
     <div
       v-if="showReconnectNotice"
-      class="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 z-[9998] mx-auto max-w-xl rounded-2xl border border-white/10 bg-slate-900/88 px-4 py-3 text-white shadow-2xl backdrop-blur-sm"
+      class="fixed left-4 right-4 z-[9998] mx-auto max-w-xl rounded-2xl border border-white/10 bg-slate-900/88 px-4 py-3 text-white shadow-2xl backdrop-blur-sm"
+      :style="reconnectNoticeStyle"
     >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

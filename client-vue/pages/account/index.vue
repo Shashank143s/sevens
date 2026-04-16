@@ -3,6 +3,9 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import AdMobBottomBanner from '~/components/AdMobBottomBanner.vue'
+import PermissionsModal from '~/components/PermissionsModal.vue'
+import UserAvatar from '~/components/UserAvatar.vue'
+import { useAppSource } from '~/composables/useAppSource'
 
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
@@ -10,8 +13,10 @@ const { clearAllCredentials } = useRoomCredentials()
 const { deleteAccount, getAccountSummary } = useAccountApi()
 const { signOut } = useGoogleLogin()
 const admob = useAdMob()
+const { isWebApp } = useAppSource()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
+const isPermissionsDialogOpen = ref(false)
 const isSummaryLoading = ref(true)
 const coinsBalance = ref<number | null>(null)
 const playerLevel = ref<number | null>(null)
@@ -24,7 +29,6 @@ const sessionReady = computed(() => mounted.value && hydrated.value)
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
 const email = computed(() => (sessionReady.value ? session.value?.email?.trim() : '') || 'Not available')
 const profileImage = computed(() => (sessionReady.value ? session.value?.image : undefined))
-const avatarLabel = computed(() => fullName.value.charAt(0).toUpperCase() || 'P')
 const accountIdentifier = computed(() => (sessionReady.value ? session.value?.id || session.value?.email?.trim() : '') || '')
 const lastLoginLabel = computed(() => (sessionReady.value ? formatDate(session.value?.lastLoginAt) : 'Not available'))
 const levelProgress = computed(() => {
@@ -64,6 +68,14 @@ function openDeleteDialog() {
 function closeDeleteDialog() {
   if (isDeleting.value) return
   isDeleteDialogOpen.value = false
+}
+
+function openPermissionsDialog() {
+  isPermissionsDialogOpen.value = true
+}
+
+function closePermissionsDialog() {
+  isPermissionsDialogOpen.value = false
 }
 
 async function confirmDeleteAccount() {
@@ -155,15 +167,11 @@ onMounted(() => {
               </p>
             </div>
 
-            <div class="account-card__avatar">
-              <img
-                v-if="profileImage"
-                :src="profileImage"
-                :alt="fullName"
-                class="account-card__image"
-              >
-              <span v-else>{{ avatarLabel }}</span>
-            </div>
+            <UserAvatar
+              class="account-card__avatar"
+              :name="fullName"
+              :image-src="profileImage"
+            />
           </div>
         </div>
 
@@ -236,9 +244,17 @@ onMounted(() => {
 
         <div class="account-card__actions">
           <div class="account-card__row">
-            <NuxtLink to="/instructions" class="account-card__secondary">
-              View Instructions
+            <NuxtLink v-if="isWebApp" to="/instructions" class="account-card__secondary">
+              Instructions
             </NuxtLink>
+            <button
+              v-else
+              type="button"
+              class="account-card__secondary"
+              @click="openPermissionsDialog"
+            >
+              Permissions
+            </button>
             <button
               type="button"
               class="account-card__logout"
@@ -266,6 +282,11 @@ onMounted(() => {
       :deleting="isDeleting"
       @close="closeDeleteDialog"
       @confirm="confirmDeleteAccount"
+    />
+
+    <PermissionsModal
+      :open="isPermissionsDialogOpen"
+      @close="closePermissionsDialog"
     />
   </div>
 </template>
@@ -378,12 +399,6 @@ onMounted(() => {
   font-size: 1.75rem;
   font-weight: 800;
   color: #f8f4ec;
-}
-
-.account-card__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .account-card__identity {
