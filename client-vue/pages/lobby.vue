@@ -82,7 +82,7 @@ const lobbyStatus = computed(() => {
 })
 
 function joinedCount(m: LobbyMatch): number {
-  return m.joined_count ?? m.players?.filter(p => p.name != null && p.name !== '')?.length ?? 0
+  return m.joined_count ?? m.players?.filter((p: any) => p.name != null && p.name !== '')?.length ?? 0
 }
 
 function totalPlayers(m: LobbyMatch): number {
