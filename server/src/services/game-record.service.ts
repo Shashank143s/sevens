@@ -289,6 +289,17 @@ export async function authorizeGameJoin(matchID: string, password?: string, user
   const game = await getGameRecord(matchID);
   if (!game) return null;
   if (userId) {
+    const existingSeat = (game.players ?? []).find((player) => (
+      !player.is_bot
+      && !player.left_at
+      && player.user_id
+      && String(player.user_id) === String(userId)
+    ));
+    if (existingSeat) {
+      return { allowed: false, already_joined: true, player_id: existingSeat.player_id };
+    }
+  }
+  if (userId) {
     await ensureAvailableCoinsForUser(userId, Math.max(game.coin_rules?.stake ?? 10, 10));
   }
   if (!game.access?.is_private) return { allowed: true };

@@ -21,7 +21,6 @@ const { isOnline } = useOnlineStatus()
 const { registerSound, playSound, stopSound } = useSoundEffects()
 
 const joined = ref(false)
-const rejoining = ref(false)
 const playerName = ref('')
 const avatar = ref('🐶')
 const playerID = ref<string | null>(null)
@@ -177,7 +176,6 @@ onMounted(async () => {
   }
   const stored = getCredentials(matchID.value)
   if (stored) {
-    rejoining.value = true
     playerID.value = stored.playerID
     playerCredentials.value = stored.credentials
     joined.value = true
@@ -415,7 +413,7 @@ const loadingCards = [
 
   <!-- Joined but waiting for other players -->
   <div
-    v-else-if="joined && !rejoining && !allPlayersJoined"
+    v-else-if="joined && !allPlayersJoined"
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
