@@ -78,7 +78,7 @@ watch(showCoinTransfer, (active, wasActive) => {
 }, { immediate: true })
 
 watch(() => props.rewardCoinBurstKey, (next, prev) => {
-  if (!props.didIWin || next === prev || next == null) return
+  if (!props.didIWin || next == null || prev == null || next <= prev) return
   clearBonusCoinBurstTimer()
   bonusCoinBurstActive.value = false
   void playCoinRewardSound()
@@ -89,7 +89,7 @@ watch(() => props.rewardCoinBurstKey, (next, prev) => {
       bonusCoinBurstTimer = null
     }, 1050)
   }, 40)
-}, { immediate: true })
+})
 
 onUnmounted(() => {
   clearCoinSoundDelay()
