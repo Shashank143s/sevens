@@ -298,6 +298,25 @@ export async function upsertAccountWithGeo(identifier: string, payload: AccountP
   );
 }
 
+export async function rewardCoinsByIdentifier(identifier: string, amount = 5): Promise<any> {
+  const safeAmount = Math.floor(Number(amount));
+  if (!Number.isFinite(safeAmount) || safeAmount <= 0) {
+    throw new Error('Reward amount must be a positive number');
+  }
+
+  const user = await UserModel.findOneAndUpdate(
+    createUserLookup(identifier) as any,
+    {
+      $inc: {
+        'wallet.coins_balance': safeAmount,
+      },
+    },
+    { returnDocument: 'after' } as any,
+  ).lean();
+
+  return user;
+}
+
 function mapLeaderboardEntry(user: any, rank: number): LeaderboardEntry {
   return {
     rank,

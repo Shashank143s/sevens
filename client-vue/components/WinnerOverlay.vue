@@ -10,16 +10,24 @@ const props = defineProps<{
   redirectSeconds: number
   wonCoins?: number | null
   totalCoins?: number | null
+  rewardAvailable?: boolean
+  rewardLoading?: boolean
+  rewardClaimed?: boolean
+  rewardStatus?: string | null
+  rewardCoinBurstKey?: number
 }>()
 
 const emit = defineEmits<{
   goLobby: []
+  watchReward: []
 }>()
 const { registerSound, playSound, stopSound } = useSoundEffects()
 
 const showCoinTransfer = computed(() => props.didIWin && (props.wonCoins ?? 0) > 0 && props.totalCoins != null)
 const coinTrail = Array.from({ length: 5 }, (_, index) => index)
 let coinSoundDelayTimer: ReturnType<typeof setTimeout> | null = null
+let bonusCoinBurstTimer: ReturnType<typeof setTimeout> | null = null
+const bonusCoinBurstActive = ref(false)
 
 function stopCoinSound() {
   stopSound(coinSoundSrc)
@@ -34,6 +42,13 @@ function clearCoinSoundDelay() {
   if (coinSoundDelayTimer) {
     clearTimeout(coinSoundDelayTimer)
     coinSoundDelayTimer = null
+  }
+}
+
+function clearBonusCoinBurstTimer() {
+  if (bonusCoinBurstTimer) {
+    clearTimeout(bonusCoinBurstTimer)
+    bonusCoinBurstTimer = null
   }
 }
 
@@ -62,8 +77,23 @@ watch(showCoinTransfer, (active, wasActive) => {
   }, 520)
 }, { immediate: true })
 
+watch(() => props.rewardCoinBurstKey, (next, prev) => {
+  if (!props.didIWin || next === prev || next == null) return
+  clearBonusCoinBurstTimer()
+  bonusCoinBurstActive.value = false
+  void playCoinRewardSound()
+  bonusCoinBurstTimer = setTimeout(() => {
+    bonusCoinBurstActive.value = true
+    bonusCoinBurstTimer = window.setTimeout(() => {
+      bonusCoinBurstActive.value = false
+      bonusCoinBurstTimer = null
+    }, 1050)
+  }, 40)
+}, { immediate: true })
+
 onUnmounted(() => {
   clearCoinSoundDelay()
+  clearBonusCoinBurstTimer()
   stopCoinSound()
   stopOutcomeSound()
 })
@@ -108,57 +138,107 @@ onMounted(() => {
 
         <div
           v-if="didIWin && (wonCoins != null || totalCoins != null)"
-          class="winner-overlay__economy grid grid-cols-2 gap-3"
+          class="winner-overlay__economy space-y-3"
         >
-          <div
-            v-if="wonCoins != null"
-            class="winner-overlay__economy-card rounded-2xl border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.14),rgba(15,23,42,0.35))] px-4 py-3"
-          >
-            <div class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-emerald-200/80">
-              Won
-            </div>
-            <div class="mt-2 inline-flex items-center gap-2 text-lg font-extrabold text-emerald-50">
-              <span>+{{ wonCoins }}</span>
-              <IconsCoinIcon class="h-5 w-5" />
-            </div>
-          </div>
-
-          <div
-            v-if="totalCoins != null"
-            class="winner-overlay__economy-card winner-overlay__economy-card--wallet rounded-2xl border border-amber-300/15 bg-[linear-gradient(180deg,rgba(250,204,21,0.12),rgba(15,23,42,0.35))] px-4 py-3"
-            :class="{ 'winner-overlay__economy-card--wallet-pulse': showCoinTransfer }"
-          >
-            <div class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-200/80">
-              Wallet
-            </div>
-            <div class="mt-2 inline-flex items-center gap-2 text-lg font-extrabold text-amber-50">
-              <span>{{ totalCoins }}</span>
-              <IconsCoinIcon class="h-5 w-5" />
-            </div>
-          </div>
-
-          <div
-            v-if="showCoinTransfer"
-            class="winner-overlay__coin-flow"
-            aria-hidden="true"
-          >
-            <span
-              v-for="coin in coinTrail"
-              :key="coin"
-              class="winner-overlay__coin"
-              :style="{ '--coin-delay': `${coin * 160}ms` }"
+          <div class="winner-overlay__economy-stage grid grid-cols-2 items-start gap-3">
+            <div
+              v-if="wonCoins != null"
+              class="winner-overlay__economy-card rounded-2xl border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.14),rgba(15,23,42,0.35))] px-4 py-3"
             >
-              <IconsCoinIcon class="h-4 w-4" />
-            </span>
+              <div class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-emerald-200/80">
+                Won
+              </div>
+              <div class="mt-2 inline-flex items-center gap-2 text-lg font-extrabold text-emerald-50">
+                <span>+{{ wonCoins }}</span>
+                <IconsCoinIcon class="h-5 w-5" />
+              </div>
+            </div>
+
+            <div
+              v-if="totalCoins != null"
+              class="winner-overlay__economy-card winner-overlay__economy-card--wallet rounded-2xl border border-amber-300/15 bg-[linear-gradient(180deg,rgba(250,204,21,0.12),rgba(15,23,42,0.35))] px-4 py-3"
+              :class="{ 'winner-overlay__economy-card--wallet-pulse': showCoinTransfer }"
+            >
+              <div class="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-200/80">
+                Wallet
+              </div>
+              <div class="mt-2 inline-flex items-center gap-2 text-lg font-extrabold text-amber-50">
+                <span>{{ totalCoins }}</span>
+                <IconsCoinIcon class="h-5 w-5" />
+              </div>
+            </div>
+
+            <div
+              v-if="showCoinTransfer"
+              class="winner-overlay__coin-flow"
+              aria-hidden="true"
+            >
+              <span
+                v-for="coin in coinTrail"
+                :key="coin"
+                class="winner-overlay__coin"
+                :style="{ '--coin-delay': `${coin * 160}ms` }"
+              >
+                <IconsCoinIcon class="h-4 w-4" />
+              </span>
+            </div>
+
+            <div
+              v-if="bonusCoinBurstActive"
+              class="winner-overlay__bonus-coin-flow"
+              aria-hidden="true"
+            >
+              <span
+                v-for="coin in coinTrail"
+                :key="`bonus-${coin}`"
+                class="winner-overlay__bonus-coin"
+                :style="{ '--coin-delay': `${coin * 160}ms` }"
+              >
+                <IconsCoinIcon class="h-4 w-4" />
+              </span>
+            </div>
           </div>
         </div>
+
+        <div
+          v-if="rewardAvailable"
+          class="winner-overlay__reward-prompt rounded-2xl px-4 py-3"
+          :class="rewardClaimed
+            ? 'border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.14),rgba(15,23,42,0.35))]'
+            : 'border border-sky-300/15 bg-[linear-gradient(180deg,rgba(14,165,233,0.12),rgba(15,23,42,0.35))]'"
+        >
+          <div
+            class="text-[0.68rem] font-bold uppercase tracking-[0.2em]"
+            :class="rewardClaimed ? 'text-emerald-200/80' : 'text-sky-200/80'"
+          >
+            {{ rewardClaimed ? 'Bonus claimed' : 'Bonus' }}
+          </div>
+          <p class="mt-2 text-sm font-semibold text-slate-100">
+            {{ rewardClaimed
+              ? '5 extra coins were added to your wallet.'
+              : 'Watch a reward video to earn 5 extra coins.' }}
+          </p>
+          <p v-if="rewardStatus" class="mt-1 text-xs text-slate-300">
+            {{ rewardStatus }}
+          </p>
+        </div>
+
+        <button
+          v-if="rewardAvailable && !rewardClaimed"
+          type="button"
+          class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-sky-300/20 bg-sky-400 px-4 py-3 font-bold text-slate-950 shadow-[0_18px_40px_rgba(14,165,233,0.18)] transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="rewardLoading"
+          @click="emit('watchReward')"
+        >
+          {{ rewardLoading ? 'Preparing Reward...' : 'Watch Reward Video (+5 Coins)' }}
+        </button>
 
         <button
           type="button"
           class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400 px-4 py-3 font-bold text-slate-950 shadow-[0_18px_40px_rgba(245,158,11,0.18)] transition hover:bg-amber-300"
           @click="emit('goLobby')"
         >
-          Go to Lobby ({{ redirectSeconds }}s)
+          {{ rewardClaimed ? 'Go to Lobby' : `Skip to Lobby (${redirectSeconds}s)` }}
         </button>
       </div>
     </div>
@@ -168,6 +248,16 @@ onMounted(() => {
 <style scoped>
 .winner-overlay__economy {
   position: relative;
+}
+
+.winner-overlay__economy-stage {
+  position: relative;
+}
+
+.winner-overlay__reward-prompt {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 22px rgba(56, 189, 248, 0.08);
 }
 
 .winner-overlay__economy-card {
@@ -190,6 +280,24 @@ onMounted(() => {
   position: absolute;
   inset: 0;
   overflow: hidden;
+}
+
+.winner-overlay__bonus-coin-flow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.winner-overlay__bonus-coin {
+  position: absolute;
+  left: 24%;
+  top: 58%;
+  color: #facc15;
+  opacity: 0;
+  filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.42));
+  animation: winner-overlay-coin-transfer 900ms cubic-bezier(0.22, 1, 0.36, 1) 3;
+  animation-fill-mode: both;
 }
 
 .winner-overlay__coin {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import RoomCard from '~/components/RoomCard.vue'
+import AdMobBottomBanner from '~/components/AdMobBottomBanner.vue'
 import { listMatches, createMatch, joinBots } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
@@ -476,6 +477,8 @@ onMounted(() => {
     @update:create-room-name="createRoomName = $event"
     @update:show-bots-info="showBotsInfo = $event"
   />
+
+  <AdMobBottomBanner />
 </template>
 
 <style scoped>

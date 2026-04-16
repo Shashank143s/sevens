@@ -2,6 +2,7 @@
 import { getMatchUrl } from '~/composables/useLobbyApi'
 import type { LobbyMatch } from '~/composables/useLobbyApi'
 import { useRoomCredentials } from '~/composables/useRoomCredentials'
+import { BannerAdPosition } from '@capacitor-community/admob'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 import cardShuffleSound from '~/assets/audio/card_shuffle_sound.mp3'
 import sevenSpades from '~/assets/images/cards/spades-7.png'
@@ -9,6 +10,7 @@ import sevenHearts from '~/assets/images/cards/hearts-7.png'
 import sevenDiamonds from '~/assets/images/cards/diamonds-7.png'
 import sevenClubs from '~/assets/images/cards/clubs-7.png'
 import TablePrepScreen from '~/components/TablePrepScreen.vue'
+import RoomLoadingBanner from '~/components/RoomLoadingBanner.vue'
 
 const route = useRoute()
 const matchID = computed(() => route.params.matchID as string)
@@ -346,6 +348,7 @@ const loadingCards = [
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
+    <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <div class="w-full max-w-md">
       <div
         v-if="creatorRoomPassword"
@@ -414,6 +417,7 @@ const loadingCards = [
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
+    <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <WaitingForPlayersModal
       :room-name="roomName"
       :joined-count="joinedCount"
@@ -434,6 +438,10 @@ const loadingCards = [
         :match-id="matchID"
         :player-id="playerID"
         :credentials="playerCredentials"
+      />
+      <RoomLoadingBanner
+        v-if="showTablePrepOverlay"
+        :position="BannerAdPosition.BOTTOM_CENTER"
       />
       <Transition name="table-prep-fade">
         <TablePrepScreen

@@ -125,6 +125,17 @@ type DeleteAccountResponse = {
   deleted: boolean
 }
 
+type RewardCoinsResponse = {
+  credited: number
+  user: {
+    _id: string
+    wallet?: {
+      coins_balance: number
+      coins_reserved: number
+    }
+  }
+}
+
 export function useAccountApi() {
   const config = useRuntimeConfig()
 
@@ -171,6 +182,16 @@ export function useAccountApi() {
     })
   }
 
+  async function rewardCoins(userID: string, amount = 5, source = 'reward_video') {
+    return $fetch<RewardCoinsResponse>(`${buildAccountUrl(userID)}/reward-coins`, {
+      method: 'POST',
+      body: {
+        amount,
+        source,
+      },
+    })
+  }
+
   async function getLeaderboard(limit = 25, userID?: string) {
     return $fetch<GetLeaderboardResponse>(`${config.public.apiBase}/api/leaderboard`, {
       query: {
@@ -186,6 +207,7 @@ export function useAccountApi() {
     getAccountGames,
     getAccountSummary,
     getLeaderboard,
+    rewardCoins,
     signInWithGoogleCredential,
     upsertAccount,
   }
