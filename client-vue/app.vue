@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Capacitor } from '@capacitor/core'
+import AppUpdateModal from '~/components/AppUpdateModal.vue'
 import WebSplashScreen from '~/components/WebSplashScreen.vue'
 import { useAppSource } from '~/composables/useAppSource'
+import { useAppUpdate } from '~/composables/useAppUpdate'
 import { normalizePath } from '~/utils/normalizePath'
 
 const isOnline = ref(true)
@@ -21,6 +23,19 @@ const showWebSplash = computed(() => isWebApp.value && mounted.value && !nativeA
 const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
 const router = useRouter()
+const {
+  modalVisible: updateModalVisible,
+  mandatory: updateMandatory,
+  flowInProgress: updateFlowInProgress,
+  updateDownloaded,
+  statusMessage: updateStatusMessage,
+  currentVersionCode: updateCurrentVersionCode,
+  availableVersionCode: updateAvailableVersionCode,
+  updateCopy,
+  checkForUpdatesOnLaunch,
+  startUpdate,
+  dismissOptionalUpdate,
+} = useAppUpdate()
 
 const showInstallBanner = computed(() =>
   mounted.value
@@ -91,6 +106,7 @@ onMounted(() => {
 
   handleProtectedRouteRedirect()
   releaseAuthRedirect()
+  void checkForUpdatesOnLaunch()
 })
 
 watch(() => route.fullPath, () => {
@@ -161,6 +177,19 @@ onUnmounted(() => {
 
       <NuxtPage />
     </div>
+
+    <AppUpdateModal
+      :open="updateModalVisible"
+      :mandatory="updateMandatory"
+      :in-progress="updateFlowInProgress"
+      :downloaded="updateDownloaded"
+      :message="updateCopy"
+      :error-message="updateStatusMessage"
+      :current-version-code="updateCurrentVersionCode"
+      :target-version-code="updateAvailableVersionCode"
+      @update="startUpdate"
+      @later="dismissOptionalUpdate"
+    />
   </div>
 </template>
 
