@@ -736,6 +736,52 @@ onUnmounted(() => {
   flex: 0 1 auto;
 }
 
+:global(html.ui-density-compact) .board-stage__mobile {
+  padding: 3rem 0.62rem 11.6rem;
+}
+
+:global(html.ui-density-compact) .board-stage__mobile--android-offset {
+  padding-top: calc(2.9rem + var(--game-safe-top, env(safe-area-inset-top)));
+}
+
+:global(html.ui-density-compact) .top-bar {
+  left: 0.58rem;
+  right: 0.58rem;
+  width: min(calc(100vw - 1.16rem), 40rem);
+  gap: 0.6rem;
+}
+
+:global(html.ui-density-compact) .turn-toast {
+  width: min(calc(100% - 5.2rem), 31rem);
+}
+
+:global(html.ui-density-compact) .turn-toast__inner {
+  min-height: 3.05rem;
+  padding: 0.56rem 0.78rem;
+  border-radius: 0.92rem;
+}
+
+:global(html.ui-density-compact) .turn-toast__text {
+  font-size: 0.86rem;
+}
+
+:global(html.ui-density-compact) .turn-toast__timer {
+  min-width: 2.75rem;
+  font-size: 0.94rem;
+}
+
+:global(html.ui-density-compact) .game-hand-tray {
+  border-top-left-radius: 1.38rem;
+  border-top-right-radius: 1.38rem;
+  padding-top: 0.56rem;
+  padding-bottom: 0.62rem;
+}
+
+:global(html.ui-density-compact) .game-pass-btn {
+  padding: 0.56rem 1rem;
+  font-size: 0.92rem;
+}
+
 .turn-toast__inner {
   display: flex;
   align-items: center;

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import UserAvatar from '~/components/UserAvatar.vue'
 
+withDefaults(defineProps<{
+  compact?: boolean
+}>(), {
+  compact: false,
+})
+
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
@@ -69,7 +75,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="showMenu" class="user-menu">
+  <div v-if="showMenu" class="user-menu" :class="{ 'user-menu--compact': compact }">
     <button
       type="button"
       class="user-menu__toggle"
@@ -203,6 +209,13 @@ onMounted(() => {
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
+.user-menu--compact .user-menu__toggle {
+  min-height: 3rem;
+  padding: 0.42rem 0.62rem 0.42rem 0.74rem;
+  border-radius: 1rem;
+  gap: 0.52rem;
+}
+
 .user-menu__toggle--open {
   border-color: rgba(212, 175, 55, 0.18);
   background:
@@ -232,11 +245,21 @@ onMounted(() => {
   line-height: 1;
 }
 
+.user-menu--compact .user-menu__eyebrow {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+}
+
 .user-menu__label {
   margin-top: 0.18rem;
   font-size: 0.9rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.user-menu--compact .user-menu__label {
+  margin-top: 0.12rem;
+  font-size: 0.82rem;
 }
 
 .user-menu__avatar {
@@ -253,6 +276,12 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
+.user-menu--compact .user-menu__avatar {
+  width: 2.05rem;
+  height: 2.05rem;
+  font-size: 0.9rem;
+}
+
 .user-menu__chevron {
   display: inline-flex;
   align-items: center;
@@ -261,6 +290,11 @@ onMounted(() => {
   height: 1rem;
   color: rgba(226, 232, 240, 0.72);
   transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.user-menu--compact .user-menu__chevron {
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .user-menu__chevron svg {
@@ -289,8 +323,18 @@ onMounted(() => {
   backdrop-filter: blur(18px);
 }
 
+.user-menu--compact .user-menu__panel {
+  min-width: 13.4rem;
+  padding: 0.5rem;
+  border-radius: 0.98rem;
+}
+
 .user-menu__section + .user-menu__section {
   margin-top: 0.65rem;
+}
+
+.user-menu--compact .user-menu__section + .user-menu__section {
+  margin-top: 0.45rem;
 }
 
 .user-menu__section-label {
@@ -301,6 +345,12 @@ onMounted(() => {
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.user-menu--compact .user-menu__section-label {
+  margin: 0 0 0.28rem;
+  padding: 0 0.3rem;
+  font-size: 0.56rem;
 }
 
 .user-menu__action {
@@ -319,8 +369,18 @@ onMounted(() => {
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
+.user-menu--compact .user-menu__action {
+  padding: 0.58rem 0.68rem;
+  border-radius: 0.72rem;
+  font-size: 0.79rem;
+}
+
 .user-menu__action + .user-menu__action {
   margin-top: 0.34rem;
+}
+
+.user-menu--compact .user-menu__action + .user-menu__action {
+  margin-top: 0.26rem;
 }
 
 .user-menu__action:hover {
@@ -360,9 +420,17 @@ onMounted(() => {
   gap: 0.4rem;
 }
 
+.user-menu--compact .user-menu__legal {
+  gap: 0.28rem;
+}
+
 .user-menu__action--legal {
   font-size: 0.82rem;
   color: rgba(226, 232, 240, 0.8);
+}
+
+.user-menu--compact .user-menu__action--legal {
+  font-size: 0.74rem;
 }
 
 @media (max-width: 767px) {

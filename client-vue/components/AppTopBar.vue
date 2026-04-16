@@ -3,10 +3,12 @@ const props = withDefaults(defineProps<{
   backTo?: string
   backLabel?: string
   reserveSpace?: boolean
+  compact?: boolean
 }>(), {
   backTo: '',
   backLabel: '',
   reserveSpace: true,
+  compact: false,
 })
 
 const router = useRouter()
@@ -20,7 +22,11 @@ function goBack() {
 </script>
 
 <template>
-  <div class="app-topbar" :style="{ '--app-topbar-safe-top': topInsetCss }">
+  <div
+    class="app-topbar"
+    :class="{ 'app-topbar--compact': compact }"
+    :style="{ '--app-topbar-safe-top': topInsetCss }"
+  >
     <header class="app-topbar__header">
       <button
         v-if="showBack"
@@ -30,8 +36,12 @@ function goBack() {
       >
         ← {{ backLabel }}
       </button>
-      <div v-else class="app-topbar__back app-topbar__back--ghost" aria-hidden="true" />
-      <AppUserMenu />
+      <div
+        v-else
+        class="app-topbar__back app-topbar__back--ghost"
+        aria-hidden="true"
+      />
+      <AppUserMenu :compact="compact" />
     </header>
     <div v-if="reserveSpace" class="app-topbar__spacer" aria-hidden="true" />
   </div>
@@ -93,5 +103,43 @@ function goBack() {
 
 .app-topbar__spacer {
   height: calc(max(0.9rem, var(--app-topbar-safe-top)) + 2.75rem + 1.1rem);
+}
+
+:global(.app-topbar--compact) .app-topbar__header {
+  gap: 0.7rem;
+  padding:
+    max(0.62rem, var(--app-topbar-safe-top))
+    max(0.8rem, env(safe-area-inset-right))
+    0
+    max(0.8rem, env(safe-area-inset-left));
+}
+
+:global(.app-topbar--compact) .app-topbar__back {
+  min-height: 2.45rem;
+  padding: 0.56rem 0.84rem;
+  font-size: 0.86rem;
+}
+
+:global(.app-topbar--compact) .app-topbar__spacer {
+  height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.45rem + 0.82rem);
+}
+
+:global(html.ui-density-compact) .app-topbar__header {
+  gap: 0.7rem;
+  padding:
+    max(0.62rem, var(--app-topbar-safe-top))
+    max(0.8rem, env(safe-area-inset-right))
+    0
+    max(0.8rem, env(safe-area-inset-left));
+}
+
+:global(html.ui-density-compact) .app-topbar__back {
+  min-height: 2.45rem;
+  padding: 0.56rem 0.84rem;
+  font-size: 0.86rem;
+}
+
+:global(html.ui-density-compact) .app-topbar__spacer {
+  height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.45rem + 0.82rem);
 }
 </style>

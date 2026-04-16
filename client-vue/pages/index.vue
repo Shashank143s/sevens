@@ -13,6 +13,7 @@ const pwa = import.meta.client ? usePWA() : undefined
 const showPermissionsModal = ref(false)
 const permissionPromptCheckedThisLaunch = useState<boolean>('permission-prompt-checked-this-launch', () => false)
 const canonicalUrl = computed(() => new URL(route.path || '/', config.public.siteUrl).toString())
+const isHomeCompact = computed(() => config.public.uiDensityHome === 'compact')
 
 useHead(() => ({
   link: [
@@ -109,9 +110,9 @@ onMounted(async () => {
     class="home-shell box-border min-h-[100dvh] overflow-x-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar :reserve-space="false" />
+    <AppTopBar :reserve-space="false" :compact="isHomeCompact" />
 
-    <section class="mobile-home">
+    <section class="mobile-home" :class="{ 'mobile-home--compact': isHomeCompact }">
       <div class="mobile-home__content">
         <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
         <h1 class="mobile-home__title">Sevens Royale</h1>
@@ -301,6 +302,92 @@ onMounted(async () => {
   font-size: 0.98rem;
   font-weight: 700;
   backdrop-filter: blur(12px);
+}
+
+.mobile-home--compact {
+  padding:
+    max(1.25rem, env(safe-area-inset-top))
+    max(0.95rem, env(safe-area-inset-right))
+    0.95rem
+    max(0.95rem, env(safe-area-inset-left));
+}
+
+.mobile-home--compact .mobile-home__eyebrow {
+  margin-bottom: 0.9rem;
+  font-size: clamp(0.58rem, 2vw, 0.95rem);
+}
+
+.mobile-home--compact .mobile-home__title {
+  font-size: clamp(2.6rem, 7.4vw, 5rem);
+  line-height: 0.92;
+}
+
+.mobile-home--compact .mobile-home__description {
+  margin-top: 1.05rem;
+  max-width: 31rem;
+  font-size: clamp(0.88rem, 1.7vw, 1.18rem);
+  line-height: 1.5;
+}
+
+.mobile-home--compact .mobile-home__divider {
+  margin: 1.45rem auto 1.5rem;
+}
+
+.mobile-home--compact .mobile-home__suits {
+  font-size: clamp(0.95rem, 3.6vw, 1.45rem);
+}
+
+.mobile-home--compact .mobile-home__cta {
+  width: min(100%, 20rem);
+  min-height: 3.45rem;
+  padding: 0.7rem 1.05rem;
+  font-size: 0.92rem;
+  gap: 0.72rem;
+}
+
+.mobile-home--compact .mobile-home__cta-arrow {
+  font-size: 1.12rem;
+}
+
+.mobile-home--compact .mobile-home__secondary-cta {
+  width: min(100%, 20rem);
+  min-height: 2.85rem;
+  padding: 0.65rem 1.05rem;
+  font-size: 0.86rem;
+}
+
+.mobile-home--compact {
+  padding:
+    max(1.55rem, env(safe-area-inset-top))
+    max(1.2rem, env(safe-area-inset-right))
+    1.1rem
+    max(1.2rem, env(safe-area-inset-left));
+}
+
+.mobile-home--compact .mobile-home__eyebrow {
+  margin-bottom: 1.1rem;
+}
+
+.mobile-home--compact .mobile-home__title {
+  font-size: clamp(3rem, 8.3vw, 6.2rem);
+}
+
+.mobile-home--compact .mobile-home__description {
+  margin-top: 1.35rem;
+  max-width: 34rem;
+  line-height: 1.55;
+}
+
+.mobile-home--compact .mobile-home__divider {
+  margin: 1.8rem auto 2rem;
+}
+
+.mobile-home--compact .mobile-home__cta {
+  min-height: 3.8rem;
+}
+
+.mobile-home--compact .mobile-home__secondary-cta {
+  min-height: 3.1rem;
 }
 
 @media (min-width: 640px) {

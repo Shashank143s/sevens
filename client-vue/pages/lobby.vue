@@ -7,6 +7,7 @@ import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
+const config = useRuntimeConfig()
 const { session } = usePlayerSession()
 const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
@@ -40,6 +41,7 @@ const createRoomName = ref('')
 const roomNameTouched = ref(false)
 const stakeTouched = ref(false)
 const showBotsInfo = ref(false)
+const isLobbyCompact = computed(() => config.public.uiDensityLobby === 'compact')
 
 const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
 const botOptions = computed(() => {
@@ -312,16 +314,19 @@ onMounted(() => {
 
 <template>
   <div
-    class="box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
+    class="lobby-page box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
+    :class="{ 'lobby-page--compact': isLobbyCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Back" />
+    <AppTopBar back-to="/" back-label="Back" :compact="isLobbyCompact" />
 
     <div class="mx-auto w-full max-w-5xl">
       <div
         v-if="lobbyStatus"
         class="mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
-        :class="isOnline ? 'border-amber-400/20 bg-slate-900/70 text-slate-200' : 'border-red-400/20 bg-red-950/40 text-red-100'"
+        :class="[
+          isOnline ? 'border-amber-400/20 bg-slate-900/70 text-slate-200' : 'border-red-400/20 bg-red-950/40 text-red-100',
+        ]"
       >
         {{ lobbyStatus }}
       </div>
@@ -354,8 +359,12 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl">
-        <div class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-4 py-3.5">
+      <section
+        class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl"
+      >
+        <div
+          class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-4 py-3.5"
+        >
           <div class="min-w-0">
             <p class="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-sky-300/80">Live Lobby</p>
             <h2 class="mt-1 font-semibold text-slate-100">Available Rooms</h2>
@@ -450,6 +459,7 @@ onMounted(() => {
 
   <CreateRoomModal
     :visible="showCreateModal"
+    :compact="isLobbyCompact"
     :coins-balance-label="coinsBalanceLabel"
     :bot-options="botOptions"
     :creating="creating"
@@ -482,4 +492,61 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.lobby-page--compact {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: max(0.35rem, env(safe-area-inset-left));
+  padding-right: max(0.35rem, env(safe-area-inset-right));
+}
+
+.lobby-page--compact > .mx-auto {
+  max-width: 72rem;
+}
+
+.lobby-page--compact section {
+  max-height: calc(100dvh - 8.4rem);
+}
+
+.lobby-page--compact .space-y-3 > * + * {
+  margin-top: 0.5rem;
+}
+
+.lobby-page--compact .mb-4.rounded-2xl.border.px-4.py-3.text-sm {
+  margin-bottom: 0.75rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.lobby-page--compact .shrink-0.flex.items-center.justify-between.gap-3.border-b {
+  padding: 0.62rem 0.75rem;
+}
+
+.lobby-page--compact .shrink-0 .text-\[0\.68rem\] {
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+}
+
+.lobby-page--compact .shrink-0 h2 {
+  margin-top: 0.125rem;
+  font-size: 0.9rem;
+}
+
+.lobby-page--compact .flex.items-center.gap-3 {
+  gap: 0.5rem;
+}
+
+.lobby-page--compact .inline-flex.h-8.w-8 {
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.lobby-page--compact .inline-flex.h-8.w-8 .h-4.w-4 {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.lobby-page--compact .flex-1.overflow-y-auto.p-3 {
+  padding: 0.625rem;
+}
 </style>

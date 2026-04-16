@@ -725,6 +725,35 @@ onMounted(() => {
   color: #fecaca;
 }
 
+:global(html.ui-density-compact) .account-page {
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(0.85rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom))
+    max(0.85rem, env(safe-area-inset-left));
+}
+
+:global(html.ui-density-compact) .account-card {
+  border-radius: 1.45rem;
+  padding: 1.12rem;
+}
+
+:global(html.ui-density-compact) .account-card__hero-shell {
+  margin: -1.12rem -1.12rem 0;
+  padding: 0.95rem 1.12rem 1rem;
+}
+
+:global(html.ui-density-compact) .account-history__link {
+  min-height: 4.35rem;
+  padding: 0.9rem 1rem;
+}
+
+:global(html.ui-density-compact) .account-card__secondary,
+:global(html.ui-density-compact) .account-card__logout,
+:global(html.ui-density-compact) .account-card__danger {
+  min-height: 2.95rem;
+}
+
 @media (min-width: 768px) {
   .account-page {
     padding:

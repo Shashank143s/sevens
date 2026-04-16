@@ -13,6 +13,7 @@ import TablePrepScreen from '~/components/TablePrepScreen.vue'
 import RoomLoadingBanner from '~/components/RoomLoadingBanner.vue'
 
 const route = useRoute()
+const config = useRuntimeConfig()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
 const { getCredentials, getRoomMeta, setCredentials } = useRoomCredentials()
@@ -35,6 +36,7 @@ const roomPassword = ref('')
 const requiresPassword = ref(false)
 const roomName = ref('')
 const roomStake = ref<number | null>(null)
+const isJoinModalCompact = computed(() => config.public.uiDensityLobby === 'compact')
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
 const tablePrepVisible = ref(false)
@@ -347,11 +349,11 @@ const loadingCards = [
   <!-- Not yet joined: show join form (pre-filled from session) -->
   <div
     v-if="!joined"
-    class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
+    class="room-page__shell room-page__shell--join min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
-    <div class="w-full max-w-md">
+    <div class="w-full max-w-md" :class="{ 'max-w-xl': isJoinModalCompact }">
       <div
         v-if="creatorRoomPassword"
         class="mb-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 backdrop-blur-sm"
@@ -394,6 +396,7 @@ const loadingCards = [
       </p>
       <JoinTableModal
         :match-id="matchID"
+        :compact="isJoinModalCompact"
         :room-name="roomName"
         :room-stake="roomStake ?? undefined"
         :player-name="playerName"
@@ -416,7 +419,7 @@ const loadingCards = [
   <!-- Joined but waiting for other players -->
   <div
     v-else-if="joined && !rejoining && !allPlayersJoined"
-    class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
+    class="room-page__shell room-page__shell--waiting min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
@@ -465,6 +468,15 @@ const loadingCards = [
 <style scoped>
 .room-table-stage {
   position: relative;
+}
+
+:global(html.ui-density-compact) .room-page__shell {
+  padding: 0.9rem;
+}
+
+:global(html.ui-density-compact) .room-page__shell--join .w-full.max-w-md,
+:global(html.ui-density-compact) .room-page__shell--waiting .w-full.max-w-sm {
+  max-width: 24rem;
 }
 
 .table-prep-fade-enter-active,
