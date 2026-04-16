@@ -41,6 +41,13 @@ async function handleAuthorizeJoin(ctx: GameRouteContext, matchID: string) {
   const payload = (await readJsonBody(ctx)) as JoinAuthorizationPayload;
   const result = await authorizeGameJoin(matchID, payload.password, payload.user_id);
   if (!result) return setJson(ctx, 404, { error: 'Game not found' });
+  if (result.already_joined) {
+    return setJson(ctx, 409, {
+      error: 'You already joined this table. Please rejoin from lobby.',
+      reason: 'already_joined',
+      player_id: result.player_id,
+    });
+  }
   if (!result.allowed) return setJson(ctx, 403, { error: 'Incorrect room password' });
   return setJson(ctx, 200, { allowed: true });
 }
