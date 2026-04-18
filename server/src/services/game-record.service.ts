@@ -89,6 +89,39 @@ async function claimCoinSettlement(matchID: string) {
   );
 }
 
+function buildExistingSettlementResult(game: any, payload: UpdateGamePayload) {
+  return {
+    players: buildUpdatedPlayers(game.players ?? [], payload),
+    coin_settlement: game.coin_settlement,
+    xp_settlement: game.xp_settlement,
+  };
+}
+
+async function settleCompletionIdempotently(
+  matchID: string,
+  game: any,
+  payload: UpdateGamePayload,
+  players: any[],
+) {
+  const coinSettlementStatus = game.coin_settlement?.status;
+  if (coinSettlementStatus === 'completed' || coinSettlementStatus === 'void') {
+    return buildExistingSettlementResult(game, payload);
+  }
+
+  const settlementClaim = await claimCoinSettlement(matchID);
+  if (settlementClaim) {
+    return settleCompletedEconomy(game, players, resolveWinnerSeatId(payload));
+  }
+
+  const latestGame = await getGameRecord(matchID);
+  console.warn(
+    '[game-record] Completion lock already claimed; finalizing status without duplicate settlement:',
+    matchID,
+    latestGame?.coin_settlement?.status ?? game.coin_settlement?.status ?? 'unknown',
+  );
+  return buildExistingSettlementResult(latestGame ?? game, payload);
+}
+
 function countPlayers(players: ReturnType<typeof normalizePlayers>) {
   return players.filter((player) => !player.is_bot).length;
 }
@@ -314,15 +347,8 @@ export async function updateGameRecord(matchID: string, payload: UpdateGamePaylo
   if (!game) return null;
   await reserveJoinedPlayerCoins(game, payload);
   const players = buildUpdatedPlayers(game.players, payload);
-  if (payload.status === 'completed') {
-    const settlementClaim = await claimCoinSettlement(matchID);
-    if (!settlementClaim) {
-      return GameModel.findOne({ match_id: matchID }).lean();
-    }
-  }
-
   const settlement = payload.status === 'completed'
-    ? await settleCompletedEconomy(game, players, resolveWinnerSeatId(payload))
+    ? await settleCompletionIdempotently(matchID, game, payload, players)
     : await applySettlementIfNeeded(game, payload, players);
   const finalPlayers = settlement.players;
   const winnerUserId = resolveWinnerUserId(finalPlayers, payload);
