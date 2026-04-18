@@ -337,21 +337,49 @@ function mapLeaderboardEntry(user: any, rank: number): LeaderboardEntry {
   };
 }
 
+function buildWinRateExpr() {
+  return {
+    $cond: [
+      { $gt: [{ $ifNull: ['$stats.games_played', 0] }, 0] },
+      {
+        $divide: [
+          { $ifNull: ['$stats.wins', 0] },
+          { $ifNull: ['$stats.games_played', 0] },
+        ],
+      },
+      0,
+    ],
+  };
+}
+
 async function getLeaderboardRank(user: any): Promise<number> {
   const coinsBalance = user.wallet?.coins_balance ?? 0;
-  const level = user.progression?.level ?? 1;
   const xpTotal = user.progression?.xp_total ?? 0;
   const wins = user.stats?.wins ?? 0;
+  const gamesPlayed = user.stats?.games_played ?? 0;
+  const winRate = gamesPlayed > 0 ? wins / gamesPlayed : 0;
   const createdAt = user.created_at ?? new Date(0);
+  const winRateExpr = buildWinRateExpr();
 
   const usersAhead = await UserModel.countDocuments({
     is_active: true,
     $or: [
-      { 'wallet.coins_balance': { $gt: coinsBalance } },
-      { 'wallet.coins_balance': coinsBalance, 'progression.level': { $gt: level } },
-      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': { $gt: xpTotal } },
-      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': xpTotal, 'stats.wins': { $gt: wins } },
-      { 'wallet.coins_balance': coinsBalance, 'progression.level': level, 'progression.xp_total': xpTotal, 'stats.wins': wins, created_at: { $lt: createdAt } },
+      { 'progression.xp_total': { $gt: xpTotal } },
+      {
+        'progression.xp_total': xpTotal,
+        $expr: { $gt: [winRateExpr, winRate] },
+      },
+      {
+        'progression.xp_total': xpTotal,
+        $expr: { $eq: [winRateExpr, winRate] },
+        'wallet.coins_balance': { $gt: coinsBalance },
+      },
+      {
+        'progression.xp_total': xpTotal,
+        $expr: { $eq: [winRateExpr, winRate] },
+        'wallet.coins_balance': coinsBalance,
+        created_at: { $lt: createdAt },
+      },
     ],
   } as any);
 
@@ -360,28 +388,35 @@ async function getLeaderboardRank(user: any): Promise<number> {
 
 export async function getLeaderboard(limit = 25, identifier?: string): Promise<LeaderboardResponse> {
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
-  const findEntriesPromise = UserModel.find(
-    { is_active: true } as any,
+  const findEntriesPromise = UserModel.aggregate([
+    { $match: { is_active: true } },
     {
-      full_name: 1,
-      profile_image_url: 1,
-      avatar_emoji: 1,
-      location: 1,
-      stats: 1,
-      wallet: 1,
-      progression: 1,
-      created_at: 1,
-    } as any,
-  )
-    .sort({
-      'wallet.coins_balance': -1,
-      'progression.level': -1,
-      'progression.xp_total': -1,
-      'stats.wins': -1,
-      created_at: 1,
-    })
-    .limit(safeLimit)
-    .lean();
+      $addFields: {
+        _win_rate_sort: buildWinRateExpr(),
+      },
+    },
+    {
+      $sort: {
+        'progression.xp_total': -1,
+        _win_rate_sort: -1,
+        'wallet.coins_balance': -1,
+        created_at: 1,
+      },
+    },
+    {
+      $project: {
+        full_name: 1,
+        profile_image_url: 1,
+        avatar_emoji: 1,
+        location: 1,
+        stats: 1,
+        wallet: 1,
+        progression: 1,
+        created_at: 1,
+      },
+    },
+    { $limit: safeLimit },
+  ]);
 
   const findCurrentUserPromise = identifier
     ? findUserByIdentifier(identifier)
