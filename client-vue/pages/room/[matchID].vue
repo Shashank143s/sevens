@@ -422,6 +422,7 @@ const loadingCards = [
   >
     <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <WaitingForPlayersModal
+      :compact="isJoinModalCompact"
       :room-name="roomName"
       :joined-count="joinedCount"
       :total-players="totalPlayers"

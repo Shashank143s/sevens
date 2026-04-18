@@ -1,5 +1,15 @@
+<script setup lang="ts">
+defineProps<{
+  compact?: boolean
+}>()
+</script>
+
 <template>
-  <article class="leaderboard-skeleton animate-pulse" aria-hidden="true">
+  <article
+    class="leaderboard-skeleton animate-pulse"
+    :class="{ 'leaderboard-skeleton--compact': compact }"
+    aria-hidden="true"
+  >
     <div class="leaderboard-skeleton__top">
       <div class="leaderboard-skeleton__main">
         <div class="leaderboard-skeleton__avatar" />
@@ -8,14 +18,10 @@
           <div class="leaderboard-skeleton__meta" />
         </div>
       </div>
-      <div class="leaderboard-skeleton__rank" />
-    </div>
-
-    <div class="leaderboard-skeleton__stats">
-      <div class="leaderboard-skeleton__stat" />
-      <div class="leaderboard-skeleton__stat" />
-      <div class="leaderboard-skeleton__stat" />
-      <div class="leaderboard-skeleton__stat" />
+      <div class="leaderboard-skeleton__rank-wrap">
+        <div class="leaderboard-skeleton__rank" />
+        <div class="leaderboard-skeleton__expand" />
+      </div>
     </div>
   </article>
 </template>
@@ -54,8 +60,15 @@
 .leaderboard-skeleton__title,
 .leaderboard-skeleton__meta,
 .leaderboard-skeleton__rank,
-.leaderboard-skeleton__stat {
+.leaderboard-skeleton__expand {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-skeleton__rank-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
 }
 
 .leaderboard-skeleton__avatar {
@@ -93,29 +106,62 @@
   flex-shrink: 0;
 }
 
-.leaderboard-skeleton__stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.45rem;
+.leaderboard-skeleton__expand {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.75rem;
+  flex-shrink: 0;
 }
 
-.leaderboard-skeleton__stat {
-  min-height: 4.5rem;
-  border-radius: 0.95rem;
+.leaderboard-skeleton--compact {
+  gap: 0.5rem;
+  padding: 0.62rem 0.68rem;
+  border-radius: 0.9rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__top {
+  gap: 0.58rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__main {
+  gap: 0.52rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__avatar {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.66rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__title {
+  height: 0.84rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__meta {
+  height: 0.66rem;
+  margin-top: 0.34rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__rank-wrap {
+  gap: 0.24rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__rank {
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+  border-radius: 0.72rem;
+}
+
+.leaderboard-skeleton--compact .leaderboard-skeleton__expand {
+  width: 1.68rem;
+  height: 1.68rem;
+  border-radius: 0.58rem;
 }
 
 @media (max-width: 640px) {
   .leaderboard-skeleton__rank {
     min-width: 3.4rem;
     min-height: 3.4rem;
-  }
-
-  .leaderboard-skeleton__stats {
-    gap: 0.32rem;
-  }
-
-  .leaderboard-skeleton__stat {
-    min-height: 4rem;
   }
 }
 </style>

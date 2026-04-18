@@ -4,6 +4,11 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const route = useRoute()
 const config = useRuntimeConfig()
 const canonicalUrl = computed(() => new URL(route.path || '/privacy-policy', config.public.siteUrl).toString())
+const isCompact = computed(() =>
+  config.public.uiDensity === 'compact'
+  || config.public.uiDensityHome === 'compact'
+  || config.public.uiDensityLobby === 'compact',
+)
 
 useHead(() => ({
   link: [
@@ -24,9 +29,10 @@ useSeoMeta({
 <template>
   <div
     class="legal-page"
+    :class="{ 'legal-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Home" />
+    <AppTopBar back-to="/account" back-label="Account" :compact="isCompact" />
 
     <main class="legal-page__content">
       <section class="legal-card legal-card--hero">
@@ -42,8 +48,14 @@ useSeoMeta({
         <h2>1. Information We Collect</h2>
         <p>
           We may collect basic account details such as your name, email address, profile image,
-          sign-in time, country information derived from IP or hosting provider headers, and in-game
-          activity such as rooms created, coins, XP, leaderboard position, and recent match history.
+          sign-in time, country information derived from IP or hosting provider headers, timezone,
+          locale, and in-game activity such as rooms created, coins, XP, leaderboard position,
+          and recent match history.
+        </p>
+        <p>
+          We may also collect technical and device data needed to run the app, including app instance identifiers,
+          advertising identifiers provided by the operating system (when available), notification subscription status,
+          push tokens / subscription IDs, device model and OS details, and basic diagnostics used for reliability.
         </p>
       </section>
 
@@ -54,22 +66,35 @@ useSeoMeta({
           and progression systems, show match history and leaderboards, improve stability, and protect
           the integrity of gameplay.
         </p>
-      </section>
-
-      <section class="legal-card">
-        <h2>3. Authentication</h2>
         <p>
-          Sevens Royale currently uses Google Sign-In for account access. We only use the profile
-          data needed to identify your account and personalize your experience inside the game.
+          We also use this data to deliver app features such as push notifications, account recovery flows,
+          service communications, and advertising experiences in supported builds.
         </p>
       </section>
 
       <section class="legal-card">
-        <h2>4. Device, Network, and Gameplay Data</h2>
+        <h2>3. Authentication and Third-Party Services</h2>
+        <p>
+          Sevens Royale currently uses Google Sign-In for account access. We only use the profile
+          data needed to identify your account and personalize your experience inside the game.
+        </p>
+        <p>
+          We also integrate third-party platforms to operate parts of the app experience, including:
+          Google AdMob (ads) and OneSignal (push notifications and subscription delivery).
+          These providers may process technical identifiers and event data according to their own policies.
+        </p>
+      </section>
+
+      <section class="legal-card">
+        <h2>4. Device, Network, Notification, and Gameplay Data</h2>
         <p>
           We may store room participation, stake values, match outcomes, progression changes,
           and technical information required for multiplayer features, reconnect flows, and optional
-          features such as notifications or future voice chat support.
+          features such as notifications.
+        </p>
+        <p>
+          For notification delivery we may store subscription metadata such as device-linked identifiers,
+          subscription state, timezone, and country so notifications can be delivered and managed correctly.
         </p>
       </section>
 
@@ -97,10 +122,23 @@ useSeoMeta({
           providers needed to run the service. Reasonable technical measures are used to protect stored data,
           but no online service can guarantee absolute security.
         </p>
+        <p>
+          Where applicable, advertising and notification providers may receive technical metadata needed
+          to serve ads or deliver notifications for your device and app session.
+        </p>
       </section>
 
       <section class="legal-card">
-        <h2>8. Contact and Changes</h2>
+        <h2>8. Your Choices</h2>
+        <p>
+          You can control notification permissions at the device level, and you can request account deletion
+          from within the app. Some identifiers used by third-party services may remain subject to their own
+          retention windows and platform policies.
+        </p>
+      </section>
+
+      <section class="legal-card">
+        <h2>9. Contact and Changes</h2>
         <p>
           This policy may be updated as the product evolves. Continued use of Sevens Royale after an update
           means you accept the revised policy.
@@ -217,5 +255,44 @@ useSeoMeta({
   margin: 0.75rem 0 0;
   color: rgba(226, 232, 240, 0.8);
   line-height: 1.75;
+}
+
+.legal-page--compact {
+  padding:
+    max(0.95rem, env(safe-area-inset-top))
+    max(0.72rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.72rem, env(safe-area-inset-left));
+}
+
+.legal-page--compact .legal-page__content {
+  max-width: 53rem;
+  gap: 0.65rem;
+}
+
+.legal-page--compact .legal-card {
+  padding: 0.88rem 0.92rem;
+  border-radius: 1rem;
+}
+
+.legal-page--compact .legal-card__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+}
+
+.legal-page--compact .legal-card h1 {
+  margin-top: 0.3rem;
+  font-size: clamp(1.35rem, 4.8vw, 2.15rem);
+}
+
+.legal-page--compact .legal-card h2 {
+  font-size: 0.94rem;
+}
+
+.legal-page--compact .legal-card__lede,
+.legal-page--compact .legal-card p {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.52;
 }
 </style>

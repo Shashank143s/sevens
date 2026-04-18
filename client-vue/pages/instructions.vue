@@ -6,6 +6,11 @@ const config = useRuntimeConfig()
 const { session, hydrated } = usePlayerSession()
 const mounted = ref(false)
 const sessionReady = computed(() => mounted.value && hydrated.value)
+const isCompact = computed(() =>
+  config.public.uiDensity === 'compact'
+  || config.public.uiDensityLobby === 'compact'
+  || config.public.uiDensityHome === 'compact',
+)
 const canonicalUrl = computed(() => new URL(route.path || '/instructions', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -16,9 +21,9 @@ useHead(() => ({
 
 useSeoMeta({
   title: 'How to Play Sevens',
-  description: 'Learn how to play Sevens, also commonly searched as Seven Up or Seven Down. See the rules, room flow, stakes, coins, and winning tips for Sevens Royale.',
+  description: 'Learn how to play Sevens (Seven Up / Seven Down): room flow, legal moves, stakes, bots, XP, and match payouts in Sevens Royale.',
   ogTitle: 'How to Play Sevens - Sevens Royale',
-  ogDescription: 'Rules, examples, coin stakes, and gameplay tips for Sevens Royale.',
+  ogDescription: 'Updated Sevens Royale rules, examples, coins, XP, and room flow.',
   ogUrl: canonicalUrl,
   robots: 'index, follow',
 })
@@ -40,7 +45,7 @@ const primaryCta = computed(() => {
 const journeySteps = [
   {
     title: '1. Get to the lobby',
-    body: 'Sign in, open the lobby, and either create a room or join one that already has open seats. You can create up to 10 rooms per UTC day, but you can still join existing rooms anytime.',
+    body: 'Sign in, open the lobby, and either create a room or join one with open seats. You can create up to 10 rooms per UTC day, and you can still join existing rooms anytime.',
   },
   {
     title: '2. Start with the seven of spades',
@@ -60,6 +65,13 @@ const journeySteps = [
   },
 ]
 
+const quickFacts = [
+  { label: 'Create rooms', value: '10 per UTC day' },
+  { label: 'Minimum stake', value: '10 coins' },
+  { label: 'Start balance', value: '100 coins' },
+  { label: 'Reward video', value: 'Android only (+5)' },
+]
+
 const playExamples = [
   'If 7 hearts is on the table, you can play 6 hearts or 8 hearts.',
   'If a lane shows 5 through 9 of clubs, the next club must be 4 or 10.',
@@ -69,7 +81,7 @@ const playExamples = [
 const tips = [
   'Keep an eye on blocked suits. A single card can prevent other players from opening up their hands.',
   'Low cards and high cards are equally valuable. Saving both ends gives you more options later.',
-  'If you create a room, you can add AI bots to fill empty seats and start faster.',
+  'Room size includes bots. Example: 4 seats with 2 bots means 2 human players.',
 ]
 
 const coinRules = [
@@ -91,18 +103,30 @@ onMounted(() => {
 <template>
   <div
     class="instructions-page"
+    :class="{ 'instructions-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar :back-to="primaryCta.to" :back-label="primaryCta.label" />
+    <AppTopBar :back-to="primaryCta.to" :back-label="primaryCta.label" :compact="isCompact" />
 
     <main class="instructions-page__content">
       <section class="instructions-hero">
         <p class="instructions-hero__eyebrow">How To Play</p>
         <h1 class="instructions-hero__title">Sevens Royale Instructions</h1>
         <p class="instructions-hero__description">
-          This guide explains how to play Sevens, including the classic card game many players
-          also call Seven Up or Seven Down, from room join to winning play.
+          This guide is aligned with the latest Sevens Royale flow. It covers legal moves,
+          room setup, coins, bots, XP, and what happens at match end.
         </p>
+
+        <div class="instructions-hero__facts">
+          <article
+            v-for="fact in quickFacts"
+            :key="fact.label"
+            class="instructions-hero__fact"
+          >
+            <p class="instructions-hero__fact-label">{{ fact.label }}</p>
+            <p class="instructions-hero__fact-value">{{ fact.value }}</p>
+          </article>
+        </div>
 
         <div class="instructions-hero__actions">
           <NuxtLink :to="primaryCta.to" class="instructions-hero__primary">
@@ -174,9 +198,10 @@ onMounted(() => {
 
           <ul class="instructions-list">
             <li><strong>Home:</strong> sign in and enter the game.</li>
-            <li><strong>Lobby:</strong> create a room, join an existing room, or rejoin a game you were already in. Room creation is limited to 10 per UTC day.</li>
-            <li><strong>Room:</strong> wait for players, add bots, and then enter the live game board.</li>
-            <li><strong>Game board:</strong> watch the suit lanes, choose a legal card, or pass when no move exists.</li>
+            <li><strong>Lobby:</strong> create a room, join an existing room, or rejoin a game you were already in.</li>
+            <li><strong>Room:</strong> choose room size and optional bots, set stake, then wait for everyone to join.</li>
+            <li><strong>Game board:</strong> play legal cards only; pass is allowed only when no move exists.</li>
+            <li><strong>Post-match:</strong> see winner results, coin updates, and progression.</li>
           </ul>
         </article>
 
@@ -193,6 +218,7 @@ onMounted(() => {
             >
               {{ rule }}
             </li>
+            <li>Android players may get a post-match rewarded-video option for +5 bonus coins when the video completes.</li>
           </ul>
         </article>
       </section>
@@ -250,42 +276,6 @@ onMounted(() => {
   box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
-.instructions-page__header {
-  position: sticky;
-  top: max(0.65rem, env(safe-area-inset-top));
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0.15rem 0;
-}
-
-.instructions-page__back {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.72);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 18px 40px rgba(2, 6, 23, 0.24);
-  backdrop-filter: blur(16px);
-  color: rgba(226, 232, 240, 0.82);
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.instructions-page__back:hover,
-.instructions-page__back:focus-visible {
-  background: rgba(30, 41, 59, 0.9);
-  color: #f8fafc;
-  border-color: rgba(212, 175, 55, 0.22);
-}
-
 .instructions-page__content {
   width: 100%;
   max-width: 72rem;
@@ -330,6 +320,38 @@ onMounted(() => {
   color: rgba(226, 232, 240, 0.8);
   font-size: 1rem;
   line-height: 1.7;
+}
+
+.instructions-hero__facts {
+  margin-top: 1.15rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.68rem;
+}
+
+.instructions-hero__fact {
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 0.9rem;
+  padding: 0.62rem 0.74rem;
+  background:
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.08), transparent 48%),
+    rgba(15, 23, 42, 0.58);
+}
+
+.instructions-hero__fact-label {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.instructions-hero__fact-value {
+  margin: 0.24rem 0 0;
+  color: #fef3c7;
+  font-size: 0.84rem;
+  font-weight: 800;
 }
 
 .instructions-hero__actions {
@@ -409,11 +431,29 @@ onMounted(() => {
 
 .instructions-list {
   margin: 1rem 0 0;
-  padding-left: 1.1rem;
+  padding-left: 1rem;
+  list-style: none;
 }
 
 .instructions-list li + li {
   margin-top: 0.7rem;
+}
+
+.instructions-list li {
+  position: relative;
+  padding-left: 1.05rem;
+}
+
+.instructions-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.66em;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #d4af37;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
 }
 
 @media (min-width: 768px) {
@@ -430,6 +470,10 @@ onMounted(() => {
     padding: 1.75rem;
   }
 
+  .instructions-hero__facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .journey-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -437,5 +481,132 @@ onMounted(() => {
   .instructions-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.instructions-page--compact {
+  padding:
+    max(0.95rem, env(safe-area-inset-top))
+    max(0.72rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.72rem, env(safe-area-inset-left));
+}
+
+.instructions-page--compact .instructions-page__content {
+  max-width: 67rem;
+  gap: 0.72rem;
+}
+
+.instructions-page--compact .instructions-hero,
+.instructions-page--compact .instructions-card {
+  border-radius: 1rem;
+}
+
+.instructions-page--compact .instructions-hero {
+  padding: 0.95rem;
+}
+
+.instructions-page--compact .instructions-hero__eyebrow {
+  margin-bottom: 0.45rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+}
+
+.instructions-page--compact .instructions-hero__title {
+  font-size: clamp(1.55rem, 5.2vw, 2.65rem);
+}
+
+.instructions-page--compact .instructions-hero__description {
+  margin-top: 0.58rem;
+  font-size: 0.84rem;
+  line-height: 1.46;
+}
+
+.instructions-page--compact .instructions-hero__facts {
+  margin-top: 0.7rem;
+  gap: 0.5rem;
+}
+
+.instructions-page--compact .instructions-hero__fact {
+  border-radius: 0.72rem;
+  padding: 0.5rem 0.56rem;
+}
+
+.instructions-page--compact .instructions-hero__fact-label {
+  font-size: 0.54rem;
+}
+
+.instructions-page--compact .instructions-hero__fact-value {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+}
+
+.instructions-page--compact .instructions-hero__actions {
+  margin-top: 0.82rem;
+  gap: 0.55rem;
+}
+
+.instructions-page--compact .instructions-hero__primary,
+.instructions-page--compact .instructions-hero__secondary {
+  min-height: 2.62rem;
+  padding: 0.58rem 0.9rem;
+  font-size: 0.82rem;
+}
+
+.instructions-page--compact .instructions-card {
+  padding: 0.95rem;
+}
+
+.instructions-page--compact .instructions-card__heading h2 {
+  font-size: 1rem;
+}
+
+.instructions-page--compact .instructions-card__heading p {
+  margin-top: 0.28rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.instructions-page--compact .journey-grid,
+.instructions-page--compact .instructions-layout {
+  gap: 0.72rem;
+}
+
+.instructions-page--compact .journey-grid {
+  margin-top: 0.68rem;
+}
+
+.instructions-page--compact .journey-step {
+  padding: 0.74rem;
+  border-radius: 0.82rem;
+}
+
+.instructions-page--compact .journey-step h3 {
+  margin-bottom: 0.3rem;
+  font-size: 0.88rem;
+}
+
+.instructions-page--compact .journey-step p,
+.instructions-page--compact .instructions-list {
+  font-size: 0.8rem;
+  line-height: 1.44;
+}
+
+.instructions-page--compact .instructions-list {
+  margin-top: 0.68rem;
+  padding-left: 0.9rem;
+}
+
+.instructions-page--compact .instructions-list li + li {
+  margin-top: 0.45rem;
+}
+
+.instructions-page--compact .instructions-list li {
+  padding-left: 0.88rem;
+}
+
+.instructions-page--compact .instructions-list li::before {
+  top: 0.62em;
+  width: 0.32rem;
+  height: 0.32rem;
 }
 </style>

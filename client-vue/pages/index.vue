@@ -305,10 +305,13 @@ onMounted(async () => {
 }
 
 .mobile-home--compact {
+  --home-topbar-overlay: calc(max(0.62rem, env(safe-area-inset-top)) + 2.45rem);
+  min-height: calc(100svh - var(--home-topbar-overlay));
+  height: calc(100svh - var(--home-topbar-overlay));
   padding:
-    max(1.25rem, env(safe-area-inset-top))
+    0.62rem
     max(0.95rem, env(safe-area-inset-right))
-    0.95rem
+    0.7rem
     max(0.95rem, env(safe-area-inset-left));
 }
 
@@ -323,14 +326,14 @@ onMounted(async () => {
 }
 
 .mobile-home--compact .mobile-home__description {
-  margin-top: 1.05rem;
+  margin-top: 0.88rem;
   max-width: 31rem;
   font-size: clamp(0.88rem, 1.7vw, 1.18rem);
-  line-height: 1.5;
+  line-height: 1.44;
 }
 
 .mobile-home--compact .mobile-home__divider {
-  margin: 1.45rem auto 1.5rem;
+  margin: 1.15rem auto 1.2rem;
 }
 
 .mobile-home--compact .mobile-home__suits {
@@ -351,43 +354,9 @@ onMounted(async () => {
 
 .mobile-home--compact .mobile-home__secondary-cta {
   width: min(100%, 20rem);
-  min-height: 2.85rem;
-  padding: 0.65rem 1.05rem;
+  min-height: 2.7rem;
+  padding: 0.55rem 1.05rem;
   font-size: 0.86rem;
-}
-
-.mobile-home--compact {
-  padding:
-    max(1.55rem, env(safe-area-inset-top))
-    max(1.2rem, env(safe-area-inset-right))
-    1.1rem
-    max(1.2rem, env(safe-area-inset-left));
-}
-
-.mobile-home--compact .mobile-home__eyebrow {
-  margin-bottom: 1.1rem;
-}
-
-.mobile-home--compact .mobile-home__title {
-  font-size: clamp(3rem, 8.3vw, 6.2rem);
-}
-
-.mobile-home--compact .mobile-home__description {
-  margin-top: 1.35rem;
-  max-width: 34rem;
-  line-height: 1.55;
-}
-
-.mobile-home--compact .mobile-home__divider {
-  margin: 1.8rem auto 2rem;
-}
-
-.mobile-home--compact .mobile-home__cta {
-  min-height: 3.8rem;
-}
-
-.mobile-home--compact .mobile-home__secondary-cta {
-  min-height: 3.1rem;
 }
 
 @media (min-width: 640px) {
@@ -413,6 +382,17 @@ onMounted(async () => {
 
   .mobile-home__secondary-cta {
     width: min(100%, 25rem);
+  }
+
+  .mobile-home--compact {
+    --home-topbar-overlay: calc(max(0.62rem, env(safe-area-inset-top)) + 2.45rem);
+    min-height: calc(100svh - var(--home-topbar-overlay));
+    height: calc(100svh - var(--home-topbar-overlay));
+    padding:
+      0.62rem
+      max(0.95rem, env(safe-area-inset-right))
+      0.7rem
+      max(0.95rem, env(safe-area-inset-left));
   }
 }
 </style>

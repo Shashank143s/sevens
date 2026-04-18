@@ -50,16 +50,6 @@ function goToBlog() {
   router.push('/blog')
 }
 
-function goToPrivacyPolicy() {
-  open.value = false
-  router.push('/privacy-policy')
-}
-
-function goToTerms() {
-  open.value = false
-  router.push('/terms-and-conditions')
-}
-
 async function login() {
   open.value = false
   if (router.currentRoute.value.path !== '/') {
@@ -160,25 +150,6 @@ onMounted(() => {
           </button>
         </div>
 
-        <div class="user-menu__section">
-          <p class="user-menu__section-label">Legal</p>
-          <div class="user-menu__legal">
-            <button
-              type="button"
-              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-              @click="goToPrivacyPolicy"
-            >
-              Privacy Policy
-            </button>
-            <button
-              type="button"
-              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-              @click="goToTerms"
-            >
-              Terms &amp; Conditions
-            </button>
-          </div>
-        </div>
       </div>
     </Transition>
   </div>
@@ -324,9 +295,9 @@ onMounted(() => {
 }
 
 .user-menu--compact .user-menu__panel {
-  min-width: 13.4rem;
-  padding: 0.5rem;
-  border-radius: 0.98rem;
+  min-width: 14.8rem;
+  padding: 0.62rem;
+  border-radius: 1.05rem;
 }
 
 .user-menu__section + .user-menu__section {
@@ -334,7 +305,7 @@ onMounted(() => {
 }
 
 .user-menu--compact .user-menu__section + .user-menu__section {
-  margin-top: 0.45rem;
+  margin-top: 0.58rem;
 }
 
 .user-menu__section-label {
@@ -348,9 +319,10 @@ onMounted(() => {
 }
 
 .user-menu--compact .user-menu__section-label {
-  margin: 0 0 0.28rem;
-  padding: 0 0.3rem;
-  font-size: 0.56rem;
+  margin: 0 0 0.38rem;
+  padding: 0 0.42rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
 }
 
 .user-menu__action {
@@ -370,9 +342,10 @@ onMounted(() => {
 }
 
 .user-menu--compact .user-menu__action {
-  padding: 0.58rem 0.68rem;
-  border-radius: 0.72rem;
-  font-size: 0.79rem;
+  padding: 0.66rem 0.8rem;
+  border-radius: 0.82rem;
+  font-size: 0.86rem;
+  border: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .user-menu__action + .user-menu__action {
@@ -380,7 +353,7 @@ onMounted(() => {
 }
 
 .user-menu--compact .user-menu__action + .user-menu__action {
-  margin-top: 0.26rem;
+  margin-top: 0.34rem;
 }
 
 .user-menu__action:hover {

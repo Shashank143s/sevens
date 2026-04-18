@@ -449,6 +449,7 @@ onMounted(() => {
               :is-full="isRoomFull(room)"
               :status-dot-class="roomStatusDotClass(room)"
               :display-title="room.room_name || displayRoomID(room.matchID)"
+              :compact="isLobbyCompact"
               @join="joinRoom"
             />
           </div>

@@ -22,7 +22,15 @@
         </NuxtLink>
       </nav>
       <p class="home-footer__copyright">
-        &copy; 2026 Droidking Developers
+        &copy; 2026
+        <a
+          class="home-footer__brand-link"
+          href="https://play.google.com/store/apps/developer?id=DROIDKING+DEVELOPERS"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Droidking Developers
+        </a>
       </p>
     </div>
   </footer>
@@ -84,6 +92,18 @@
   font-size: 0.72rem;
   line-height: 1.35;
   text-align: center;
+}
+
+.home-footer__brand-link {
+  color: #e4c862;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-footer__brand-link:hover,
+.home-footer__brand-link:focus-visible {
+  color: #f8e39a;
+  text-decoration: underline;
 }
 
 @media (min-width: 640px) {
