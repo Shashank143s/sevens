@@ -342,7 +342,7 @@ async function watchRewardVideo() {
 }
 
 async function syncCompletedGame() {
-  if (completionSynced || winnerID.value == null || state.value?.playerID == null || !didIWin.value) return
+  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
   try {
     finalizedGame.value = await completeGameRecord(props.matchId, String(winnerID.value))
