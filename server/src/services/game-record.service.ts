@@ -13,8 +13,17 @@ import { normalizeDate } from '../utils/user.util';
 import { hashRoomPassword, normalizeRoomPassword, verifyRoomPassword } from '../utils/password.util';
 import { validateRoomName } from '../utils/room.util';
 
+const SETTLEMENT_TAKEOVER_WINDOW_MS = 30_000;
+
 function toObjectId(value?: string) {
   return value && Types.ObjectId.isValid(value) ? new Types.ObjectId(value) : undefined;
+}
+
+function createConflictError(message: string, reason: string) {
+  const error = new Error(message) as Error & { status: number; reason: string };
+  error.status = 409;
+  error.reason = reason;
+  return error;
 }
 
 function resolveWinnerSeatId(payload: UpdateGamePayload) {
@@ -74,15 +83,31 @@ async function findGameDocument(matchID: string) {
 }
 
 async function claimCoinSettlement(matchID: string) {
+  const staleTakeoverCutoff = new Date(Date.now() - SETTLEMENT_TAKEOVER_WINDOW_MS);
   return GameModel.findOneAndUpdate(
     {
       match_id: matchID,
-      'coin_settlement.status': 'pending',
+      $or: [
+        {
+          'coin_settlement.status': 'pending',
+        },
+        {
+          'coin_settlement.status': 'settling',
+          $or: [
+            { 'coin_settlement.recovery_inflight': { $ne: true } },
+            { 'coin_settlement.recovery_started_at': { $lte: staleTakeoverCutoff } },
+          ],
+        },
+      ],
     } as any,
     {
       $set: {
         'coin_settlement.status': 'settling',
         'xp_settlement.status': 'settling',
+        'coin_settlement.recovery_inflight': true,
+        'xp_settlement.recovery_inflight': true,
+        'coin_settlement.recovery_started_at': new Date(),
+        'xp_settlement.recovery_started_at': new Date(),
       },
     } as any,
     { returnDocument: 'after', lean: true },
@@ -95,6 +120,10 @@ function buildExistingSettlementResult(game: any, payload: UpdateGamePayload) {
     coin_settlement: game.coin_settlement,
     xp_settlement: game.xp_settlement,
   };
+}
+
+function hasUnreleasedHumanReservations(players: any[]) {
+  return (players ?? []).some((player) => !player.is_bot && (player.coins?.reserved ?? 0) > 0);
 }
 
 async function settleCompletionIdempotently(
@@ -114,6 +143,12 @@ async function settleCompletionIdempotently(
   }
 
   const latestGame = await getGameRecord(matchID);
+  if (latestGame?.coin_settlement?.status === 'settling' && hasUnreleasedHumanReservations(latestGame.players ?? [])) {
+    throw createConflictError(
+      'Game settlement is currently in progress. Please retry completion shortly.',
+      'settlement_in_progress',
+    );
+  }
   console.warn(
     '[game-record] Completion lock already claimed; finalizing status without duplicate settlement:',
     matchID,
