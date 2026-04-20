@@ -348,8 +348,27 @@ async function watchRewardVideo() {
 async function syncCompletedGame() {
   if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
+  let lastError: unknown = null
   try {
-    finalizedGame.value = await completeGameRecord(props.matchId, String(winnerID.value))
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        const completed = await completeGameRecord(props.matchId, String(winnerID.value))
+        finalizedGame.value = completed
+        const settlementStatus = completed?.game?.coin_settlement?.status
+        if (settlementStatus === 'completed' || settlementStatus === 'void') {
+          return
+        }
+      } catch (error) {
+        lastError = error
+      }
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 1200))
+      }
+    }
+    if (lastError) {
+      throw lastError
+    }
+    throw new Error('Game settlement did not complete in time.')
   } catch (error) {
     completionSynced = false
     console.error('[game-board] Failed to finalize game record:', error)
