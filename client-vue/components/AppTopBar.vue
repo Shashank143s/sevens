@@ -122,7 +122,7 @@ function goBack() {
 :global(.app-topbar--compact) .app-topbar__spacer {
   height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.2rem + 0.68rem);
   min-height: 2.18rem;
-  padding: 1.9rem 0.68rem;
+  padding: 0.2rem 0.68rem;
   border-radius: 0.78rem;
   font-size: 0.8rem;
   line-height: 1;
