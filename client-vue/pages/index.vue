@@ -317,7 +317,7 @@ onMounted(async () => {
 
 .mobile-home--compact .mobile-home__eyebrow {
   margin-bottom: 0.9rem;
-  font-size: clamp(0.58rem, 2vw, 0.95rem);
+  font-size: clamp(0.78rem, 2vw, 0.95rem);
 }
 
 .mobile-home--compact .mobile-home__title {
@@ -326,7 +326,7 @@ onMounted(async () => {
 }
 
 .mobile-home--compact .mobile-home__description {
-  margin-top: 0.88rem;
+  margin-top: 1.4rem;
   max-width: 31rem;
   font-size: clamp(0.88rem, 1.7vw, 1.18rem);
   line-height: 1.44;
