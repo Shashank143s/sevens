@@ -26,20 +26,19 @@ function goBack() {
     :class="{ 'app-topbar--compact': isCompact }"
     :style="{ '--app-topbar-safe-top': topInsetCss }"
   >
-    <header class="app-topbar__header">
+    <header
+      class="app-topbar__header"
+      :class="{ 'app-topbar__header--menu-only': !showBack }"
+    >
       <button
         v-if="showBack"
         type="button"
         class="app-topbar__back"
         @click="goBack"
       >
-        ← {{ backLabel }}
+        <IconsDirectionalArrowIcon direction="left" class="app-topbar__back-icon" />
+        <span>{{ backLabel }}</span>
       </button>
-      <div
-        v-else
-        class="app-topbar__back app-topbar__back--ghost"
-        aria-hidden="true"
-      />
       <AppUserMenu />
     </header>
     <div v-if="reserveSpace" class="app-topbar__spacer" aria-hidden="true" />
@@ -73,6 +72,8 @@ function goBack() {
 .app-topbar__back {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
   min-height: 2.45rem;
   padding: 0.5rem 0.8rem;
   border-radius: 999px;
@@ -95,13 +96,18 @@ function goBack() {
   border-color: rgba(212, 175, 55, 0.22);
 }
 
-.app-topbar__back--ghost {
-  visibility: hidden;
-  pointer-events: none;
+.app-topbar__header--menu-only {
+  justify-content: flex-end;
 }
 
 .app-topbar__spacer {
   height: calc(max(0.9rem, var(--app-topbar-safe-top)) + 2.75rem + 1.1rem);
+}
+
+.app-topbar__back-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
 }
 
 :global(.app-topbar--compact) .app-topbar__header {
@@ -117,6 +123,11 @@ function goBack() {
   min-height: 2.2rem;
   padding: 0.42rem 0.66rem;
   font-size: 0.78rem;
+}
+
+:global(.app-topbar--compact) .app-topbar__back-icon {
+  width: 0.82rem;
+  height: 0.82rem;
 }
 
 :global(.app-topbar--compact) .app-topbar__spacer {
@@ -142,6 +153,11 @@ function goBack() {
   min-height: 2.2rem;
   padding: 0.42rem 0.66rem;
   font-size: 0.78rem;
+}
+
+:global(html.ui-density-compact) .app-topbar__back-icon {
+  width: 0.82rem;
+  height: 0.82rem;
 }
 
 :global(html.ui-density-compact) .app-topbar__spacer {

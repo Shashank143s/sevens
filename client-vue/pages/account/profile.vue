@@ -236,7 +236,7 @@ onMounted(async () => {
             <div class="profile-page__section-head">
               <h2>Recent Games</h2>
               <button type="button" class="profile-page__recent-link" @click="goToRecentGames">
-                →
+                <IconsDirectionalArrowIcon class="profile-page__recent-link-icon" />
               </button>
             </div>
             <p class="profile-page__recent-subtext">Last {{ PAGE_SIZE }} games</p>
@@ -702,9 +702,12 @@ onMounted(async () => {
   border: 1px solid rgba(250, 204, 21, 0.28);
   color: #facc15;
   background: rgba(15, 23, 42, 0.62);
-  font-size: 1.05rem;
-  font-weight: 900;
-  line-height: 1;
+}
+
+.profile-page__recent-link-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
 }
 
 .profile-page__recent-subtext {

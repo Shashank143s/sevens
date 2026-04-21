@@ -165,10 +165,6 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-:deep(.app-topbar) {
-  background: rgba(0, 0, 0, 0.4);
-}
-
 .mobile-home {
   box-sizing: border-box;
   position: relative;
@@ -185,7 +181,6 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: rgba(0, 0, 0, 0.4);
 }
 
 .mobile-home__content {

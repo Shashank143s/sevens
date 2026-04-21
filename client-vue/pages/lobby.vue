@@ -359,7 +359,7 @@ onMounted(() => {
       </section>
 
       <section
-        class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl"
+        class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[0.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl"
       >
         <div
           class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-4 py-3.5"

@@ -163,7 +163,7 @@ onMounted(() => {
               @click="goToAccountSection('/account/profile')"
             >
               <span class="account-history__title">Profile</span>
-              <span class="account-history__arrow">→</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </button>
             <button
               type="button"
@@ -172,21 +172,21 @@ onMounted(() => {
               @click="goToAccountSection('/account/leaderboard')"
             >
               <span class="account-history__title">Leaderboard</span>
-              <span class="account-history__arrow">→</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </button>
             <NuxtLink
               to="/privacy-policy"
               class="account-history__link"
             >
               <span class="account-history__title">Privacy Policy</span>
-              <span class="account-history__arrow">→</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </NuxtLink>
             <NuxtLink
               to="/terms-and-conditions"
               class="account-history__link"
             >
               <span class="account-history__title">Terms &amp; Conditions</span>
-              <span class="account-history__arrow">→</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </NuxtLink>
           </div>
         </section>
@@ -662,8 +662,10 @@ onMounted(() => {
 }
 
 .account-history__arrow {
-  font-size: 1.7rem;
   color: #facc15;
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
 }
 
 .account-card__row {
@@ -891,7 +893,8 @@ onMounted(() => {
 }
 
 .account-page--compact .account-history__arrow {
-  font-size: 1.24rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .account-page--compact .account-card__actions {
