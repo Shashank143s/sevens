@@ -6,11 +6,13 @@ import UserAvatar from '~/components/UserAvatar.vue'
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getLeaderboard } = useAccountApi()
+const { isCompact } = useUiDensity()
 
 const entries = ref<LeaderboardEntry[]>([])
 const currentUserEntry = ref<LeaderboardEntry | null>(null)
 const isLoading = ref(true)
 const loadError = ref('')
+const expandedCards = ref<Record<string, boolean>>({})
 const currentUserId = computed(() => session.value?.id || session.value?.email?.trim() || '')
 const currentUserInTopList = computed(() =>
   !!currentUserEntry.value && entries.value.some(entry => entry.user_id === currentUserEntry.value?.user_id),
@@ -46,6 +48,14 @@ function medalEmoji(rank: number) {
   return ''
 }
 
+function isCardExpanded(cardId: string) {
+  return !!expandedCards.value[cardId]
+}
+
+function toggleCard(cardId: string) {
+  expandedCards.value[cardId] = !expandedCards.value[cardId]
+}
+
 async function loadLeaderboard() {
   try {
     const response = await getLeaderboard(25, currentUserId.value || undefined)
@@ -72,6 +82,7 @@ onMounted(async () => {
 <template>
   <div
     class="leaderboard-page"
+    :class="{ 'leaderboard-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <AppTopBar back-to="/account" back-label="Account" />
@@ -82,7 +93,7 @@ onMounted(async () => {
           <p class="leaderboard-page__eyebrow">Sevens Royale</p>
           <h1>Leaderboard</h1>
           <p class="leaderboard-page__subtitle">
-            Top players by coin balance, with progression and wins sharpening the order.
+            Top players by XP first, then win rate, then coin balance.
           </p>
         </div>
         <div class="leaderboard-page__hero-side">
@@ -118,6 +129,7 @@ onMounted(async () => {
           :class="{
             'leaderboard-card--top': entry.rank <= 3,
             'leaderboard-card--self': currentUserEntry && entry.user_id === currentUserEntry.user_id,
+            'leaderboard-card--expanded': isCardExpanded(entry.user_id),
           }"
         >
           <div class="leaderboard-card__top">
@@ -156,32 +168,47 @@ onMounted(async () => {
                 <span>RANK</span>
                 <strong>{{ entry.rank }}</strong>
               </div>
+              <button
+                type="button"
+                class="leaderboard-card__expand"
+                :class="{ 'leaderboard-card__expand--open': isCardExpanded(entry.user_id) }"
+                :aria-expanded="isCardExpanded(entry.user_id) ? 'true' : 'false'"
+                aria-label="Toggle player stats"
+                @click="toggleCard(entry.user_id)"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m6 8 4 4 4-4" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="leaderboard-card__stats">
-            <div class="leaderboard-card__stat leaderboard-card__stat--winrate">
-              <span>Win %</span>
-              <strong>{{ entry.win_percentage }}%</strong>
+          <Transition name="leaderboard-card__stats-expand">
+            <div v-if="isCardExpanded(entry.user_id)" class="leaderboard-card__stats">
+              <div class="leaderboard-card__stat leaderboard-card__stat--winrate">
+                <span>Win %</span>
+                <strong>{{ entry.win_percentage }}%</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--coins">
+                <span>Coins</span>
+                <strong>{{ entry.coins_balance }}</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--level">
+                <span>Level</span>
+                <strong>Lv {{ entry.level }}</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--xp">
+                <span>XP</span>
+                <strong>{{ entry.xp_total }}</strong>
+              </div>
             </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--coins">
-              <span>Coins</span>
-              <strong>{{ entry.coins_balance }}</strong>
-            </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--level">
-              <span>Level</span>
-              <strong>Lv {{ entry.level }}</strong>
-            </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--xp">
-              <span>XP</span>
-              <strong>{{ entry.xp_total }}</strong>
-            </div>
-          </div>
+          </Transition>
         </article>
 
         <article
           v-if="currentUserEntry && !currentUserInTopList"
           class="leaderboard-card leaderboard-card--self leaderboard-card--pinned"
+          :class="{ 'leaderboard-card--expanded': isCardExpanded(`pinned-${currentUserEntry.user_id}`) }"
         >
           <div class="leaderboard-card__top">
             <div class="leaderboard-card__main">
@@ -200,30 +227,46 @@ onMounted(async () => {
                 </p>
               </div>
             </div>
-            <div class="leaderboard-card__rank">
-              <span>RANK</span>
-              <strong>{{ currentUserEntry.rank }}</strong>
+            <div class="leaderboard-card__rank-wrap">
+              <div class="leaderboard-card__rank">
+                <span>RANK</span>
+                <strong>{{ currentUserEntry.rank }}</strong>
+              </div>
+              <button
+                type="button"
+                class="leaderboard-card__expand"
+                :class="{ 'leaderboard-card__expand--open': isCardExpanded(`pinned-${currentUserEntry.user_id}`) }"
+                :aria-expanded="isCardExpanded(`pinned-${currentUserEntry.user_id}`) ? 'true' : 'false'"
+                aria-label="Toggle player stats"
+                @click="toggleCard(`pinned-${currentUserEntry.user_id}`)"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m6 8 4 4 4-4" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="leaderboard-card__stats">
-            <div class="leaderboard-card__stat leaderboard-card__stat--winrate">
-              <span>Win %</span>
-              <strong>{{ currentUserEntry.win_percentage }}%</strong>
+          <Transition name="leaderboard-card__stats-expand">
+            <div v-if="isCardExpanded(`pinned-${currentUserEntry.user_id}`)" class="leaderboard-card__stats">
+              <div class="leaderboard-card__stat leaderboard-card__stat--winrate">
+                <span>Win %</span>
+                <strong>{{ currentUserEntry.win_percentage }}%</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--coins">
+                <span>Coins</span>
+                <strong>{{ currentUserEntry.coins_balance }}</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--level">
+                <span>Level</span>
+                <strong>Lv {{ currentUserEntry.level }}</strong>
+              </div>
+              <div class="leaderboard-card__stat leaderboard-card__stat--xp">
+                <span>XP</span>
+                <strong>{{ currentUserEntry.xp_total }}</strong>
+              </div>
             </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--coins">
-              <span>Coins</span>
-              <strong>{{ currentUserEntry.coins_balance }}</strong>
-            </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--level">
-              <span>Level</span>
-              <strong>Lv {{ currentUserEntry.level }}</strong>
-            </div>
-            <div class="leaderboard-card__stat leaderboard-card__stat--xp">
-              <span>XP</span>
-              <strong>{{ currentUserEntry.xp_total }}</strong>
-            </div>
-          </div>
+          </Transition>
         </article>
 
       </section>
@@ -309,6 +352,8 @@ onMounted(async () => {
 
 .leaderboard-page__hero-copy {
   min-width: 0;
+  display: grid;
+  gap: 0.6rem;
 }
 
 .leaderboard-page__hero-side {
@@ -316,30 +361,31 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.6rem;
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
 .leaderboard-page__eyebrow {
   margin: 0;
   color: rgba(250, 204, 21, 0.84);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
 .leaderboard-page__hero h1 {
-  margin: 0.45rem 0 0;
+  margin: 0;
   font-size: clamp(1.85rem, 4.8vw, 2.85rem);
   line-height: 0.98;
 }
 
 .leaderboard-page__subtitle {
-  margin: 0.45rem 0 0;
+  margin: 0;
   max-width: 27rem;
   color: rgba(203, 213, 225, 0.78);
   font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .leaderboard-page__hero-chip {
@@ -476,6 +522,38 @@ onMounted(async () => {
   align-items: center;
   gap: 0.45rem;
   flex-shrink: 0;
+}
+
+.leaderboard-card__expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  color: rgba(203, 213, 225, 0.92);
+  transition:
+    transform 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.leaderboard-card__expand:hover,
+.leaderboard-card__expand:focus-visible {
+  color: #f8fafc;
+}
+
+.leaderboard-card__expand svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.leaderboard-card__expand--open {
+  color: #fde68a;
+}
+
+.leaderboard-card__expand--open svg {
+  transform: rotate(180deg);
 }
 
 .leaderboard-card__rank span {
@@ -619,6 +697,17 @@ onMounted(async () => {
   gap: 0.45rem;
 }
 
+.leaderboard-card__stats-expand-enter-active,
+.leaderboard-card__stats-expand-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.leaderboard-card__stats-expand-enter-from,
+.leaderboard-card__stats-expand-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
 .leaderboard-card__stat {
   display: grid;
   justify-items: center;
@@ -709,6 +798,168 @@ onMounted(async () => {
   background:
     radial-gradient(circle at top center, rgba(34, 211, 238, 0.13), transparent 52%),
     linear-gradient(180deg, rgba(8, 47, 73, 0.18), rgba(255, 255, 255, 0.025));
+}
+
+.leaderboard-page--compact {
+  padding:
+    max(0.92rem, env(safe-area-inset-top))
+    max(0.7rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.7rem, env(safe-area-inset-left));
+}
+
+.leaderboard-page--compact .leaderboard-page__content {
+  max-width: 53rem;
+}
+
+.leaderboard-page--compact .leaderboard-page__hero {
+  gap: 0.6rem;
+  margin-bottom: 0.64rem;
+  padding: 0.74rem 0.78rem;
+  border-radius: 1rem;
+}
+
+.leaderboard-page--compact .leaderboard-page__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+}
+
+.leaderboard-page--compact .leaderboard-page__hero h1 {
+  margin-top: 0;
+  font-size: clamp(1.35rem, 4.2vw, 2rem);
+}
+
+.leaderboard-page--compact .leaderboard-page__subtitle {
+  margin-top: 0;
+  max-width: 22rem;
+  font-size: 0.76rem;
+  line-height: 1.34;
+}
+
+.leaderboard-page--compact .leaderboard-page__hero-copy {
+  gap: 0.42rem;
+}
+
+.leaderboard-page--compact .leaderboard-page__hero-chip,
+.leaderboard-page--compact .leaderboard-page__self-chip {
+  min-height: 1.95rem;
+  border-radius: 0.62rem;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.7rem;
+}
+
+.leaderboard-page--compact .leaderboard-page__self-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+}
+
+.leaderboard-page--compact .leaderboard-page__self-chip strong {
+  font-size: 0.82rem;
+}
+
+.leaderboard-page--compact .leaderboard-page__list {
+  margin-top: 0.66rem;
+  gap: 0.5rem;
+}
+
+.leaderboard-page--compact .leaderboard-card {
+  gap: 0.5rem;
+  padding: 0.62rem 0.68rem;
+  border-radius: 0.9rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__top {
+  gap: 0.58rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__main {
+  gap: 0.52rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__avatar {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.66rem;
+  font-size: 1rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__name-row h2 {
+  font-size: 0.84rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__meta {
+  margin-top: 0.14rem;
+  font-size: 0.66rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__rank-wrap {
+  gap: 0.24rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__expand {
+  width: 1.68rem;
+  height: 1.68rem;
+  border-radius: 0.58rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__expand svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__rank {
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+  padding: 0.25rem;
+  border-radius: 0.72rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__rank span {
+  font-size: 0.48rem;
+  letter-spacing: 0.1em;
+}
+
+.leaderboard-page--compact .leaderboard-card__rank strong {
+  margin-top: 0.02rem;
+  font-size: 1.14rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__side-medal {
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 1.5rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__you-badge {
+  min-height: 1.2rem;
+  padding: 0.12rem 0.36rem;
+  font-size: 0.56rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__stats {
+  gap: 0.25rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__stat {
+  min-height: 2.72rem;
+  border-radius: 0.58rem;
+  padding: 0.34rem 0.22rem 0.3rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__stat span {
+  font-size: 0.45rem;
+  letter-spacing: 0.06em;
+}
+
+.leaderboard-page--compact .leaderboard-card__stat strong {
+  margin-top: 0.04rem;
+  font-size: 0.84rem;
+}
+
+.leaderboard-page--compact .leaderboard-card__stat--coins strong::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.16rem;
 }
 
 @media (max-width: 640px) {

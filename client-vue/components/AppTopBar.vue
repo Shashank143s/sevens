@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<{
 
 const router = useRouter()
 const { topInsetCss } = useAndroidViewportInsets()
+const { isCompact } = useUiDensity()
 const showBack = computed(() => !!props.backTo && !!props.backLabel)
 
 function goBack() {
@@ -20,17 +21,24 @@ function goBack() {
 </script>
 
 <template>
-  <div class="app-topbar" :style="{ '--app-topbar-safe-top': topInsetCss }">
-    <header class="app-topbar__header">
+  <div
+    class="app-topbar"
+    :class="{ 'app-topbar--compact': isCompact }"
+    :style="{ '--app-topbar-safe-top': topInsetCss }"
+  >
+    <header
+      class="app-topbar__header"
+      :class="{ 'app-topbar__header--menu-only': !showBack }"
+    >
       <button
         v-if="showBack"
         type="button"
         class="app-topbar__back"
         @click="goBack"
       >
-        ← {{ backLabel }}
+        <IconsDirectionalArrowIcon direction="left" class="app-topbar__back-icon" />
+        <span>{{ backLabel }}</span>
       </button>
-      <div v-else class="app-topbar__back app-topbar__back--ghost" aria-hidden="true" />
       <AppUserMenu />
     </header>
     <div v-if="reserveSpace" class="app-topbar__spacer" aria-hidden="true" />
@@ -64,8 +72,10 @@ function goBack() {
 .app-topbar__back {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
+  justify-content: center;
+  gap: 0.32rem;
+  min-height: 2.45rem;
+  padding: 0.5rem 0.8rem;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(15, 23, 42, 0.72);
@@ -74,8 +84,8 @@ function goBack() {
     0 18px 40px rgba(2, 6, 23, 0.24);
   backdrop-filter: blur(16px);
   color: rgba(226, 232, 240, 0.82);
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 600;
   transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
@@ -86,12 +96,77 @@ function goBack() {
   border-color: rgba(212, 175, 55, 0.22);
 }
 
-.app-topbar__back--ghost {
-  visibility: hidden;
-  pointer-events: none;
+.app-topbar__header--menu-only {
+  justify-content: flex-end;
 }
 
 .app-topbar__spacer {
   height: calc(max(0.9rem, var(--app-topbar-safe-top)) + 2.75rem + 1.1rem);
 }
+
+.app-topbar__back-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+}
+
+:global(.app-topbar--compact) .app-topbar__header {
+  gap: 0.62rem;
+  padding:
+    max(0.62rem, var(--app-topbar-safe-top))
+    max(0.78rem, env(safe-area-inset-right))
+    0
+    max(0.78rem, env(safe-area-inset-left));
+}
+
+:global(.app-topbar--compact) .app-topbar__back {
+  min-height: 2.2rem;
+  padding: 0.42rem 0.66rem;
+  font-size: 0.78rem;
+}
+
+:global(.app-topbar--compact) .app-topbar__back-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+:global(.app-topbar--compact) .app-topbar__spacer {
+  height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.2rem + 0.68rem);
+  min-height: 2.18rem;
+  padding: 0.2rem 0.68rem;
+  border-radius: 0.78rem;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+
+:global(html.ui-density-compact) .app-topbar__header {
+  gap: 0.62rem;
+  padding:
+    max(0.62rem, var(--app-topbar-safe-top))
+    max(0.78rem, env(safe-area-inset-right))
+    0
+    max(0.78rem, env(safe-area-inset-left));
+}
+
+:global(html.ui-density-compact) .app-topbar__back {
+  min-height: 2.2rem;
+  padding: 0.42rem 0.66rem;
+  font-size: 0.78rem;
+}
+
+:global(html.ui-density-compact) .app-topbar__back-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+:global(html.ui-density-compact) .app-topbar__spacer {
+  height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.2rem + 0.68rem);
+  min-height: 2.18rem;
+  padding: 0.44rem 0.68rem;
+  border-radius: 0.78rem;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
 </style>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import UserAvatar from '~/components/UserAvatar.vue'
 
+const { isCompact } = useUiDensity()
+
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
@@ -44,16 +46,6 @@ function goToBlog() {
   router.push('/blog')
 }
 
-function goToPrivacyPolicy() {
-  open.value = false
-  router.push('/privacy-policy')
-}
-
-function goToTerms() {
-  open.value = false
-  router.push('/terms-and-conditions')
-}
-
 async function login() {
   open.value = false
   if (router.currentRoute.value.path !== '/') {
@@ -69,7 +61,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="showMenu" class="user-menu">
+  <div v-if="showMenu" class="user-menu" :class="{ 'user-menu--compact': isCompact }">
     <button
       type="button"
       class="user-menu__toggle"
@@ -154,25 +146,6 @@ onMounted(() => {
           </button>
         </div>
 
-        <div class="user-menu__section">
-          <p class="user-menu__section-label">Legal</p>
-          <div class="user-menu__legal">
-            <button
-              type="button"
-              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-              @click="goToPrivacyPolicy"
-            >
-              Privacy Policy
-            </button>
-            <button
-              type="button"
-              class="user-menu__action user-menu__action--neutral user-menu__action--legal"
-              @click="goToTerms"
-            >
-              Terms &amp; Conditions
-            </button>
-          </div>
-        </div>
       </div>
     </Transition>
   </div>
@@ -201,6 +174,13 @@ onMounted(() => {
     0 18px 40px rgba(2, 6, 23, 0.24);
   backdrop-filter: blur(18px);
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.user-menu--compact .user-menu__toggle {
+  min-height: 3rem;
+  padding: 0.42rem 0.62rem 0.42rem 0.74rem;
+  border-radius: 1rem;
+  gap: 0.52rem;
 }
 
 .user-menu__toggle--open {
@@ -232,11 +212,21 @@ onMounted(() => {
   line-height: 1;
 }
 
+.user-menu--compact .user-menu__eyebrow {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+}
+
 .user-menu__label {
   margin-top: 0.18rem;
   font-size: 0.9rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.user-menu--compact .user-menu__label {
+  margin-top: 0.12rem;
+  font-size: 0.82rem;
 }
 
 .user-menu__avatar {
@@ -253,6 +243,12 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
+.user-menu--compact .user-menu__avatar {
+  width: 2.05rem;
+  height: 2.05rem;
+  font-size: 0.9rem;
+}
+
 .user-menu__chevron {
   display: inline-flex;
   align-items: center;
@@ -261,6 +257,11 @@ onMounted(() => {
   height: 1rem;
   color: rgba(226, 232, 240, 0.72);
   transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.user-menu--compact .user-menu__chevron {
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .user-menu__chevron svg {
@@ -289,8 +290,18 @@ onMounted(() => {
   backdrop-filter: blur(18px);
 }
 
+.user-menu--compact .user-menu__panel {
+  min-width: 14.8rem;
+  padding: 0.62rem;
+  border-radius: 1.05rem;
+}
+
 .user-menu__section + .user-menu__section {
   margin-top: 0.65rem;
+}
+
+.user-menu--compact .user-menu__section + .user-menu__section {
+  margin-top: 0.58rem;
 }
 
 .user-menu__section-label {
@@ -301,6 +312,13 @@ onMounted(() => {
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.user-menu--compact .user-menu__section-label {
+  margin: 0 0 0.38rem;
+  padding: 0 0.42rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
 }
 
 .user-menu__action {
@@ -319,7 +337,18 @@ onMounted(() => {
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
+.user-menu--compact .user-menu__action {
+  padding: 0.66rem 0.8rem;
+  border-radius: 0.82rem;
+  font-size: 0.86rem;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
 .user-menu__action + .user-menu__action {
+  margin-top: 0.34rem;
+}
+
+.user-menu--compact .user-menu__action + .user-menu__action {
   margin-top: 0.34rem;
 }
 
@@ -360,9 +389,17 @@ onMounted(() => {
   gap: 0.4rem;
 }
 
+.user-menu--compact .user-menu__legal {
+  gap: 0.28rem;
+}
+
 .user-menu__action--legal {
   font-size: 0.82rem;
   color: rgba(226, 232, 240, 0.8);
+}
+
+.user-menu--compact .user-menu__action--legal {
+  font-size: 0.74rem;
 }
 
 @media (max-width: 767px) {

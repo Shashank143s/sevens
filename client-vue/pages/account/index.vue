@@ -14,15 +14,12 @@ const { deleteAccount, getAccountSummary } = useAccountApi()
 const { signOut } = useGoogleLogin()
 const admob = useAdMob()
 const { isWebApp } = useAppSource()
+const { isCompact } = useUiDensity()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isPermissionsDialogOpen = ref(false)
-const isSummaryLoading = ref(true)
-const coinsBalance = ref<number | null>(null)
-const playerLevel = ref<number | null>(null)
-const xpTotal = ref<number | null>(null)
+const countryName = ref<string>('Not available')
 const mounted = ref(false)
-const progressionExpanded = ref(false)
 const isInterstitialNavigating = ref(false)
 
 const sessionReady = computed(() => mounted.value && hydrated.value)
@@ -31,27 +28,6 @@ const email = computed(() => (sessionReady.value ? session.value?.email?.trim() 
 const profileImage = computed(() => (sessionReady.value ? session.value?.image : undefined))
 const accountIdentifier = computed(() => (sessionReady.value ? session.value?.id || session.value?.email?.trim() : '') || '')
 const lastLoginLabel = computed(() => (sessionReady.value ? formatDate(session.value?.lastLoginAt) : 'Not available'))
-const levelProgress = computed(() => {
-  const totalXp = Math.max(xpTotal.value ?? 0, 0)
-  let level = 1
-  let xpIntoLevel = totalXp
-  let xpNeededForNextLevel = 100
-
-  while (xpIntoLevel >= xpNeededForNextLevel) {
-    xpIntoLevel -= xpNeededForNextLevel
-    level += 1
-    xpNeededForNextLevel += 50
-  }
-
-  return {
-    level,
-    xpIntoLevel,
-    xpNeededForNextLevel,
-    progressPercent: xpNeededForNextLevel > 0
-      ? Math.min((xpIntoLevel / xpNeededForNextLevel) * 100, 100)
-      : 0,
-  }
-})
 
 function formatDate(value?: string | number) {
   if (!value) return 'Not available'
@@ -101,18 +77,13 @@ async function logout() {
 
 async function loadAccountSummary() {
   if (!accountIdentifier.value) return
-  isSummaryLoading.value = true
   try {
     const response = await getAccountSummary(accountIdentifier.value)
-    coinsBalance.value = response.user.wallet?.coins_balance ?? null
-    playerLevel.value = response.user.progression?.level ?? null
-    xpTotal.value = response.user.progression?.xp_total ?? null
+    countryName.value = response.user.location?.country_name
+      || response.user.location?.country_code
+      || 'Not available'
   } catch {
-    coinsBalance.value = null
-    playerLevel.value = null
-    xpTotal.value = null
-  } finally {
-    isSummaryLoading.value = false
+    countryName.value = 'Not available'
   }
 }
 
@@ -147,6 +118,7 @@ onMounted(() => {
 <template>
   <div
     class="account-page"
+    :class="{ 'account-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <AppTopBar back-to="/" back-label="Home" />
@@ -159,12 +131,7 @@ onMounted(() => {
               <p class="account-card__eyebrow">Player Account</p>
               <div class="account-card__identity-main">
                 <h1>{{ fullName }}</h1>
-                <p class="account-card__email">{{ email }}</p>
               </div>
-              <p class="account-card__meta-line">
-                <span class="account-card__meta-label">Last login</span>
-                <strong>{{ lastLoginLabel }}</strong>
-              </p>
             </div>
 
             <UserAvatar
@@ -175,60 +142,28 @@ onMounted(() => {
           </div>
         </div>
 
-        <AccountProgressSkeleton v-if="isSummaryLoading" />
-
-        <section v-else class="account-card__progression">
-          <button
-            type="button"
-            class="account-card__progression-toggle"
-            :aria-expanded="progressionExpanded ? 'true' : 'false'"
-            @click="progressionExpanded = !progressionExpanded"
-          >
-            <div class="account-card__progression-top">
-              <div class="account-card__chip account-card__chip--coins">
-                <IconsCoinIcon class="account-card__coin-icon" />
-                <strong>{{ coinsBalance == null ? '—' : coinsBalance }}</strong>
-              </div>
-              <div class="account-card__progression-controls">
-                <div class="account-card__chip account-card__chip--level">
-                  <span class="account-card__chip-label">Lv</span>
-                  <strong>{{ playerLevel ?? levelProgress.level }}</strong>
-                </div>
-                <span
-                  class="account-card__chevron"
-                  :class="{ 'account-card__chevron--open': progressionExpanded }"
-                  aria-hidden="true"
-                >
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m6 8 4 4 4-4" />
-                  </svg>
-                </span>
-              </div>
-            </div>
-          </button>
-          <Transition name="account-progress-expand">
-            <div v-if="progressionExpanded" class="account-card__xp">
-              <div class="account-card__xp-header">
-                <p class="account-card__economy-label">Level Progress</p>
-                <span>{{ levelProgress.xpIntoLevel }} / {{ levelProgress.xpNeededForNextLevel }} XP</span>
-              </div>
-              <div class="account-card__xp-track" aria-hidden="true">
-                <div class="account-card__xp-fill" :style="{ width: `${levelProgress.progressPercent}%` }" />
-              </div>
-            </div>
-          </Transition>
-        </section>
-
         <section class="account-history">
           <div class="account-history__grid">
+            <div class="account-history__info-row">
+              <span class="account-history__info-label">Email</span>
+              <span class="account-history__info-value">{{ email }}</span>
+            </div>
+            <div class="account-history__info-row">
+              <span class="account-history__info-label">Last login</span>
+              <span class="account-history__info-value">{{ lastLoginLabel }}</span>
+            </div>
+            <div class="account-history__info-row">
+              <span class="account-history__info-label">Country</span>
+              <span class="account-history__info-value">{{ countryName }}</span>
+            </div>
             <button
               type="button"
               class="account-history__link"
               :disabled="isInterstitialNavigating"
-              @click="goToAccountSection('/account/games')"
+              @click="goToAccountSection('/account/profile')"
             >
-              <span class="account-history__title">Recent Games</span>
-              <span class="account-history__arrow">→</span>
+              <span class="account-history__title">Profile</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </button>
             <button
               type="button"
@@ -237,8 +172,22 @@ onMounted(() => {
               @click="goToAccountSection('/account/leaderboard')"
             >
               <span class="account-history__title">Leaderboard</span>
-              <span class="account-history__arrow">→</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
             </button>
+            <NuxtLink
+              to="/privacy-policy"
+              class="account-history__link"
+            >
+              <span class="account-history__title">Privacy Policy</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
+            </NuxtLink>
+            <NuxtLink
+              to="/terms-and-conditions"
+              class="account-history__link"
+            >
+              <span class="account-history__title">Terms &amp; Conditions</span>
+              <IconsDirectionalArrowIcon class="account-history__arrow" />
+            </NuxtLink>
           </div>
         </section>
 
@@ -414,7 +363,9 @@ onMounted(() => {
 
 .account-card__identity h1 {
   margin: 0;
-  font-size: clamp(1.45rem, 4vw, 2.2rem);
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  font-weight: 300;
+  letter-spacing: 0.1rem;
   line-height: 1;
   color: #f8f4ec;
   text-shadow: 0 8px 22px rgba(2, 6, 23, 0.18);
@@ -645,6 +596,37 @@ onMounted(() => {
   gap: 0.55rem;
 }
 
+.account-history__info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-height: 3rem;
+  padding: 0.62rem 0.95rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.account-history__info-label {
+  color: rgba(203, 213, 225, 0.88);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-history__info-value {
+  color: #f8fafc;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: right;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .account-history__link {
   display: flex;
   align-items: center;
@@ -680,8 +662,10 @@ onMounted(() => {
 }
 
 .account-history__arrow {
-  font-size: 1.7rem;
   color: #facc15;
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
 }
 
 .account-card__row {
@@ -723,6 +707,211 @@ onMounted(() => {
   background: rgba(127, 29, 29, 0.2);
   border: 1px solid rgba(248, 113, 113, 0.22);
   color: #fecaca;
+}
+
+:global(html.ui-density-compact) .account-page {
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(0.85rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom))
+    max(0.85rem, env(safe-area-inset-left));
+}
+
+:global(html.ui-density-compact) .account-card {
+  border-radius: 1.45rem;
+  padding: 1.12rem;
+}
+
+:global(html.ui-density-compact) .account-card__hero-shell {
+  margin: -1.12rem -1.12rem 0;
+  padding: 0.95rem 1.12rem 1rem;
+}
+
+:global(html.ui-density-compact) .account-history__link {
+  min-height: 4.35rem;
+  padding: 0.9rem 1rem;
+}
+
+:global(html.ui-density-compact) .account-card__secondary,
+:global(html.ui-density-compact) .account-card__logout,
+:global(html.ui-density-compact) .account-card__danger {
+  min-height: 2.95rem;
+}
+
+.account-page--compact {
+  padding:
+    max(0.85rem, env(safe-area-inset-top))
+    max(0.65rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.65rem, env(safe-area-inset-left));
+}
+
+.account-page--compact .account-page__content {
+  max-width: 56rem;
+}
+
+.account-page--compact .account-card {
+  border-radius: 1.45rem;
+  padding: 0.95rem;
+}
+
+.account-page--compact .account-card__hero-shell {
+  margin: -0.95rem -0.95rem 0;
+  padding: 0.78rem 0.95rem 0.82rem;
+}
+
+.account-page--compact .account-card__hero {
+  gap: 0.72rem;
+}
+
+.account-page--compact .account-card__avatar {
+  width: 4.15rem;
+  height: 4.15rem;
+  border-radius: 1.08rem;
+}
+
+.account-page--compact .account-card__eyebrow {
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+}
+
+.account-page--compact .account-card__identity-main {
+  margin-top: 0.52rem;
+  gap: 0.2rem;
+}
+
+.account-page--compact .account-card__identity h1 {
+  font-size: clamp(1.6rem, 3.2vw, 1.72rem);
+}
+
+.account-page--compact .account-card__email {
+  font-size: 0.82rem;
+}
+
+.account-page--compact .account-card__meta-line {
+  margin-top: 0.62rem;
+}
+
+.account-page--compact .account-card__meta-label {
+  font-size: 0.54rem;
+}
+
+.account-page--compact .account-card__meta-line strong {
+  font-size: 0.7rem;
+}
+
+.account-page--compact .account-card__progression {
+  margin-top: 0.72rem;
+  border-radius: 1rem;
+  padding: 0.64rem 0.72rem 0.74rem;
+}
+
+.account-page--compact .account-card__progression-controls {
+  gap: 0.5rem;
+}
+
+.account-page--compact .account-card__chip {
+  min-height: 2.2rem;
+  padding: 0.4rem 0.62rem;
+  gap: 0.42rem;
+}
+
+.account-page--compact .account-card__chip strong {
+  font-size: 0.85rem;
+}
+
+.account-page--compact .account-card__chip-label {
+  font-size: 0.62rem;
+}
+
+.account-page--compact .account-card__coin-icon {
+  width: 0.84rem;
+  height: 0.84rem;
+}
+
+.account-page--compact .account-card__chevron {
+  width: 1.82rem;
+  height: 1.82rem;
+}
+
+.account-page--compact .account-card__chevron svg {
+  width: 0.74rem;
+  height: 0.74rem;
+}
+
+.account-page--compact .account-card__xp {
+  margin-top: 0.68rem;
+}
+
+.account-page--compact .account-card__xp-header {
+  margin-bottom: 0.44rem;
+}
+
+.account-page--compact .account-card__xp-header span {
+  font-size: 0.74rem;
+}
+
+.account-page--compact .account-card__xp-track {
+  height: 0.58rem;
+}
+
+.account-page--compact .account-history {
+  margin-top: 1rem;
+  padding: 0.32rem;
+  border-radius: 1rem;
+}
+
+.account-page--compact .account-history__grid {
+  gap: 0.38rem;
+}
+
+.account-page--compact .account-history__info-row {
+  min-height: 2.45rem;
+  border-radius: 0.72rem;
+  padding: 0.46rem 0.72rem;
+  gap: 0.6rem;
+}
+
+.account-page--compact .account-history__info-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+}
+
+.account-page--compact .account-history__info-value {
+  font-size: 0.72rem;
+}
+
+.account-page--compact .account-history__link {
+  min-height: 3.35rem;
+  border-radius: 0.82rem;
+  padding: 0.64rem 0.75rem;
+}
+
+.account-page--compact .account-history__title {
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
+}
+
+.account-page--compact .account-history__arrow {
+  width: 1rem;
+  height: 1rem;
+}
+
+.account-page--compact .account-card__actions {
+  margin-top: 0.9rem;
+  gap: 0.55rem;
+}
+
+.account-page--compact .account-card__row {
+  gap: 0.55rem;
+}
+
+.account-page--compact .account-card__secondary,
+.account-page--compact .account-card__logout,
+.account-page--compact .account-card__danger {
+  min-height: 2.65rem;
+  padding: 0.58rem 0.82rem;
+  font-size: 0.84rem;
 }
 
 @media (min-width: 768px) {

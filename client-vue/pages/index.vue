@@ -9,6 +9,7 @@ const { isAndroidApp } = useAppSource()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
 const { isSupported: notificationsSupported, isGranted: notificationsGranted, refreshPermission } = useNotificationPermission()
+const { isCompact } = useUiDensity()
 const pwa = import.meta.client ? usePWA() : undefined
 const showPermissionsModal = ref(false)
 const permissionPromptCheckedThisLaunch = useState<boolean>('permission-prompt-checked-this-launch', () => false)
@@ -111,7 +112,7 @@ onMounted(async () => {
   >
     <AppTopBar :reserve-space="false" />
 
-    <section class="mobile-home">
+    <section class="mobile-home" :class="{ 'mobile-home--compact': isCompact }">
       <div class="mobile-home__content">
         <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
         <h1 class="mobile-home__title">Sevens Royale</h1>
@@ -164,10 +165,6 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-:deep(.app-topbar) {
-  background: rgba(0, 0, 0, 0.4);
-}
-
 .mobile-home {
   box-sizing: border-box;
   position: relative;
@@ -184,7 +181,6 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: rgba(0, 0, 0, 0.4);
 }
 
 .mobile-home__content {
@@ -303,6 +299,61 @@ onMounted(async () => {
   backdrop-filter: blur(12px);
 }
 
+.mobile-home--compact {
+  --home-topbar-overlay: calc(max(0.62rem, env(safe-area-inset-top)) + 2.45rem);
+  min-height: calc(100svh - var(--home-topbar-overlay));
+  height: calc(100svh - var(--home-topbar-overlay));
+  padding:
+    0.62rem
+    max(0.95rem, env(safe-area-inset-right))
+    0.7rem
+    max(0.95rem, env(safe-area-inset-left));
+}
+
+.mobile-home--compact .mobile-home__eyebrow {
+  margin-bottom: 0.9rem;
+  font-size: clamp(0.78rem, 2vw, 0.95rem);
+}
+
+.mobile-home--compact .mobile-home__title {
+  font-size: clamp(3.6rem, 7.4vw, 5rem);
+  line-height: 0.92;
+}
+
+.mobile-home--compact .mobile-home__description {
+  margin-top: 1.4rem;
+  max-width: 31rem;
+  font-size: clamp(0.88rem, 1.7vw, 1.18rem);
+  line-height: 1.44;
+}
+
+.mobile-home--compact .mobile-home__divider {
+  margin: 1.15rem auto 1.2rem;
+}
+
+.mobile-home--compact .mobile-home__suits {
+  font-size: clamp(0.95rem, 3.6vw, 1.45rem);
+}
+
+.mobile-home--compact .mobile-home__cta {
+  width: min(100%, 20rem);
+  min-height: 3.45rem;
+  padding: 0.7rem 1.05rem;
+  font-size: 0.92rem;
+  gap: 0.72rem;
+}
+
+.mobile-home--compact .mobile-home__cta-arrow {
+  font-size: 1.12rem;
+}
+
+.mobile-home--compact .mobile-home__secondary-cta {
+  width: min(100%, 20rem);
+  min-height: 2.7rem;
+  padding: 0.55rem 1.05rem;
+  font-size: 0.86rem;
+}
+
 @media (min-width: 640px) {
   .mobile-home {
     flex: 1 1 auto;
@@ -326,6 +377,17 @@ onMounted(async () => {
 
   .mobile-home__secondary-cta {
     width: min(100%, 25rem);
+  }
+
+  .mobile-home--compact {
+    --home-topbar-overlay: calc(max(0.62rem, env(safe-area-inset-top)) + 2.45rem);
+    min-height: calc(100svh - var(--home-topbar-overlay));
+    height: calc(100svh - var(--home-topbar-overlay));
+    padding:
+      0.62rem
+      max(0.95rem, env(safe-area-inset-right))
+      0.7rem
+      max(0.95rem, env(safe-area-inset-left));
   }
 }
 </style>

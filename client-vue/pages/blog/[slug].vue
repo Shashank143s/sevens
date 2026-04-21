@@ -4,6 +4,7 @@ import { blogPosts, getBlogPost } from '~/data/blog'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const slug = computed(() => String(route.params.slug || ''))
 const post = computed(() => getBlogPost(slug.value))
 const canonicalPath = computed(() => {

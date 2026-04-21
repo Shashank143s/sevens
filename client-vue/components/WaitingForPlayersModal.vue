@@ -10,6 +10,7 @@ const props = defineProps<{
   isOnline?: boolean
   checkingRoom?: boolean
 }>()
+const { isCompact } = useUiDensity()
 
 const emit = defineEmits<{
   retry: []
@@ -17,8 +18,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 text-white shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
-    <div class="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_30%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4">
+  <div
+    class="waiting-modal w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 text-white shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl"
+    :class="isCompact ? 'waiting-modal--compact max-w-xl rounded-[1.35rem]' : ''"
+  >
+    <div
+      class="waiting-modal__header border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_30%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4"
+      :class="isCompact ? 'px-4 py-3' : ''"
+    >
       <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
           <p class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-sky-300/80">Room Ready</p>
@@ -38,7 +45,7 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <div class="p-5">
+    <div class="waiting-modal__body p-5" :class="isCompact ? 'p-4' : ''">
       <p
         v-if="roomStatusMessage"
         class="mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur-sm"
@@ -47,8 +54,8 @@ const emit = defineEmits<{
         {{ roomStatusMessage }}
       </p>
 
-      <div class="rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-4 py-4 text-center">
-        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300/15 bg-emerald-400/10 shadow-[0_0_32px_rgba(16,185,129,0.22)]">
+      <div class="waiting-modal__panel rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-4 py-4 text-center">
+        <div class="waiting-modal__icon-wrap mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300/15 bg-emerald-400/10 shadow-[0_0_32px_rgba(16,185,129,0.22)]">
           <svg
             viewBox="0 0 24 24"
             class="h-7 w-7 text-emerald-200"
@@ -74,18 +81,18 @@ const emit = defineEmits<{
         <button
           v-if="isOnline"
           type="button"
-          class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          class="waiting-modal__secondary-btn inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="checkingRoom"
           @click="emit('retry')"
         >
           {{ checkingRoom ? 'Checking...' : 'Check Again' }}
         </button>
-        <div v-else class="rounded-2xl border border-red-400/20 bg-red-950/35 px-4 py-3 text-center text-sm font-semibold text-red-100">
+        <div v-else class="waiting-modal__offline rounded-2xl border border-red-400/20 bg-red-950/35 px-4 py-3 text-center text-sm font-semibold text-red-100">
           Offline
         </div>
         <button
           type="button"
-          class="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-900 transition hover:bg-amber-600"
+          class="waiting-modal__submit inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-900 transition hover:bg-amber-600"
           @click="router.push('/lobby')"
         >
           Back to Lobby
@@ -94,3 +101,65 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.waiting-modal--compact {
+  font-size: 0.89rem;
+}
+
+.waiting-modal--compact .waiting-modal__header {
+  padding: 0.7rem 0.95rem !important;
+}
+
+.waiting-modal--compact .waiting-modal__header p {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+}
+
+.waiting-modal--compact .waiting-modal__header h2 {
+  margin-top: 0.2rem;
+  font-size: 1.08rem;
+}
+
+.waiting-modal--compact .waiting-modal__body {
+  padding: 0.9rem !important;
+}
+
+.waiting-modal--compact .waiting-modal__body .mb-4 {
+  margin-bottom: 0.72rem;
+}
+
+.waiting-modal--compact .waiting-modal__body .mt-5 {
+  margin-top: 0.85rem;
+}
+
+.waiting-modal--compact .waiting-modal__panel {
+  border-radius: 0.88rem;
+  padding: 0.72rem 0.75rem;
+}
+
+.waiting-modal--compact .waiting-modal__icon-wrap {
+  margin-bottom: 0.55rem;
+  height: 2.8rem;
+  width: 2.8rem;
+}
+
+.waiting-modal--compact .waiting-modal__icon-wrap svg {
+  height: 1.3rem;
+  width: 1.3rem;
+}
+
+.waiting-modal--compact .waiting-modal__panel p {
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.waiting-modal--compact .waiting-modal__secondary-btn,
+.waiting-modal--compact .waiting-modal__submit,
+.waiting-modal--compact .waiting-modal__offline {
+  border-radius: 0.85rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  font-size: 0.85rem;
+}
+</style>

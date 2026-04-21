@@ -10,6 +10,14 @@ html {
   overscroll-behavior-y: none;
 }
 
+html.ui-density-cozy {
+  font-size: 100%;
+}
+
+html.ui-density-compact {
+  font-size: 93.75%;
+}
+
 body {
   height: 100%;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

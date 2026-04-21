@@ -3,6 +3,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalUrl = computed(() => new URL(route.path || '/contact', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -24,6 +25,7 @@ useSeoMeta({
 <template>
   <div
     class="contact-page"
+    :class="{ 'contact-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <AppTopBar back-to="/" back-label="Home" />
@@ -58,8 +60,17 @@ useSeoMeta({
           <p>
             For support, bug reports, business inquiries, or feedback, please email the developer team at:
           </p>
-          <a class="contact-card__email" href="mailto:support@sevensroyale.com">
-            support@sevensroyale.com
+          <a class="contact-card__email-box" href="mailto:support@sevensroyale.com" aria-label="Email Sevens Royale Support">
+            <span class="contact-card__email-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" ry="2" />
+                <path d="m3 7 9 6 9-6" />
+              </svg>
+            </span>
+            <span class="contact-card__email-copy">
+              <span class="contact-card__email-label">Support Email</span>
+              <span class="contact-card__email">support@sevensroyale.com</span>
+            </span>
           </a>
           <p class="contact-card__note">
             Include your device, browser, and a short description if you are reporting an issue.
@@ -140,7 +151,9 @@ useSeoMeta({
   padding: 1.2rem 1.25rem;
   border-radius: 1.45rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.76);
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 36%),
+    rgba(15, 23, 42, 0.76);
   box-shadow: 0 20px 48px rgba(2, 6, 23, 0.26);
   backdrop-filter: blur(16px);
 }
@@ -184,12 +197,69 @@ useSeoMeta({
   line-height: 1.75;
 }
 
+.contact-card__email-box {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  margin-top: 0.9rem;
+  width: 100%;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.1), transparent 46%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.62));
+  padding: 0.72rem 0.82rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 30px rgba(2, 6, 23, 0.2);
+}
+
+.contact-card__email-box:hover,
+.contact-card__email-box:focus-visible {
+  border-color: rgba(250, 204, 21, 0.4);
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.14), transparent 46%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.84), rgba(30, 41, 59, 0.72));
+}
+
+.contact-card__email-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  background: rgba(250, 204, 21, 0.14);
+  color: #fcd34d;
+  flex-shrink: 0;
+}
+
+.contact-card__email-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.contact-card__email-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.contact-card__email-label {
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .contact-card__email {
   display: inline-block;
-  margin-top: 0.9rem;
   font-weight: 800;
   font-size: 1.02rem;
   color: #fde68a;
+  line-height: 1.2;
 }
 
 .contact-card__note {
@@ -200,5 +270,74 @@ useSeoMeta({
   .contact-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.contact-page--compact {
+  padding:
+    max(0.95rem, env(safe-area-inset-top))
+    max(0.72rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.72rem, env(safe-area-inset-left));
+}
+
+.contact-page--compact .contact-page__content {
+  max-width: 53rem;
+  gap: 0.65rem;
+}
+
+.contact-page--compact .contact-card {
+  padding: 0.88rem 0.92rem;
+  border-radius: 1rem;
+}
+
+.contact-page--compact .contact-card__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+}
+
+.contact-page--compact .contact-card h1 {
+  margin-top: 0.3rem;
+  font-size: clamp(1.35rem, 4.8vw, 2.15rem);
+}
+
+.contact-page--compact .contact-card h2 {
+  font-size: 0.94rem;
+}
+
+.contact-page--compact .contact-card__lede,
+.contact-page--compact .contact-card p {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.52;
+}
+
+.contact-page--compact .contact-card__email-box {
+  margin-top: 0.62rem;
+  gap: 0.52rem;
+  padding: 0.52rem 0.58rem;
+  border-radius: 0.74rem;
+}
+
+.contact-page--compact .contact-card__email-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.56rem;
+}
+
+.contact-page--compact .contact-card__email-icon svg {
+  width: 0.84rem;
+  height: 0.84rem;
+}
+
+.contact-page--compact .contact-card__email-label {
+  font-size: 0.56rem;
+}
+
+.contact-page--compact .contact-card__email {
+  font-size: 0.82rem;
+}
+
+.contact-page--compact .contact-card__note {
+  font-size: 0.78rem;
 }
 </style>

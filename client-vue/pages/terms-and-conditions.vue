@@ -3,6 +3,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalUrl = computed(() => new URL(route.path || '/terms-and-conditions', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -24,9 +25,10 @@ useSeoMeta({
 <template>
   <div
     class="legal-page"
+    :class="{ 'legal-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Home" />
+    <AppTopBar back-to="/account" back-label="Account" />
 
     <main class="legal-page__content">
       <section class="legal-card legal-card--hero">
@@ -70,7 +72,20 @@ useSeoMeta({
       </section>
 
       <section class="legal-card">
-        <h2>5. Rooms and Match Outcomes</h2>
+        <h2>5. Ads, Notifications, and Third-Party Services</h2>
+        <p>
+          Sevens Royale may display ads in supported app builds and may use push notifications for gameplay,
+          updates, and engagement. These features are powered through third-party services including Google AdMob
+          and OneSignal.
+        </p>
+        <p>
+          By using the app, you acknowledge that technical identifiers and subscription metadata required for
+          these features may be processed in accordance with those providers&apos; terms and privacy policies.
+        </p>
+      </section>
+
+      <section class="legal-card">
+        <h2>6. Rooms and Match Outcomes</h2>
         <p>
           Match creation, joining, bot participation, private room access, and settlement outcomes
           are governed by the current game rules. Abandoned matches, invalid sessions, or suspicious
@@ -79,7 +94,7 @@ useSeoMeta({
       </section>
 
       <section class="legal-card">
-        <h2>6. Availability</h2>
+        <h2>7. Availability</h2>
         <p>
           We may update, suspend, or discontinue parts of the service at any time, including features,
           downloads, multiplayer systems, or progression rules.
@@ -87,7 +102,7 @@ useSeoMeta({
       </section>
 
       <section class="legal-card">
-        <h2>7. Intellectual Property</h2>
+        <h2>8. Intellectual Property</h2>
         <p>
           The Sevens Royale application, branding, UI, and service logic remain the property of the
           application owner except where third-party assets or services are used under their own terms.
@@ -95,7 +110,7 @@ useSeoMeta({
       </section>
 
       <section class="legal-card">
-        <h2>8. Limitation of Liability</h2>
+        <h2>9. Limitation of Liability</h2>
         <p>
           Sevens Royale is provided on an as-is basis. To the fullest extent allowed by law, the service
           is not liable for indirect, incidental, or consequential damages arising from use of the application.
@@ -103,7 +118,7 @@ useSeoMeta({
       </section>
 
       <section class="legal-card">
-        <h2>9. Changes to Terms</h2>
+        <h2>10. Changes to Terms</h2>
         <p>
           These terms may change over time. Continued use of the service after updates means you accept
           the revised version.
@@ -220,5 +235,44 @@ useSeoMeta({
   margin: 0.75rem 0 0;
   color: rgba(226, 232, 240, 0.8);
   line-height: 1.75;
+}
+
+.legal-page--compact {
+  padding:
+    max(0.95rem, env(safe-area-inset-top))
+    max(0.72rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.72rem, env(safe-area-inset-left));
+}
+
+.legal-page--compact .legal-page__content {
+  max-width: 53rem;
+  gap: 0.65rem;
+}
+
+.legal-page--compact .legal-card {
+  padding: 0.88rem 0.92rem;
+  border-radius: 1rem;
+}
+
+.legal-page--compact .legal-card__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+}
+
+.legal-page--compact .legal-card h1 {
+  margin-top: 0.3rem;
+  font-size: clamp(1.35rem, 4.8vw, 2.15rem);
+}
+
+.legal-page--compact .legal-card h2 {
+  font-size: 0.94rem;
+}
+
+.legal-page--compact .legal-card__lede,
+.legal-page--compact .legal-card p {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.52;
 }
 </style>

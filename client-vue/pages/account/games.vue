@@ -7,6 +7,7 @@ const PAGE_SIZE = 5
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getAccountGames } = useAccountApi()
+const { isCompact } = useUiDensity()
 
 const accountStats = ref<{ games_played: number; wins: number; losses: number } | null>(null)
 const games = ref<AccountRecentGame[]>([])
@@ -95,9 +96,10 @@ onMounted(async () => {
 <template>
   <div
     class="games-page"
+    :class="{ 'games-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/account" back-label="Account" />
+    <AppTopBar back-to="/account/profile" back-label="Profile" />
 
     <main class="games-page__content">
       <section class="games-page__hero">
@@ -457,9 +459,9 @@ onMounted(async () => {
 }
 
 .games-page__badge--loss {
-  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(71, 85, 105, 0.22));
-  border-color: rgba(148, 163, 184, 0.14);
-  color: #e2e8f0;
+  background: linear-gradient(135deg, rgba(185, 28, 28, 0.26), rgba(239, 68, 68, 0.24));
+  border-color: rgba(248, 113, 113, 0.2);
+  color: #fecaca;
 }
 
 .games-page__badge--bot {
@@ -532,6 +534,122 @@ onMounted(async () => {
   color: #111827;
   font-weight: 800;
   box-shadow: 0 18px 40px rgba(245, 158, 11, 0.2);
+}
+
+.games-page--compact {
+  padding:
+    max(0.92rem, env(safe-area-inset-top))
+    max(0.7rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.7rem, env(safe-area-inset-left));
+}
+
+.games-page--compact .games-page__content {
+  max-width: 53rem;
+}
+
+.games-page--compact .games-page__hero {
+  padding: 1.05rem 1rem;
+  border-radius: 1.12rem;
+}
+
+.games-page--compact .games-page__eyebrow {
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+}
+
+.games-page--compact .games-page__hero h1 {
+  margin-top: 0.22rem;
+  font-size: clamp(1.42rem, 4.4vw, 2.1rem);
+}
+
+.games-page--compact .games-page__subtitle {
+  margin-top: 0.48rem;
+  max-width: 30rem;
+  font-size: 0.8rem;
+  line-height: 1.42;
+}
+
+.games-page--compact .games-page__stats {
+  margin-top: 0.7rem;
+  gap: 0.45rem;
+}
+
+.games-page--compact .games-page__stat {
+  gap: 0.38rem;
+  padding: 0.44rem 0.64rem;
+  border-radius: 0.72rem;
+}
+
+.games-page--compact .games-page__stat span {
+  font-size: 0.7rem;
+}
+
+.games-page--compact .games-page__stat strong {
+  font-size: 0.82rem;
+}
+
+.games-page--compact .games-page__message {
+  margin-top: 0.8rem;
+  padding: 0.72rem;
+  border-radius: 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.games-page--compact .games-page__list {
+  margin-top: 0.78rem;
+  gap: 0.58rem;
+}
+
+.games-page--compact .games-page__item {
+  border-radius: 0.95rem;
+  padding: 0.72rem 0.78rem;
+}
+
+.games-page--compact .games-page__item-top {
+  gap: 0.55rem;
+}
+
+.games-page--compact .games-page__match {
+  font-size: 0.9rem;
+}
+
+.games-page--compact .games-page__meta {
+  margin-top: 0.26rem;
+  font-size: 0.72rem;
+}
+
+.games-page--compact .games-page__badge {
+  min-height: 1.52rem;
+  padding: 0.25rem 0.54rem;
+  border-radius: 0.62rem;
+  font-size: 0.66rem;
+}
+
+.games-page--compact .games-page__item-bottom {
+  margin-top: 0.55rem;
+  gap: 0.4rem;
+}
+
+.games-page--compact .games-page__delta {
+  min-height: 1.45rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.62rem;
+  font-size: 0.64rem;
+  gap: 0.3rem;
+}
+
+.games-page--compact .games-page__coin-icon {
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+.games-page--compact .games-page__load-more {
+  margin-top: 0.82rem;
+  min-height: 2.3rem;
+  border-radius: 0.78rem;
+  font-size: 0.86rem;
 }
 
 @media (min-width: 768px) {

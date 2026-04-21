@@ -14,6 +14,7 @@ const props = defineProps<{
   stakeError: string
   showBotsInfo: boolean
 }>()
+const { isCompact } = useUiDensity()
 
 const emit = defineEmits<{
   close: []
@@ -31,7 +32,6 @@ const emit = defineEmits<{
   'update:createRoomName': [value: string]
   'update:showBotsInfo': [value: boolean]
 }>()
-
 const createRoomNameInput = ref<HTMLInputElement | null>(null)
 
 const createRoomNameValue = computed({
@@ -77,10 +77,17 @@ watch(() => props.visible, async (open) => {
     <div
       v-if="visible"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4"
+      :class="isCompact ? 'p-2.5 sm:p-3' : ''"
       @click.self="emit('close')"
     >
-      <div class="w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl">
-        <div class="border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4">
+      <div
+        class="create-room-modal w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl"
+        :class="isCompact ? 'create-room-modal--compact max-w-xl rounded-[1.35rem]' : ''"
+      >
+        <div
+          class="create-room-modal__header border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4"
+          :class="isCompact ? 'px-4 py-3' : ''"
+        >
           <div class="flex items-center justify-between gap-4">
             <div>
               <p class="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-amber-300/80">New Table</p>
@@ -102,7 +109,7 @@ watch(() => props.visible, async (open) => {
             </div>
           </div>
         </div>
-        <div class="p-5">
+        <div class="create-room-modal__body p-5" :class="isCompact ? 'p-4' : ''">
           <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Name</label>
           <input
             ref="createRoomNameInput"
@@ -110,7 +117,7 @@ watch(() => props.visible, async (open) => {
             type="text"
             maxlength="40"
             placeholder="Friday Night Table"
-            class="mb-1.5 w-full rounded-2xl bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2"
+            class="create-room-modal__input mb-1.5 w-full rounded-2xl bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2"
             :class="roomNameError
               ? 'border border-red-400/70 focus:ring-red-400'
               : 'border border-slate-600 focus:ring-amber-500'"
@@ -125,7 +132,7 @@ watch(() => props.visible, async (open) => {
               <div class="relative">
                 <select
                   v-model.number="createNumPlayersValue"
-                  class="w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="create-room-modal__select w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option :value="2">2 Players</option>
                   <option :value="3">3 Players</option>
@@ -179,7 +186,7 @@ watch(() => props.visible, async (open) => {
               <div class="relative">
                 <select
                   v-model.number="createAiBotsValue"
-                  class="w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="create-room-modal__select w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option
                     v-for="option in botOptions"
@@ -207,7 +214,7 @@ watch(() => props.visible, async (open) => {
             </div>
           </div>
 
-          <div class="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">
+          <div class="create-room-modal__stake mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <label class="block text-sm font-semibold text-slate-200">Stake per Player</label>
@@ -217,7 +224,7 @@ watch(() => props.visible, async (open) => {
                 <div class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/70 p-1">
                   <button
                     type="button"
-                    class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
+                    class="create-room-modal__step-btn inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
                     aria-label="Decrease stake"
                     @click="emit('decrementStake')"
                   >
@@ -228,13 +235,13 @@ watch(() => props.visible, async (open) => {
                     type="number"
                     min="10"
                     step="10"
-                    class="w-14 bg-transparent px-1 text-center text-base font-bold text-amber-100 focus:outline-none"
+                    class="create-room-modal__stake-input w-14 bg-transparent px-1 text-center text-base font-bold text-amber-100 focus:outline-none"
                     @blur="emit('normalizeStakeInput')"
                     @input="emit('markStakeTouched')"
                   >
                   <button
                     type="button"
-                    class="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
+                    class="create-room-modal__step-btn inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
                     aria-label="Increase stake"
                     @click="emit('incrementStake')"
                   >
@@ -246,7 +253,7 @@ watch(() => props.visible, async (open) => {
             </div>
           </div>
 
-          <div class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <div class="create-room-modal__private mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
             <div>
               <p class="text-sm font-semibold text-slate-200">Private room</p>
               <p class="mt-1 text-xs text-slate-400">Only players with the password can join.</p>
@@ -272,13 +279,13 @@ watch(() => props.visible, async (open) => {
               v-model="createRoomPasswordValue"
               type="password"
               placeholder="Room password"
-              class="w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              class="create-room-modal__input w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
           </div>
 
           <button
             type="button"
-            class="flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 font-bold text-slate-900 disabled:opacity-50 hover:bg-amber-600"
+            class="create-room-modal__submit flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 font-bold text-slate-900 disabled:opacity-50 hover:bg-amber-600"
             :disabled="creating || !!roomNameError || !!stakeError"
             @click="emit('submit')"
           >
@@ -358,5 +365,83 @@ watch(() => props.visible, async (open) => {
 .create-room-modal__tooltip-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+.create-room-modal--compact {
+  font-size: 0.89rem;
+}
+
+.create-room-modal--compact .create-room-modal__header {
+  padding: 0.7rem 0.95rem !important;
+}
+
+.create-room-modal--compact .create-room-modal__header p {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+}
+
+.create-room-modal--compact .create-room-modal__header h2 {
+  margin-top: 0.2rem;
+  font-size: 1.08rem;
+}
+
+.create-room-modal--compact .create-room-modal__body {
+  padding: 0.9rem !important;
+}
+
+.create-room-modal--compact .create-room-modal__body .mb-4 {
+  margin-bottom: 0.72rem;
+}
+
+.create-room-modal--compact .create-room-modal__body .mb-5 {
+  margin-bottom: 0.85rem;
+}
+
+.create-room-modal--compact .create-room-modal__body .mb-3 {
+  margin-bottom: 0.6rem;
+}
+
+.create-room-modal--compact .create-room-modal__field-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.74rem;
+  line-height: 1.05rem;
+}
+
+.create-room-modal--compact .create-room-modal__input,
+.create-room-modal--compact .create-room-modal__select {
+  border-radius: 0.72rem;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+  font-size: 0.85rem;
+}
+
+.create-room-modal--compact .create-room-modal__stake,
+.create-room-modal--compact .create-room-modal__private {
+  border-radius: 0.88rem;
+  padding: 0.62rem 0.75rem;
+}
+
+.create-room-modal--compact .create-room-modal__step-btn {
+  height: 1.95rem;
+  width: 1.95rem;
+  font-size: 0.98rem;
+}
+
+.create-room-modal--compact .create-room-modal__stake-input {
+  width: 2.8rem;
+  font-size: 0.92rem;
+}
+
+.create-room-modal--compact .create-room-modal__submit {
+  border-radius: 0.85rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  font-size: 0.93rem;
+}
+
+.create-room-modal--compact .create-room-modal__tooltip {
+  width: min(11.5rem, calc(100vw - 4rem));
+  padding: 0.7rem 0.76rem;
+  font-size: 0.74rem;
 }
 </style>

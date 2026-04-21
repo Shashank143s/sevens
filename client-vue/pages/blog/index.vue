@@ -5,6 +5,7 @@ import { blogPosts } from '~/data/blog'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalPath = computed(() => {
   const path = route.path || '/blog'
   return path.endsWith('/') ? path : `${path}/`

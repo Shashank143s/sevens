@@ -3,8 +3,9 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
-const apkUrl = 'https://github.com/Shashank143s/sevens/releases/download/apk-1.0.2/sevensroyale.apk'
+const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sevensroyale.app'
 
 useHead(() => ({
   link: [
@@ -13,10 +14,10 @@ useHead(() => ({
 }))
 
 useSeoMeta({
-  title: 'Download Sevens APK',
-  description: 'Download the Sevens Royale Android APK and install the Sevens card game on your device. iPhone support is currently under development.',
-  ogTitle: 'Download Sevens APK - Sevens Royale',
-  ogDescription: 'Get the Android APK for Sevens Royale and keep the classic Sevens card game one tap away.',
+  title: 'Download Sevens on Google Play',
+  description: 'Get Sevens Royale on Google Play for Android. iPhone support is currently under development.',
+  ogTitle: 'Download Sevens on Google Play - Sevens Royale',
+  ogDescription: 'Install Sevens Royale from Google Play and keep the classic Sevens card game one tap away.',
   ogUrl: canonicalUrl,
   robots: 'index, follow',
 })
@@ -25,6 +26,7 @@ useSeoMeta({
 <template>
   <div
     class="downloads-page"
+    :class="{ 'downloads-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <AppTopBar back-to="/account" back-label="Account" />
@@ -33,49 +35,69 @@ useSeoMeta({
       <section class="downloads-card">
         <div class="downloads-card__hero">
           <div class="downloads-card__copy">
-            <p class="downloads-card__eyebrow">Android Build</p>
-            <h1>Download Sevens APK</h1>
+            <p class="downloads-card__eyebrow">Official App Stores</p>
+            <h1>Download Sevens Royale</h1>
             <p class="downloads-card__subtitle">
-              Install Sevens Royale directly on your Android device and keep the full app experience one tap away.
+              Install securely from the official storefronts. Android is live on Google Play, and iPhone support is coming soon.
             </p>
           </div>
-          <div class="downloads-card__android">
-            <IconsAndroidIcon class="downloads-card__android-icon" />
+          <div class="downloads-card__spark" aria-hidden="true">
+            <span class="downloads-card__spark-dot downloads-card__spark-dot--gold" />
+            <span class="downloads-card__spark-dot downloads-card__spark-dot--mint" />
+            <span class="downloads-card__spark-dot downloads-card__spark-dot--sky" />
           </div>
         </div>
 
-        <div class="downloads-card__body">
-          <div class="downloads-card__details">
-            <div class="downloads-card__pill">
-              <IconsAndroidIcon class="downloads-card__pill-icon" />
-              <span>Android APK</span>
-            </div>
-            <p class="downloads-card__note">
-              If your browser warns about direct APK installs, allow the download first and then open the file from your device downloads.
-            </p>
-          </div>
-
+        <div class="downloads-card__stores">
           <a
-            :href="apkUrl"
-            download="Sevens.apk"
-            class="downloads-card__button"
+            :href="playStoreUrl"
+            class="downloads-store downloads-store--play"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <IconsAndroidIcon class="downloads-card__button-icon" />
-            <span>Download APK</span>
+            <div class="downloads-store__icon-wrap">
+              <img
+                src="https://cdn.simpleicons.org/googleplay/34A853"
+                alt=""
+                class="downloads-store__icon"
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+            <div class="downloads-store__copy">
+              <p class="downloads-store__eyebrow">Android</p>
+              <h2>Google Play</h2>
+              <p>Secure install with automatic updates.</p>
+            </div>
+            <span class="downloads-store__cta">Open</span>
           </a>
+
+          <article class="downloads-store downloads-store--apple" aria-disabled="true">
+            <div class="downloads-store__icon-wrap downloads-store__icon-wrap--apple">
+              <img
+                src="https://cdn.simpleicons.org/apple/FFFFFF"
+                alt=""
+                class="downloads-store__icon"
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+            <div class="downloads-store__copy">
+              <p class="downloads-store__eyebrow">iPhone</p>
+              <h2>Apple App Store</h2>
+              <p>Under development. Use web play for now.</p>
+            </div>
+            <span class="downloads-store__badge">Soon</span>
+          </article>
         </div>
 
-        <div class="downloads-card__ios">
-          <div class="downloads-card__ios-copy">
-            <p class="downloads-card__ios-eyebrow">iPhone</p>
-            <h2>iOS build is under development</h2>
-            <p>
-              We are working on the iPhone version right now. Until then, iPhone users can keep playing through the web app experience.
-            </p>
-          </div>
-          <div class="downloads-card__ios-badge">
-            Coming Soon
-          </div>
+        <div class="downloads-card__footnote">
+          <p>
+            Prefer desktop or iPhone today? You can keep playing instantly on the web app.
+          </p>
+          <NuxtLink to="/" class="downloads-card__web-link">
+            Open Web App
+          </NuxtLink>
         </div>
       </section>
     </main>
@@ -145,20 +167,23 @@ useSeoMeta({
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.8rem;
-  background: rgba(15, 23, 42, 0.76);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(250, 204, 21, 0.12), transparent 26%),
+    radial-gradient(circle at 8% 88%, rgba(20, 184, 166, 0.1), transparent 30%),
+    rgba(15, 23, 42, 0.78);
   box-shadow: 0 22px 55px rgba(2, 6, 23, 0.32);
   backdrop-filter: blur(18px);
 }
 
 .downloads-card__hero {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.25rem 1.35rem;
+  padding: 1.25rem 1.35rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    radial-gradient(circle at top right, rgba(74, 222, 128, 0.14), transparent 26%),
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.14), transparent 28%),
     radial-gradient(circle at left center, rgba(56, 189, 248, 0.12), transparent 34%),
     linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.96));
 }
@@ -169,7 +194,7 @@ useSeoMeta({
 
 .downloads-card__eyebrow {
   margin: 0;
-  color: #86efac;
+  color: #fcd34d;
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.22em;
@@ -185,156 +210,307 @@ useSeoMeta({
 
 .downloads-card__subtitle {
   margin: 0.7rem 0 0;
-  max-width: 34rem;
+  max-width: 35rem;
   color: rgba(203, 213, 225, 0.8);
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
-.downloads-card__android {
+.downloads-card__spark {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 5rem;
-  height: 5rem;
-  flex-shrink: 0;
-  border-radius: 1.4rem;
-  border: 1px solid rgba(74, 222, 128, 0.18);
+  gap: 0.36rem;
+  margin-top: 0.2rem;
+  padding: 0.42rem 0.52rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.downloads-card__spark-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+}
+
+.downloads-card__spark-dot--gold {
+  background: #facc15;
+}
+
+.downloads-card__spark-dot--mint {
+  background: #34d399;
+}
+
+.downloads-card__spark-dot--sky {
+  background: #38bdf8;
+}
+
+.downloads-card__stores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  padding: 1rem 1.35rem;
+}
+
+.downloads-store {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 5.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.78rem 0.86rem;
   background:
-    radial-gradient(circle at top, rgba(74, 222, 128, 0.18), transparent 42%),
-    rgba(255, 255, 255, 0.05);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 32px rgba(2, 6, 23, 0.18);
+}
+
+.downloads-store--play {
+  border-color: rgba(52, 211, 153, 0.24);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(16, 185, 129, 0.18), transparent 44%),
+    linear-gradient(180deg, rgba(5, 46, 22, 0.34), rgba(255, 255, 255, 0.03));
+}
+
+.downloads-store--play:hover,
+.downloads-store--play:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(52, 211, 153, 0.4);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 18px 36px rgba(2, 6, 23, 0.22);
+    0 22px 36px rgba(16, 185, 129, 0.2);
 }
 
-.downloads-card__android-icon {
-  width: 2.2rem;
-  height: 2.2rem;
-  color: #86efac;
+.downloads-store--apple {
+  border-color: rgba(148, 163, 184, 0.24);
+  opacity: 0.95;
 }
 
-.downloads-card__body {
-  display: flex;
+.downloads-store__icon-wrap {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 1.35rem 1.35rem;
+  justify-content: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(2, 6, 23, 0.42);
+  flex-shrink: 0;
 }
 
-.downloads-card__ios {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0 1.35rem 1.35rem;
+.downloads-store__icon-wrap--apple {
+  background: rgba(15, 23, 42, 0.66);
 }
 
-.downloads-card__ios-copy {
+.downloads-store__icon {
+  width: 1.24rem;
+  height: 1.24rem;
+}
+
+.downloads-store__copy {
   min-width: 0;
+  flex: 1;
 }
 
-.downloads-card__ios-eyebrow {
+.downloads-store__eyebrow {
   margin: 0;
-  color: #bfdbfe;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
+  color: rgba(186, 230, 253, 0.86);
   text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.62rem;
+  font-weight: 800;
 }
 
-.downloads-card__ios-copy h2 {
-  margin: 0.45rem 0 0;
-  font-size: 1.2rem;
+.downloads-store__copy h2 {
+  margin: 0.18rem 0 0;
   color: #f8fafc;
+  font-size: 1rem;
+  line-height: 1.2;
 }
 
-.downloads-card__ios-copy p {
-  margin: 0.6rem 0 0;
-  color: rgba(203, 213, 225, 0.74);
-  line-height: 1.65;
-}
-
-.downloads-card__ios-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.4rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid rgba(96, 165, 250, 0.2);
-  background: rgba(59, 130, 246, 0.12);
-  color: #dbeafe;
-  font-size: 0.82rem;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.downloads-card__details {
-  min-width: 0;
-}
-
-.downloads-card__pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.4rem;
-  padding: 0.48rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid rgba(74, 222, 128, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-  color: #dcfce7;
-  font-size: 0.88rem;
-  font-weight: 800;
-}
-
-.downloads-card__pill-icon {
-  width: 1rem;
-  height: 1rem;
-  color: #86efac;
-}
-
-.downloads-card__note {
-  margin: 0.9rem 0 0;
+.downloads-store__copy p {
+  margin: 0.32rem 0 0;
   color: rgba(203, 213, 225, 0.76);
-  line-height: 1.65;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
-.downloads-card__button {
+.downloads-store__cta,
+.downloads-store__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  min-height: 3.25rem;
-  padding: 0.8rem 1.2rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(74, 222, 128, 0.22);
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #03150a;
-  font-weight: 900;
-  box-shadow: 0 18px 40px rgba(34, 197, 94, 0.22);
+  min-height: 1.65rem;
+  min-width: 3.1rem;
+  padding: 0.24rem 0.56rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
   flex-shrink: 0;
 }
 
-.downloads-card__button-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+.downloads-store__cta {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  color: #022c22;
+}
+
+.downloads-store__badge {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(51, 65, 85, 0.38);
+  color: #cbd5e1;
+}
+
+.downloads-card__footnote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.06rem 1.35rem 1.2rem;
+}
+
+.downloads-card__footnote p {
+  margin: 0;
+  color: rgba(203, 213, 225, 0.74);
+  font-size: 0.8rem;
+}
+
+.downloads-card__web-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.42rem 0.74rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  background: rgba(250, 204, 21, 0.12);
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .downloads-card__stores {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
-  .downloads-card__hero,
-  .downloads-card__body,
-  .downloads-card__ios {
+  .downloads-card__hero {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .downloads-card__android {
-    width: 4.4rem;
-    height: 4.4rem;
+  .downloads-card__footnote {
+    flex-direction: column;
+    align-items: flex-start;
   }
+}
 
-  .downloads-card__button {
-    width: 100%;
-  }
+.downloads-page--compact {
+  padding:
+    max(0.95rem, env(safe-area-inset-top))
+    max(0.72rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom))
+    max(0.72rem, env(safe-area-inset-left));
+}
+
+.downloads-page--compact .downloads-page__content {
+  max-width: 50rem;
+}
+
+.downloads-page--compact .downloads-card {
+  border-radius: 1rem;
+}
+
+.downloads-page--compact .downloads-card__hero {
+  gap: 0.72rem;
+  padding: 0.9rem 0.95rem 0.82rem;
+}
+
+.downloads-page--compact .downloads-card__eyebrow {
+  font-size: 0.64rem;
+  letter-spacing: 0.15em;
+}
+
+.downloads-page--compact .downloads-card__copy h1 {
+  margin-top: 0.3rem;
+  font-size: clamp(1.3rem, 4.5vw, 1.95rem);
+}
+
+.downloads-page--compact .downloads-card__subtitle {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.downloads-page--compact .downloads-card__spark {
+  gap: 0.3rem;
+  padding: 0.34rem 0.42rem;
+}
+
+.downloads-page--compact .downloads-card__spark-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+}
+
+.downloads-page--compact .downloads-card__stores {
+  gap: 0.62rem;
+  padding: 0.86rem 0.95rem;
+}
+
+.downloads-page--compact .downloads-store {
+  min-height: 4.55rem;
+  gap: 0.58rem;
+  border-radius: 0.8rem;
+  padding: 0.6rem 0.64rem;
+}
+
+.downloads-page--compact .downloads-store__icon-wrap {
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 0.58rem;
+}
+
+.downloads-page--compact .downloads-store__icon {
+  width: 1.02rem;
+  height: 1.02rem;
+}
+
+.downloads-page--compact .downloads-store__eyebrow {
+  font-size: 0.55rem;
+}
+
+.downloads-page--compact .downloads-store__copy h2 {
+  font-size: 0.88rem;
+}
+
+.downloads-page--compact .downloads-store__copy p {
+  margin-top: 0.26rem;
+  font-size: 0.68rem;
+}
+
+.downloads-page--compact .downloads-store__cta,
+.downloads-page--compact .downloads-store__badge {
+  min-height: 1.45rem;
+  min-width: 2.58rem;
+  font-size: 0.62rem;
+}
+
+.downloads-page--compact .downloads-card__footnote {
+  gap: 0.6rem;
+  padding: 0 0.95rem 0.95rem;
+}
+
+.downloads-page--compact .downloads-card__footnote p {
+  font-size: 0.72rem;
+}
+
+.downloads-page--compact .downloads-card__web-link {
+  min-height: 1.8rem;
+  padding: 0.34rem 0.58rem;
+  font-size: 0.68rem;
 }
 </style>
