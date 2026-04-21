@@ -14,14 +14,13 @@ const { deleteAccount, getAccountSummary } = useAccountApi()
 const { signOut } = useGoogleLogin()
 const admob = useAdMob()
 const { isWebApp } = useAppSource()
-const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isPermissionsDialogOpen = ref(false)
 const countryName = ref<string>('Not available')
 const mounted = ref(false)
 const isInterstitialNavigating = ref(false)
-const isAccountCompact = computed(() => config.public.uiDensityLobby === 'compact')
 
 const sessionReady = computed(() => mounted.value && hydrated.value)
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
@@ -119,10 +118,10 @@ onMounted(() => {
 <template>
   <div
     class="account-page"
-    :class="{ 'account-page--compact': isAccountCompact }"
+    :class="{ 'account-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Home" :compact="isAccountCompact" />
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="account-page__content">
       <section class="account-card">

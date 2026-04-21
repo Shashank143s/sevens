@@ -5,11 +5,7 @@ import { blogPosts } from '~/data/blog'
 
 const route = useRoute()
 const config = useRuntimeConfig()
-const isCompact = computed(() =>
-  config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
+const { isCompact } = useUiDensity()
 const canonicalPath = computed(() => {
   const path = route.path || '/blog'
   return path.endsWith('/') ? path : `${path}/`
@@ -46,7 +42,7 @@ useHead(() => ({
     class="blog-page"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Home" :compact="isCompact" />
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="blog-page__content">
       <section class="blog-hero">

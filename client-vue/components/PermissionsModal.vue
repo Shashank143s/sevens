@@ -19,8 +19,7 @@ const {
   disableNotifications,
 } = useNotificationPermission()
 const { isAndroidApp, isWebApp } = useAppSource()
-const config = useRuntimeConfig()
-const isCompact = computed(() => config.public.uiDensityLobby === 'compact')
+const { isCompact } = useUiDensity()
 
 const notificationsActive = computed(() => notificationsEnabled.value)
 const toggleLabel = computed(() => {

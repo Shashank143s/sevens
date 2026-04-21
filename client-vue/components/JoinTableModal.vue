@@ -3,7 +3,6 @@ const router = useRouter()
 
 const props = defineProps<{
   matchId: string
-  compact?: boolean
   roomName?: string
   roomStake?: number
   playerName: string
@@ -12,6 +11,7 @@ const props = defineProps<{
   requiresPassword?: boolean
   disabled?: boolean
 }>()
+const { isCompact } = useUiDensity()
 
 const emit = defineEmits<{
   'update:playerName': [value: string]
@@ -24,11 +24,11 @@ const emit = defineEmits<{
 <template>
   <div
     class="join-table-modal w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 text-white shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl"
-    :class="compact ? 'join-table-modal--compact max-w-xl rounded-[1.35rem]' : ''"
+    :class="isCompact ? 'join-table-modal--compact max-w-xl rounded-[1.35rem]' : ''"
   >
     <div
       class="join-table-modal__header border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_30%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4"
-      :class="compact ? 'px-4 py-3' : ''"
+      :class="isCompact ? 'px-4 py-3' : ''"
     >
       <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
@@ -57,7 +57,7 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <div class="join-table-modal__body p-5" :class="compact ? 'p-4' : ''">
+    <div class="join-table-modal__body p-5" :class="isCompact ? 'p-4' : ''">
       <div class="mb-4">
         <label class="mb-1.5 block text-sm font-semibold text-slate-300">Alias</label>
         <input

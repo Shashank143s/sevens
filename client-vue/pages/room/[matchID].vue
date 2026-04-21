@@ -13,7 +13,7 @@ import TablePrepScreen from '~/components/TablePrepScreen.vue'
 import RoomLoadingBanner from '~/components/RoomLoadingBanner.vue'
 
 const route = useRoute()
-const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
 const { getCredentials, getRoomMeta, setCredentials } = useRoomCredentials()
@@ -35,7 +35,6 @@ const roomPassword = ref('')
 const requiresPassword = ref(false)
 const roomName = ref('')
 const roomStake = ref<number | null>(null)
-const isJoinModalCompact = computed(() => config.public.uiDensityLobby === 'compact')
 const creatorRoomPassword = ref('')
 const copiedPassword = ref(false)
 const tablePrepVisible = ref(false)
@@ -351,7 +350,7 @@ const loadingCards = [
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
     <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
-    <div class="w-full max-w-md" :class="{ 'max-w-xl': isJoinModalCompact }">
+    <div class="w-full max-w-md" :class="{ 'max-w-xl': isCompact }">
       <div
         v-if="creatorRoomPassword"
         class="mb-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 backdrop-blur-sm"
@@ -394,7 +393,6 @@ const loadingCards = [
       </p>
       <JoinTableModal
         :match-id="matchID"
-        :compact="isJoinModalCompact"
         :room-name="roomName"
         :room-stake="roomStake ?? undefined"
         :player-name="playerName"
@@ -422,7 +420,6 @@ const loadingCards = [
   >
     <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <WaitingForPlayersModal
-      :compact="isJoinModalCompact"
       :room-name="roomName"
       :joined-count="joinedCount"
       :total-players="totalPlayers"

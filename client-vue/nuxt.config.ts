@@ -36,8 +36,6 @@ export default defineNuxtConfig({
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://sevensroyale.com',
       appSource: process.env.NUXT_PUBLIC_APP_SOURCE || 'web',
       uiDensity: process.env.NUXT_PUBLIC_UI_DENSITY || 'cozy',
-      uiDensityLobby: process.env.NUXT_PUBLIC_UI_DENSITY_LOBBY || 'cozy',
-      uiDensityHome: process.env.NUXT_PUBLIC_UI_DENSITY_HOME || 'cozy',
       admobEnabled: process.env.NUXT_PUBLIC_ADMOB_ENABLED || 'true',
       admobTestMode: process.env.NUXT_PUBLIC_ADMOB_TEST_MODE || 'true',
       admobBannerAdUnitId: process.env.NUXT_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || '',

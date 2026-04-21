@@ -9,11 +9,11 @@ const { isAndroidApp } = useAppSource()
 const { session } = usePlayerSession()
 const { openAuth } = useGoogleLogin()
 const { isSupported: notificationsSupported, isGranted: notificationsGranted, refreshPermission } = useNotificationPermission()
+const { isCompact } = useUiDensity()
 const pwa = import.meta.client ? usePWA() : undefined
 const showPermissionsModal = ref(false)
 const permissionPromptCheckedThisLaunch = useState<boolean>('permission-prompt-checked-this-launch', () => false)
 const canonicalUrl = computed(() => new URL(route.path || '/', config.public.siteUrl).toString())
-const isHomeCompact = computed(() => config.public.uiDensityHome === 'compact')
 
 useHead(() => ({
   link: [
@@ -110,9 +110,9 @@ onMounted(async () => {
     class="home-shell box-border min-h-[100dvh] overflow-x-hidden text-white relative bg-cover bg-center bg-no-repeat"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar :reserve-space="false" :compact="isHomeCompact" />
+    <AppTopBar :reserve-space="false" />
 
-    <section class="mobile-home" :class="{ 'mobile-home--compact': isHomeCompact }">
+    <section class="mobile-home" :class="{ 'mobile-home--compact': isCompact }">
       <div class="mobile-home__content">
         <p class="mobile-home__eyebrow">The Classic Game, Elevated</p>
         <h1 class="mobile-home__title">Sevens Royale</h1>
@@ -321,7 +321,7 @@ onMounted(async () => {
 }
 
 .mobile-home--compact .mobile-home__title {
-  font-size: clamp(2.6rem, 7.4vw, 5rem);
+  font-size: clamp(3.6rem, 7.4vw, 5rem);
   line-height: 0.92;
 }
 

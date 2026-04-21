@@ -9,15 +9,8 @@ const props = defineProps<{
   isFull: boolean
   statusDotClass: string
   displayTitle: string
-  compact?: boolean
 }>()
-const config = useRuntimeConfig()
-const isCompact = computed(() =>
-  props.compact
-  || config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
+const { isCompact } = useUiDensity()
 
 const emit = defineEmits<{
   join: [matchID: string]

@@ -4,13 +4,9 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 const route = useRoute()
 const config = useRuntimeConfig()
 const { session, hydrated } = usePlayerSession()
+const { isCompact } = useUiDensity()
 const mounted = ref(false)
 const sessionReady = computed(() => mounted.value && hydrated.value)
-const isCompact = computed(() =>
-  config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
 const canonicalUrl = computed(() => new URL(route.path || '/instructions', config.public.siteUrl).toString())
 
 useHead(() => ({
@@ -45,7 +41,7 @@ const primaryCta = computed(() => {
 const journeySteps = [
   {
     title: '1. Get to the lobby',
-    body: 'Sign in, open the lobby, and either create a room or join one with open seats. You can create up to 10 rooms per UTC day, and you can still join existing rooms anytime.',
+    body: 'Sign in, open the lobby, and either create a room or join one with open seats. You can always create a new room or join an existing room anytime.',
   },
   {
     title: '2. Start with the seven of spades',
@@ -66,7 +62,7 @@ const journeySteps = [
 ]
 
 const quickFacts = [
-  { label: 'Create rooms', value: '10 per UTC day' },
+  { label: 'Create rooms', value: 'Anytime' },
   { label: 'Minimum stake', value: '10 coins' },
   { label: 'Start balance', value: '100 coins' },
   { label: 'Reward video', value: 'Android only (+5)' },
@@ -106,7 +102,7 @@ onMounted(() => {
     :class="{ 'instructions-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar :back-to="primaryCta.to" :back-label="primaryCta.label" :compact="isCompact" />
+    <AppTopBar :back-to="primaryCta.to" :back-label="primaryCta.label" />
 
     <main class="instructions-page__content">
       <section class="instructions-hero">

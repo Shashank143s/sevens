@@ -10,7 +10,7 @@ const PAGE_SIZE = 4
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
 const { getAccountSummary, getAccountGames } = useAccountApi()
-const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 
 const mounted = ref(false)
 const isLoading = ref(true)
@@ -25,7 +25,6 @@ const stats = ref<{ games_played: number, wins: number, losses: number }>({
 })
 const recentGames = ref<AccountRecentGame[]>([])
 
-const isCompact = computed(() => config.public.uiDensityLobby === 'compact')
 const sessionReady = computed(() => mounted.value && hydrated.value)
 const accountIdentifier = computed(() => (session.value?.id || session.value?.email?.trim() || '').trim())
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
@@ -159,7 +158,7 @@ onMounted(async () => {
     :class="{ 'profile-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/account" back-label="Account" :compact="isCompact" />
+    <AppTopBar back-to="/account" back-label="Account" />
 
     <main class="profile-page__content">
       <section class="profile-page__card">

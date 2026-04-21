@@ -26,7 +26,6 @@ const { getAccount, rewardCoins } = useAccountApi()
 const { completeGameRecord, getGameRecord } = useGameApi()
 const admob = useAdMob()
 const { topInsetCss } = useAndroidViewportInsets()
-const config = useRuntimeConfig()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
@@ -37,9 +36,6 @@ const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
 const isSocketConnected = computed(() => state.value?.isConnected !== false)
 const showReconnectNotice = computed(() => !isGameOver.value && (!isOnline.value || !isSocketConnected.value))
-const isWinnerOverlayCompact = computed(() =>
-  config.public.uiDensity === 'compact' || config.public.uiDensityLobby === 'compact',
-)
 const reconnectNoticeStyle = computed(() => ({
   top: `max(1rem, ${topInsetCss.value})`,
 }))
@@ -474,7 +470,6 @@ onMounted(() => {
       :reward-claimed="rewardClaimed"
       :reward-status="rewardStatus"
       :reward-coin-burst-key="rewardCoinBurstKey"
-      :compact="isWinnerOverlayCompact"
       @go-lobby="router.push('/lobby')"
       @watch-reward="watchRewardVideo"
     />

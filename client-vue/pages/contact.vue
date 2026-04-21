@@ -3,12 +3,8 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalUrl = computed(() => new URL(route.path || '/contact', config.public.siteUrl).toString())
-const isCompact = computed(() =>
-  config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
 
 useHead(() => ({
   link: [
@@ -32,7 +28,7 @@ useSeoMeta({
     :class="{ 'contact-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Home" :compact="isCompact" />
+    <AppTopBar back-to="/" back-label="Home" />
 
     <main class="contact-page__content">
       <section class="contact-card contact-card--hero">

@@ -7,12 +7,12 @@ import { useRoomCredentials } from '~/composables/useRoomCredentials'
 import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
-const config = useRuntimeConfig()
 const { session } = usePlayerSession()
 const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
 const { getAccountSummary } = useAccountApi()
 const { isOnline } = useOnlineStatus()
+const { isCompact } = useUiDensity()
 const {
   isSupported: notificationsSupported,
   isGranted: notificationsGranted,
@@ -41,7 +41,6 @@ const createRoomName = ref('')
 const roomNameTouched = ref(false)
 const stakeTouched = ref(false)
 const showBotsInfo = ref(false)
-const isLobbyCompact = computed(() => config.public.uiDensityLobby === 'compact')
 
 const createRoomDisabled = computed(() => !isOnline.value || (coinsBalance.value != null && coinsBalance.value < 10))
 const botOptions = computed(() => {
@@ -315,10 +314,10 @@ onMounted(() => {
 <template>
   <div
     class="lobby-page box-border h-[100dvh] overflow-hidden bg-slate-900 text-white p-4 sm:p-6 safe-area-padding bg-cover bg-center bg-no-repeat"
-    :class="{ 'lobby-page--compact': isLobbyCompact }"
+    :class="{ 'lobby-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/" back-label="Back" :compact="isLobbyCompact" />
+    <AppTopBar back-to="/" back-label="Back" />
 
     <div class="mx-auto w-full max-w-5xl">
       <div
@@ -449,7 +448,6 @@ onMounted(() => {
               :is-full="isRoomFull(room)"
               :status-dot-class="roomStatusDotClass(room)"
               :display-title="room.room_name || displayRoomID(room.matchID)"
-              :compact="isLobbyCompact"
               @join="joinRoom"
             />
           </div>
@@ -460,7 +458,6 @@ onMounted(() => {
 
   <CreateRoomModal
     :visible="showCreateModal"
-    :compact="isLobbyCompact"
     :coins-balance-label="coinsBalanceLabel"
     :bot-options="botOptions"
     :creating="creating"

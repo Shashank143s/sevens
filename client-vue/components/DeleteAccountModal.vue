@@ -9,8 +9,7 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
-const config = useRuntimeConfig()
-const isCompact = computed(() => config.public.uiDensityLobby === 'compact')
+const { isCompact } = useUiDensity()
 </script>
 
 <template>

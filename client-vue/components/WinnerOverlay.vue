@@ -15,21 +15,14 @@ const props = defineProps<{
   rewardClaimed?: boolean
   rewardStatus?: string | null
   rewardCoinBurstKey?: number
-  compact?: boolean
 }>()
 
 const emit = defineEmits<{
   goLobby: []
   watchReward: []
 }>()
-const config = useRuntimeConfig()
 const { registerSound, playSound, stopSound } = useSoundEffects()
-const isCompact = computed(() =>
-  !!props.compact
-  || config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
+const { isCompact } = useUiDensity()
 
 const showCoinTransfer = computed(() => props.didIWin && (props.wonCoins ?? 0) > 0 && props.totalCoins != null)
 const coinTrail = Array.from({ length: 5 }, (_, index) => index)

@@ -3,12 +3,8 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 const canonicalUrl = computed(() => new URL(route.path || '/downloads', config.public.siteUrl).toString())
-const isCompact = computed(() =>
-  config.public.uiDensity === 'compact'
-  || config.public.uiDensityLobby === 'compact'
-  || config.public.uiDensityHome === 'compact',
-)
 const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sevensroyale.app'
 
 useHead(() => ({
@@ -33,7 +29,7 @@ useSeoMeta({
     :class="{ 'downloads-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/account" back-label="Account" :compact="isCompact" />
+    <AppTopBar back-to="/account" back-label="Account" />
 
     <main class="downloads-page__content">
       <section class="downloads-card">

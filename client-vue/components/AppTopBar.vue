@@ -3,16 +3,15 @@ const props = withDefaults(defineProps<{
   backTo?: string
   backLabel?: string
   reserveSpace?: boolean
-  compact?: boolean
 }>(), {
   backTo: '',
   backLabel: '',
   reserveSpace: true,
-  compact: false,
 })
 
 const router = useRouter()
 const { topInsetCss } = useAndroidViewportInsets()
+const { isCompact } = useUiDensity()
 const showBack = computed(() => !!props.backTo && !!props.backLabel)
 
 function goBack() {
@@ -24,7 +23,7 @@ function goBack() {
 <template>
   <div
     class="app-topbar"
-    :class="{ 'app-topbar--compact': compact }"
+    :class="{ 'app-topbar--compact': isCompact }"
     :style="{ '--app-topbar-safe-top': topInsetCss }"
   >
     <header class="app-topbar__header">
@@ -41,7 +40,7 @@ function goBack() {
         class="app-topbar__back app-topbar__back--ghost"
         aria-hidden="true"
       />
-      <AppUserMenu :compact="compact" />
+      <AppUserMenu />
     </header>
     <div v-if="reserveSpace" class="app-topbar__spacer" aria-hidden="true" />
   </div>
@@ -123,7 +122,7 @@ function goBack() {
 :global(.app-topbar--compact) .app-topbar__spacer {
   height: calc(max(0.62rem, var(--app-topbar-safe-top)) + 2.2rem + 0.68rem);
   min-height: 2.18rem;
-  padding: 0.44rem 0.68rem;
+  padding: 1.9rem 0.68rem;
   border-radius: 0.78rem;
   font-size: 0.8rem;
   line-height: 1;

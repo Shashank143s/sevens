@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { isAndroidApp } = useAppSource()
+const showBlogLink = computed(() => !isAndroidApp.value)
+</script>
+
 <template>
   <footer class="home-footer" aria-label="Sevens Royale information">
     <div class="home-footer__inner">
@@ -8,7 +13,7 @@
         <NuxtLink to="/instructions" class="home-footer__link">
           Instructions
         </NuxtLink>
-        <NuxtLink to="/blog" class="home-footer__link">
+        <NuxtLink v-if="showBlogLink" to="/blog" class="home-footer__link">
           Blog
         </NuxtLink>
         <NuxtLink to="/privacy-policy" class="home-footer__link">

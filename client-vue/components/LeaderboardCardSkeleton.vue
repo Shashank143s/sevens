@@ -1,13 +1,11 @@
 <script setup lang="ts">
-defineProps<{
-  compact?: boolean
-}>()
+const { isCompact } = useUiDensity()
 </script>
 
 <template>
   <article
     class="leaderboard-skeleton animate-pulse"
-    :class="{ 'leaderboard-skeleton--compact': compact }"
+    :class="{ 'leaderboard-skeleton--compact': isCompact }"
     aria-hidden="true"
   >
     <div class="leaderboard-skeleton__top">

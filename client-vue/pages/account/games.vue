@@ -7,7 +7,7 @@ const PAGE_SIZE = 5
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getAccountGames } = useAccountApi()
-const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 
 const accountStats = ref<{ games_played: number; wins: number; losses: number } | null>(null)
 const games = ref<AccountRecentGame[]>([])
@@ -19,7 +19,6 @@ const offset = ref(0)
 
 const accountIdentifier = computed(() => session.value?.id || session.value?.email?.trim() || '')
 const totals = computed(() => accountStats.value ?? { games_played: 0, wins: 0, losses: 0 })
-const isCompact = computed(() => config.public.uiDensityLobby === 'compact')
 
 function formatDate(value?: string | number) {
   if (!value) return 'Still active'
@@ -100,7 +99,7 @@ onMounted(async () => {
     :class="{ 'games-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/account/profile" back-label="Profile" :compact="isCompact" />
+    <AppTopBar back-to="/account/profile" back-label="Profile" />
 
     <main class="games-page__content">
       <section class="games-page__hero">

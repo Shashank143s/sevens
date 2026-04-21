@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
   visible: boolean
-  compact?: boolean
   coinsBalanceLabel: string | null
   botOptions: number[]
   creating: boolean
@@ -15,6 +14,7 @@ const props = defineProps<{
   stakeError: string
   showBotsInfo: boolean
 }>()
+const { isCompact } = useUiDensity()
 
 const emit = defineEmits<{
   close: []
@@ -77,16 +77,16 @@ watch(() => props.visible, async (open) => {
     <div
       v-if="visible"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4"
-      :class="compact ? 'p-2.5 sm:p-3' : ''"
+      :class="isCompact ? 'p-2.5 sm:p-3' : ''"
       @click.self="emit('close')"
     >
       <div
         class="create-room-modal w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl"
-        :class="compact ? 'create-room-modal--compact max-w-xl rounded-[1.35rem]' : ''"
+        :class="isCompact ? 'create-room-modal--compact max-w-xl rounded-[1.35rem]' : ''"
       >
         <div
           class="create-room-modal__header border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-5 py-4"
-          :class="compact ? 'px-4 py-3' : ''"
+          :class="isCompact ? 'px-4 py-3' : ''"
         >
           <div class="flex items-center justify-between gap-4">
             <div>
@@ -109,7 +109,7 @@ watch(() => props.visible, async (open) => {
             </div>
           </div>
         </div>
-        <div class="create-room-modal__body p-5" :class="compact ? 'p-4' : ''">
+        <div class="create-room-modal__body p-5" :class="isCompact ? 'p-4' : ''">
           <label class="block text-sm font-semibold text-slate-300 mb-1.5">Room Name</label>
           <input
             ref="createRoomNameInput"

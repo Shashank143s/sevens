@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import UserAvatar from '~/components/UserAvatar.vue'
 
-withDefaults(defineProps<{
-  compact?: boolean
-}>(), {
-  compact: false,
-})
+const { isCompact } = useUiDensity()
 
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
@@ -65,7 +61,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="showMenu" class="user-menu" :class="{ 'user-menu--compact': compact }">
+  <div v-if="showMenu" class="user-menu" :class="{ 'user-menu--compact': isCompact }">
     <button
       type="button"
       class="user-menu__toggle"

@@ -6,7 +6,7 @@ import UserAvatar from '~/components/UserAvatar.vue'
 const router = useRouter()
 const { session } = usePlayerSession()
 const { getLeaderboard } = useAccountApi()
-const config = useRuntimeConfig()
+const { isCompact } = useUiDensity()
 
 const entries = ref<LeaderboardEntry[]>([])
 const currentUserEntry = ref<LeaderboardEntry | null>(null)
@@ -14,7 +14,6 @@ const isLoading = ref(true)
 const loadError = ref('')
 const expandedCards = ref<Record<string, boolean>>({})
 const currentUserId = computed(() => session.value?.id || session.value?.email?.trim() || '')
-const isCompact = computed(() => config.public.uiDensityLobby === 'compact')
 const currentUserInTopList = computed(() =>
   !!currentUserEntry.value && entries.value.some(entry => entry.user_id === currentUserEntry.value?.user_id),
 )
@@ -86,7 +85,7 @@ onMounted(async () => {
     :class="{ 'leaderboard-page--compact': isCompact }"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <AppTopBar back-to="/account" back-label="Account" :compact="isCompact" />
+    <AppTopBar back-to="/account" back-label="Account" />
 
     <main class="leaderboard-page__content">
       <section class="leaderboard-page__hero">
@@ -113,10 +112,10 @@ onMounted(async () => {
         {{ loadError }}
       </p>
       <section v-else-if="isLoading" class="leaderboard-page__list" aria-label="Loading leaderboard">
-        <LeaderboardCardSkeleton :compact="isCompact" />
-        <LeaderboardCardSkeleton :compact="isCompact" />
-        <LeaderboardCardSkeleton :compact="isCompact" />
-        <LeaderboardCardSkeleton :compact="isCompact" />
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
+        <LeaderboardCardSkeleton />
       </section>
       <p v-else-if="entries.length === 0" class="leaderboard-page__message">
         No leaderboard entries yet.
