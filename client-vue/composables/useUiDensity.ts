@@ -1,39 +1,83 @@
 export type UiDensityMode = 'compact' | 'cozy'
 
+const STORAGE_KEY = 'sevens-ui-density'
+const MOBILE_BREAKPOINT = '(max-width: 640px)'
+
+function isMobileUserAgent(userAgent = '') {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
+}
+
+function readStoredDensity(): UiDensityMode | null {
+  if (import.meta.server) return null
+
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (raw === 'cozy' || raw === 'compact') return raw
+  } catch {}
+
+  return null
+}
+
+function writeStoredDensity(mode: UiDensityMode) {
+  if (import.meta.server) return
+
+  try {
+    sessionStorage.setItem(STORAGE_KEY, mode)
+  } catch {}
+}
+
+function resolveViewportDensity(): UiDensityMode {
+  if (import.meta.client) {
+    return window.matchMedia(MOBILE_BREAKPOINT).matches ? 'compact' : 'cozy'
+  }
+
+  const headers = useRequestHeaders(['user-agent'])
+  return isMobileUserAgent(headers['user-agent'] || '') ? 'compact' : 'cozy'
+}
+
+function resolveAndroidDensity(configuredDensity?: string): UiDensityMode {
+  return configuredDensity === 'cozy' ? 'cozy' : 'compact'
+}
+
+function resolveInitialDensity(isWebApp: boolean, configuredDensity?: string) {
+  if (!isWebApp) return resolveAndroidDensity(configuredDensity)
+  const storedDensity = readStoredDensity()
+  return storedDensity ?? resolveViewportDensity()
+}
+
 export function useUiDensity() {
   const config = useRuntimeConfig()
-
-  const density = computed<UiDensityMode>(() => (
-    config.public.uiDensity === 'cozy' ? 'cozy' : 'compact'
-  ))
+  const { isWebApp } = useAppSource()
+  const density = useState<UiDensityMode>(
+    'ui-density',
+    () => resolveInitialDensity(isWebApp.value, config.public.uiDensity),
+  )
   const isCompact = computed(() => density.value === 'compact')
 
-  // Commented this code. This way only the env variable NUXT_PUBLIC_UI_DENSITY
-  // will control the compact or coziness of the app.
-  
-  // useHead(() => ({
-  //   htmlAttrs: {
-  //     class: density.value === 'compact' ? 'ui-density-compact' : 'ui-density-cozy',
-  //   },
-  // }))
+  function setDensity(mode: UiDensityMode) {
+    density.value = mode
+  }
 
-  // function applyDensityClass(mode: UiDensityMode) {
-  //   if (typeof document === 'undefined') return
-  //   const root = document.documentElement
-  //   root.classList.remove('ui-density-compact', 'ui-density-cozy')
-  //   root.classList.add(mode === 'compact' ? 'ui-density-compact' : 'ui-density-cozy')
-  // }
+  onMounted(() => {
+    if (!isWebApp.value) return
 
-  // onMounted(() => {
-  //   applyDensityClass(density.value)
-  // })
+    const storedDensity = readStoredDensity()
+    const nextDensity = storedDensity ?? resolveViewportDensity()
 
-  // watch(density, (mode) => {
-  //   applyDensityClass(mode)
-  // })
+    if (nextDensity !== density.value) {
+      density.value = nextDensity
+    }
+  })
+
+  watch(density, (mode) => {
+    if (!import.meta.client || !isWebApp.value) return
+    writeStoredDensity(mode)
+  })
 
   return {
+    layout: density,
     density,
     isCompact,
+    setDensity,
   }
 }

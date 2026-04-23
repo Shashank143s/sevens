@@ -14,7 +14,7 @@ const { deleteAccount, getAccountSummary } = useAccountApi()
 const { signOut } = useGoogleLogin()
 const admob = useAdMob()
 const { isWebApp } = useAppSource()
-const { isCompact } = useUiDensity()
+const { isCompact, layout } = useUiDensity()
 const isDeleting = ref(false)
 const isDeleteDialogOpen = ref(false)
 const isPermissionsDialogOpen = ref(false)
@@ -155,6 +155,15 @@ onMounted(() => {
             <div class="account-history__info-row">
               <span class="account-history__info-label">Country</span>
               <span class="account-history__info-value">{{ countryName }}</span>
+            </div>
+            <div v-if="isWebApp" class="account-history__info-row account-history__info-row--layout">
+              <span class="account-history__info-label">Appearance</span>
+              <label class="account-history__layout-control">
+                <select v-model="layout" class="account-history__layout-select">
+                  <option value="cozy">Cozy</option>
+                  <option value="compact">Compact</option>
+                </select>
+              </label>
             </div>
             <button
               type="button"
@@ -668,6 +677,71 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.account-history__info-row--layout {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.account-history__layout-control {
+  position: relative;
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: block;
+  width: max-content;
+}
+
+.account-history__layout-control::after {
+  content: '';
+  position: absolute;
+  right: 0.95rem;
+  top: 50%;
+  width: 0.58rem;
+  height: 0.58rem;
+  border-right: 2px solid rgba(250, 204, 21, 0.9);
+  border-bottom: 2px solid rgba(250, 204, 21, 0.9);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.account-history__layout-select {
+  width: 7.4rem;
+  min-height: 2.55rem;
+  padding: 0.62rem 2.15rem 0.62rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at top left, rgba(250, 204, 21, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.94));
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-align: right;
+  text-align-last: right;
+  direction: rtl;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 10px 24px rgba(2, 6, 23, 0.18);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+}
+
+.account-history__layout-select:focus-visible {
+  border-color: rgba(212, 175, 55, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 0 3px rgba(212, 175, 55, 0.12),
+    0 10px 24px rgba(2, 6, 23, 0.18);
+}
+
+.account-history__layout-select option {
+  direction: ltr;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
 .account-card__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -881,6 +955,25 @@ onMounted(() => {
   font-size: 0.72rem;
 }
 
+.account-page--compact .account-history__layout-control {
+  width: max-content;
+}
+
+.account-page--compact .account-history__layout-select {
+  width: 6.6rem;
+  min-height: 2.25rem;
+  padding: 0.48rem 1.9rem 0.48rem 0.68rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-align-last: right;
+}
+
+.account-page--compact .account-history__layout-control::after {
+  right: 0.78rem;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
 .account-page--compact .account-history__link {
   min-height: 3.35rem;
   border-radius: 0.82rem;
@@ -895,6 +988,41 @@ onMounted(() => {
 .account-page--compact .account-history__arrow {
   width: 1rem;
   height: 1rem;
+}
+
+.account-page--compact .account-card__layout {
+  margin-top: 0.85rem;
+  border-radius: 1rem;
+  padding: 0.82rem 0.9rem;
+}
+
+.account-page--compact .account-card__layout-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
+.account-page--compact .account-card__layout-copy h2 {
+  font-size: 0.92rem;
+}
+
+.account-page--compact .account-card__layout-copy p {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.account-page--compact .account-card__layout-field {
+  gap: 0.32rem;
+}
+
+.account-page--compact .account-card__layout-field span {
+  font-size: 0.62rem;
+}
+
+.account-page--compact .account-card__layout-select {
+  min-height: 2.55rem;
+  padding: 0 0.75rem;
+  border-radius: 0.82rem;
+  font-size: 0.84rem;
 }
 
 .account-page--compact .account-card__actions {
@@ -975,6 +1103,10 @@ onMounted(() => {
   .account-card__chevron {
     width: 2.1rem;
     height: 2.1rem;
+  }
+
+  .account-history__layout-control {
+    width: max-content;
   }
 }
 </style>
