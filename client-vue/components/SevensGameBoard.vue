@@ -29,8 +29,10 @@ const { topInsetCss } = useAndroidViewportInsets()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
-const { clearCredentials } = useRoomCredentials()
+const { clearCredentials, getRoomMeta } = useRoomCredentials()
 const { isOnline } = useOnlineStatus()
+const roomMeta = getRoomMeta(props.matchId)
+const shouldFinalizeGame = Boolean(roomMeta?.creatorOwned)
 
 const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
@@ -342,11 +344,11 @@ async function watchRewardVideo() {
 }
 
 async function syncCompletedGame() {
-  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
+  if (!shouldFinalizeGame || completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
   let lastError: unknown = null
   try {
-    for (let attempt = 0; attempt < 4; attempt += 1) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
         const completed = await completeGameRecord(props.matchId, String(winnerID.value))
         finalizedGame.value = completed
@@ -357,8 +359,8 @@ async function syncCompletedGame() {
       } catch (error) {
         lastError = error
       }
-      if (attempt < 3) {
-        await new Promise((resolve) => setTimeout(resolve, 1200))
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 800))
       }
     }
     if (lastError) {

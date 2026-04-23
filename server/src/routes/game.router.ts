@@ -36,6 +36,13 @@ async function handlePut(ctx: GameRouteContext, matchID: string) {
   setJson(ctx, 200, { game: game as Record<string, unknown> });
 }
 
+function logGamePutTiming(matchID: string, startedAt: bigint, status?: number) {
+  const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+  console.log(
+    `[game-route] PUT /api/game/${matchID} status=${status ?? 'unknown'} duration=${durationMs.toFixed(1)}ms`,
+  );
+}
+
 async function handleAuthorizeJoin(ctx: GameRouteContext, matchID: string) {
   if (ctx.method !== 'POST') return setJson(ctx, 405, { error: 'Method not allowed' });
   const payload = (await readJsonBody(ctx)) as JoinAuthorizationPayload;
@@ -80,6 +87,7 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
   const match = matchGamePath(ctx);
   if (!match) return next();
 
+  const putStartedAt = ctx.method === 'PUT' ? process.hrtime.bigint() : null;
   try {
     await dispatchGameRoute(ctx, match[1]);
   } catch (error) {
@@ -94,5 +102,9 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
     }
     console.error('[game-route] Error:', error);
     setJson(ctx, 500, { error: 'Internal server error' });
+  } finally {
+    if (putStartedAt) {
+      logGamePutTiming(match[1], putStartedAt, ctx.status);
+    }
   }
 }
