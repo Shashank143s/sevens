@@ -139,7 +139,7 @@ async function settleCompletionIdempotently(
 
   const settlementClaim = await claimCoinSettlement(matchID);
   if (settlementClaim) {
-    return settleCompletedEconomy(game, players, resolveWinnerSeatId(payload));
+    return settleCompletedEconomy(matchID, game, players, resolveWinnerSeatId(payload));
   }
 
   const latestGame = await getGameRecord(matchID);
@@ -267,15 +267,45 @@ function applyPlayerResults(players: ReturnType<typeof normalizePlayers>, winner
   return winnerSeatId ? markWinnerResults(players, winnerSeatId) : players;
 }
 
+type JoinedPlayerIdentity = {
+  user_id?: string | Types.ObjectId;
+  player_id: string;
+};
+
+function isSameJoinedPlayer(existingPlayer: any, joinedPlayer?: JoinedPlayerIdentity) {
+  if (!joinedPlayer) return false;
+
+  if (
+    joinedPlayer.user_id
+    && existingPlayer.user_id
+    && String(existingPlayer.user_id) === String(joinedPlayer.user_id)
+  ) {
+    return true;
+  }
+
+  return String(existingPlayer.player_id) === String(joinedPlayer.player_id);
+}
+
 function mergeJoinedPlayer(existingPlayers: any[], joinedPlayer?: GamePlayerPayload) {
   if (!joinedPlayer) return existingPlayers;
   const normalizedPlayer = normalizePlayer(joinedPlayer);
-  const existingPlayer = existingPlayers.find((player) => player.player_id === normalizedPlayer.player_id);
-  const withoutPlayer = existingPlayers.filter((player) => player.player_id !== normalizedPlayer.player_id);
+  const existingPlayer = existingPlayers.find((player) => isSameJoinedPlayer(player, normalizedPlayer));
+  const withoutPlayer = existingPlayers.filter((player) => !isSameJoinedPlayer(player, normalizedPlayer));
   return [
     ...withoutPlayer,
     {
       ...normalizedPlayer,
+      player_id:
+        existingPlayer?.user_id
+        && normalizedPlayer.user_id
+        && String(existingPlayer.user_id) === String(normalizedPlayer.user_id)
+          ? existingPlayer.player_id
+          : normalizedPlayer.player_id,
+      user_id: existingPlayer?.user_id ?? normalizedPlayer.user_id,
+      joined_at: existingPlayer?.joined_at ?? normalizedPlayer.joined_at,
+      left_at: existingPlayer?.left_at ?? normalizedPlayer.left_at,
+      result: existingPlayer?.result ?? normalizedPlayer.result,
+      finish_position: existingPlayer?.finish_position ?? normalizedPlayer.finish_position,
       coins: existingPlayer?.coins ?? normalizedPlayer.coins,
       xp: existingPlayer?.xp ?? normalizedPlayer.xp,
     },
@@ -294,7 +324,7 @@ function buildUpdatedPlayers(existingPlayers: any[], payload: UpdateGamePayload)
 function hasReservedCoinsForSeat(existingPlayers: any[], joinedPlayer?: GamePlayerPayload) {
   if (!joinedPlayer) return false;
   const existingPlayer = normalizeExistingPlayers(existingPlayers).find(
-    (player) => player.player_id === joinedPlayer.player_id,
+    (player) => isSameJoinedPlayer(player, joinedPlayer),
   );
   return (existingPlayer?.coins?.reserved ?? 0) > 0;
 }

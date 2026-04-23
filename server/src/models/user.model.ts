@@ -40,6 +40,11 @@ const userWalletSchema = new Schema(
       default: 0,
       min: 0,
     },
+    settled_match_ids: {
+      type: [String],
+      required: true,
+      default: [],
+    },
   },
   {
     _id: false,

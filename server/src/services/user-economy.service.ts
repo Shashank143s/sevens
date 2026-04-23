@@ -154,7 +154,12 @@ export async function releaseReservedCoins(players: EconomyPlayer[]) {
   await UserModel.bulkWrite(reservationOps as any);
 }
 
-export async function settleCompletedEconomy(game: EconomyGame, players: EconomyPlayer[], winnerSeatId?: string) {
+export async function settleCompletedEconomy(
+  matchID: string,
+  game: EconomyGame,
+  players: EconomyPlayer[],
+  winnerSeatId?: string,
+) {
   const stake = getStake(game);
   const botReward = getBotReward(game);
   const settledAt = new Date();
@@ -207,7 +212,10 @@ export async function settleCompletedEconomy(game: EconomyGame, players: Economy
       const reservedAmount = originalPlayer?.coins?.reserved ?? 0;
       return {
         updateOne: {
-          filter: { _id: player.user_id },
+          filter: {
+            _id: player.user_id,
+            'wallet.settled_match_ids': { $ne: matchID },
+          },
           update: [
             {
               $set: {
@@ -215,6 +223,12 @@ export async function settleCompletedEconomy(game: EconomyGame, players: Economy
                   $add: ['$wallet.coins_balance', player.coins?.delta ?? 0],
                 },
                 'wallet.coins_reserved': buildReservedCoinsClampUpdate(reservedAmount),
+                'wallet.settled_match_ids': {
+                  $concatArrays: [
+                    { $ifNull: ['$wallet.settled_match_ids', []] },
+                    [matchID],
+                  ],
+                },
                 'progression.xp_total': {
                   $add: ['$progression.xp_total', player.xp?.delta ?? 0],
                 },
