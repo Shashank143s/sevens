@@ -15,14 +15,11 @@ type CreateGameRecordPayload = {
   }
 }
 
-type JoinGameRecordPayload = {
-  joined_player: {
-    user_id?: string
-    player_id: string
-    display_name: string
-    is_bot?: boolean
-    joined_at: string
-  }
+type JoinMatchPayload = {
+  playerName: string
+  data: Record<string, unknown>
+  password?: string
+  user_id?: string
 }
 
 export function useGameApi() {
@@ -47,22 +44,15 @@ export function useGameApi() {
     return $fetch<GameRecordResponse>(buildGameUrl(matchID))
   }
 
-  async function authorizeJoin(matchID: string, password?: string, userID?: string) {
+  async function joinMatch(matchID: string, payload: JoinMatchPayload) {
     try {
-      return await $fetch(`${buildGameUrl(matchID)}/authorize-join`, {
+      return await $fetch<JoinGameResponse>(`${buildGameUrl(matchID)}/join`, {
         method: 'POST',
-        body: { password, user_id: userID },
+        body: payload,
       })
     } catch (error: any) {
       throw new Error(error?.data?.error ?? 'Unable to join this room')
     }
-  }
-
-  async function registerJoinedPlayer(matchID: string, payload: JoinGameRecordPayload) {
-    return $fetch(buildGameUrl(matchID), {
-      method: 'PUT',
-      body: payload,
-    })
   }
 
   async function markGameInProgress(matchID: string) {
@@ -87,13 +77,17 @@ export function useGameApi() {
   }
 
   return {
-    authorizeJoin,
     createGameRecord,
     getGameRecord,
-    registerJoinedPlayer,
+    joinMatch,
     markGameInProgress,
     completeGameRecord,
   }
+}
+
+type JoinGameResponse = {
+  playerID: string
+  playerCredentials: string
 }
 
 type GameRecordResponse = {

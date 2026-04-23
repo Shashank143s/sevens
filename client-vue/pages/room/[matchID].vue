@@ -17,7 +17,7 @@ const { isCompact } = useUiDensity()
 const matchID = computed(() => route.params.matchID as string)
 const { session } = usePlayerSession()
 const { getCredentials, getRoomMeta, setCredentials } = useRoomCredentials()
-const { authorizeJoin, getGameRecord, registerJoinedPlayer, markGameInProgress } = useGameApi()
+const { getGameRecord, joinMatch, markGameInProgress } = useGameApi()
 const { isOnline } = useOnlineStatus()
 const { registerSound, playSound, stopSound } = useSoundEffects()
 
@@ -212,41 +212,20 @@ const enterGame = async () => {
   try {
     joining.value = true
     joinError.value = null
-    await authorizeJoin(matchID.value, requiresPassword.value ? roomPassword.value : undefined, session.value?.id)
-    const metaRes = await fetch(getMatchUrl(matchID.value))
-    if (!metaRes.ok) {
-      joinError.value = 'Could not load the room. Please try again.'
-      return
-    }
-
-    const meta = await metaRes.json() as { players: { id: number; name?: string | null }[] }
-    const freeSlot = meta.players.find(p => !p.name)
-
-    if (!freeSlot) {
-      joinError.value = 'This room is full.'
-      return
-    }
-
-    const joinRes = await fetch(`${getMatchUrl(matchID.value)}/join`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        playerID: String(freeSlot.id),
-        playerName: playerName.value.trim(),
-        data: { avatar: avatar.value },
-      }),
+    const joinData = await joinMatch(matchID.value, {
+      playerName: playerName.value.trim(),
+      data: {
+        avatar: avatar.value,
+        userId: session.value?.id,
+        displayName: playerName.value.trim(),
+      },
+      password: requiresPassword.value ? roomPassword.value : undefined,
+      user_id: session.value?.id,
     })
 
-    if (!joinRes.ok) {
-      joinError.value = 'Unable to join the room right now.'
-      return
-    }
-
-    const joinData = await joinRes.json() as { playerID: string; playerCredentials: string }
     playerID.value = joinData.playerID
     playerCredentials.value = joinData.playerCredentials
     joined.value = true
-    await syncJoinedPlayer(joinData.playerID)
     setCredentials(matchID.value, {
       playerID: joinData.playerID,
       credentials: joinData.playerCredentials,
@@ -269,18 +248,6 @@ const enterGame = async () => {
   } finally {
     joining.value = false
   }
-}
-
-async function syncJoinedPlayer(joinedPlayerID: string) {
-  await registerJoinedPlayer(matchID.value, {
-    joined_player: {
-      user_id: session.value?.id,
-      player_id: joinedPlayerID,
-      display_name: playerName.value.trim(),
-      is_bot: false,
-      joined_at: new Date().toISOString(),
-    },
-  })
 }
 
 async function retryRoomFetch() {
