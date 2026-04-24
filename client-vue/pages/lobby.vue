@@ -8,6 +8,7 @@ import backgroundGame from '~/assets/images/poker_cards_table.png'
 
 const router = useRouter()
 const { session } = usePlayerSession()
+const { onlineCount } = useLobbyPresenceState()
 const { getCredentials, setRoomMeta } = useRoomCredentials()
 const { createGameRecord } = useGameApi()
 const { getAccountSummary } = useAccountApi()
@@ -80,6 +81,10 @@ const lobbyStatus = computed(() => {
   if (error.value) return error.value
   if (reconnecting.value) return 'Connection restored. Refreshing available rooms...'
   return null
+})
+const onlineUsersLabel = computed(() => {
+  const count = onlineCount.value
+  return `${count} online`
 })
 
 function joinedCount(m: LobbyMatch): number {
@@ -369,6 +374,13 @@ onMounted(() => {
             <h2 class="mt-1 font-semibold text-slate-100">Available Rooms</h2>
           </div>
           <div class="flex items-center gap-3">
+            <div
+              class="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100 shadow-[0_10px_25px_rgba(16,185,129,0.12)]"
+              :title="`${onlineCount} connected player${onlineCount === 1 ? '' : 's'}`"
+            >
+              <span class="mr-2 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.7)]" />
+              {{ onlineUsersLabel }}
+            </div>
             <div
               v-if="coinsBalanceLabel"
               class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"

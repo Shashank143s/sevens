@@ -14,6 +14,7 @@ import { gameRoute } from './routes/game.router';
 import { leaderboardRoute } from './routes/leaderboard.router';
 import { roomsRoute } from './routes/rooms.router';
 import { appRoute } from './routes/app.router';
+import { listLobbyPresence, removeLobbyPresence, upsertLobbyPresence } from './services/lobby-presence.service';
 
 const server = Server({
   games: [Sevens],
@@ -38,6 +39,33 @@ function registerRoutes() {
 function attachSocketLogging() {
   const io = (server.app as any)._io;
   if (!io) return;
+
+  const lobbyNamespace = io.of('/lobby');
+
+  lobbyNamespace.on('connection', (socket: any) => {
+    socket.on('presence:join', (payload: { userId?: string; name?: string }) => {
+      const presence = upsertLobbyPresence(socket.id, {
+        userId: payload.userId ?? '',
+        name: payload.name ?? '',
+      });
+
+      socket.data = socket.data ?? {};
+      socket.data.userId = presence?.userId ?? '';
+      socket.data.name = presence?.name ?? '';
+
+      lobbyNamespace.emit('presence:snapshot', { users: listLobbyPresence() });
+    });
+
+    socket.on('presence:leave', () => {
+      removeLobbyPresence(socket.id);
+      lobbyNamespace.emit('presence:snapshot', { users: listLobbyPresence() });
+    });
+
+    socket.on('disconnect', () => {
+      removeLobbyPresence(socket.id);
+      lobbyNamespace.emit('presence:snapshot', { users: listLobbyPresence() });
+    });
+  });
 
   io.of('sevens').on('connection', (socket: any) => {
     socket.on('sync', (matchID: string, playerID: string) => {

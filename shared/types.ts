@@ -22,3 +22,16 @@ export interface GameState {
   playedCards: Card[];
   players: Player[];
 }
+
+export interface LobbyPresenceUser {
+  userId: string;
+  name: string;
+  socketCount: number;
+  joinedAt: string;
+  lastSeenAt: string;
+}
+
+export interface LobbyPresenceJoinPayload {
+  userId: string;
+  name: string;
+}

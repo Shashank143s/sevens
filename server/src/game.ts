@@ -228,7 +228,8 @@ export const Sevens: Game<GameState> = {
   /**
    * GAME END CONDITION
    */
-  endIf: ({ G }: FnContext<GameState>) => {
+  endIf: ({ G, ctx }: FnContext<GameState>) => {
+    console.log(G, ctx);
     const winner = G.hands.findIndex(hand => hand.length === 0);
     if (winner !== -1) {
       return { winner };
