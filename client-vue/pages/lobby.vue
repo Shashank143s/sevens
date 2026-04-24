@@ -32,6 +32,7 @@ const error = ref<string | null>(null)
 const showCreateModal = ref(false)
 const createNumPlayers = ref(2)
 const createAiBots = ref(0)
+const botsAutoFillEnabled = ref(true)
 const createStake = ref(10)
 const creating = ref(false)
 const reconnecting = ref(false)
@@ -68,6 +69,12 @@ const roomNameError = computed(() => {
   if (roomName.length < 3) return 'Use at least 3 characters.'
   if (roomName.length > 40) return 'Keep it under 40 characters.'
   return ''
+})
+const roomSetupSummary = computed(() => {
+  const totalSeats = createNumPlayers.value
+  const botCount = Math.max(0, Math.min(createAiBots.value, totalSeats - 1))
+  const humanPlayers = Math.max(totalSeats - botCount, 1)
+  return `${humanPlayers} human player${humanPlayers === 1 ? '' : 's'} + ${botCount} bot${botCount === 1 ? '' : 's'}`
 })
 const stakeError = computed(() => {
   if (!stakeTouched.value) return ''
@@ -153,7 +160,8 @@ async function openCreateModal() {
   if (createRoomDisabled.value) return
   error.value = null
   createNumPlayers.value = 2
-  createAiBots.value = 0
+  createAiBots.value = 1
+  botsAutoFillEnabled.value = true
   createStake.value = 10
   createRoomName.value = ''
   roomNameTouched.value = false
@@ -167,6 +175,18 @@ async function openCreateModal() {
 function closeCreateModal() {
   showCreateModal.value = false
   showBotsInfo.value = false
+}
+
+function handleCreateNumPlayersUpdate(value: number) {
+  createNumPlayers.value = value
+  if (botsAutoFillEnabled.value) {
+    createAiBots.value = Math.max(0, value - 1)
+  }
+}
+
+function handleCreateAiBotsUpdate(value: number) {
+  botsAutoFillEnabled.value = false
+  createAiBots.value = value
 }
 
 function adjustStake(direction: 'up' | 'down') {
@@ -301,6 +321,10 @@ watch(isOnline, async (online, wasOnline) => {
 
 watch(createNumPlayers, () => {
   const maxBots = Math.max(createNumPlayers.value - 1, 0)
+  if (botsAutoFillEnabled.value) {
+    createAiBots.value = maxBots
+    return
+  }
   if (createAiBots.value > maxBots) {
     createAiBots.value = maxBots
   }
@@ -364,7 +388,7 @@ onMounted(() => {
       </section>
 
       <section
-        class="flex max-h-[calc(100dvh-10rem)] flex-col overflow-hidden rounded-[0.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl"
+        class="flex max-h-[calc(100dvh-8rem)] flex-col overflow-hidden rounded-[0.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] shadow-[0_30px_80px_rgba(2,6,23,0.42)] backdrop-blur-xl"
       >
         <div
           class="shrink-0 flex items-center justify-between gap-3 border-b border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(250,204,21,0.12),transparent_32%),linear-gradient(145deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] px-4 py-3.5"
@@ -374,21 +398,6 @@ onMounted(() => {
             <h2 class="mt-1 font-semibold text-slate-100">Available Rooms</h2>
           </div>
           <div class="flex items-center gap-3">
-            <div
-              class="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100 shadow-[0_10px_25px_rgba(16,185,129,0.12)]"
-              :title="`${onlineCount} connected player${onlineCount === 1 ? '' : 's'}`"
-            >
-              <span class="mr-2 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.7)]" />
-              {{ onlineUsersLabel }}
-            </div>
-            <div
-              v-if="coinsBalanceLabel"
-              class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"
-              :class="coinsBalanceToneClass"
-            >
-              <IconsCoinIcon class="mr-2 h-4 w-4" />
-              {{ coinsBalanceLabel }}
-            </div>
             <button
               type="button"
               class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-900/70 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
@@ -437,6 +446,23 @@ onMounted(() => {
             </button>
           </div>
         </div>
+        <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-slate-950/55 px-4 py-3">
+          <div
+            class="inline-flex items-center rounded-full border border-emerald-300/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-100 shadow-[0_10px_25px_rgba(16,185,129,0.12)]"
+            :title="`${onlineCount} connected player${onlineCount === 1 ? '' : 's'}`"
+          >
+            <span class="mr-2 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.7)]" />
+            {{ onlineUsersLabel }}
+          </div>
+          <div
+            v-if="coinsBalanceLabel"
+            class="inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold"
+            :class="coinsBalanceToneClass"
+          >
+            <IconsCoinIcon class="mr-2 h-4 w-4" />
+            {{ coinsBalanceLabel }}
+          </div>
+        </div>
         <div v-if="loading" class="flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.05),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-3 sm:p-4">
           <div class="space-y-3">
             <RoomCardSkeleton
@@ -445,8 +471,36 @@ onMounted(() => {
             />
           </div>
         </div>
-        <div v-else-if="rooms.length === 0" class="flex flex-1 items-center justify-center px-4 py-10 text-center text-slate-400">
-          No rooms available. Create one to start playing!
+        <div v-else-if="rooms.length === 0" class="flex min-h-[22rem] flex-1 items-center justify-center px-4 py-10 text-center text-slate-300">
+          <div class="max-w-md">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/20 bg-amber-400/10 text-amber-200 shadow-[0_14px_30px_rgba(245,158,11,0.12)]">
+              <svg
+                viewBox="0 0 24 24"
+                class="h-7 w-7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.1"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+            </div>
+            <p class="text-lg font-semibold text-slate-100">No rooms available.</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">
+              Create a room to start a table and invite others in.
+            </p>
+            <button
+              type="button"
+              class="mt-5 inline-flex items-center justify-center rounded-full bg-amber-400 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-[0_16px_36px_rgba(245,158,11,0.22)] transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="createRoomDisabled"
+              @click="openCreateModal"
+            >
+              Create a Room
+            </button>
+          </div>
         </div>
         <div v-else class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.05),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] p-3 sm:p-4">
           <div class="space-y-3">
@@ -482,6 +536,7 @@ onMounted(() => {
     :room-name-error="roomNameError"
     :stake-error="stakeError"
     :show-bots-info="showBotsInfo"
+    :room-setup-summary="roomSetupSummary"
     @close="closeCreateModal"
     @submit="doCreateRoom"
     @room-name-blur="roomNameTouched = true"
@@ -489,8 +544,8 @@ onMounted(() => {
     @mark-stake-touched="stakeTouched = true"
     @decrement-stake="adjustStake('down')"
     @increment-stake="adjustStake('up')"
-    @update:create-num-players="createNumPlayers = $event"
-    @update:create-ai-bots="createAiBots = $event"
+    @update:create-num-players="handleCreateNumPlayersUpdate"
+    @update:create-ai-bots="handleCreateAiBotsUpdate"
     @update:create-stake="createStake = $event"
     @update:create-private-room="createPrivateRoom = $event"
     @update:create-room-password="createRoomPassword = $event"

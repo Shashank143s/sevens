@@ -13,6 +13,7 @@ const props = defineProps<{
   roomNameError: string
   stakeError: string
   showBotsInfo: boolean
+  roomSetupSummary: string
 }>()
 const { isCompact } = useUiDensity()
 
@@ -127,8 +128,13 @@ watch(() => props.visible, async (open) => {
           <div v-else class="mb-4" />
 
           <div class="mb-4 grid grid-cols-2 gap-3">
-            <div>
-              <label class="create-room-modal__field-label">Room Size</label>
+            <div class="create-room-modal__field-group">
+              <div class="create-room-modal__field-meta">
+                <label class="create-room-modal__field-label">Total Seats</label>
+                <p class="create-room-modal__field-helper">
+                  Seats include bots.
+                </p>
+              </div>
               <div class="relative">
                 <select
                   v-model.number="createNumPlayersValue"
@@ -155,33 +161,38 @@ watch(() => props.visible, async (open) => {
               </div>
             </div>
 
-            <div>
-              <div class="create-room-modal__field-label create-room-modal__field-label--with-icon">
-                <span>Bots</span>
-                <div class="relative">
-                  <button
-                    type="button"
-                    class="create-room-modal__info-trigger"
-                    aria-label="Explain bots and room size"
-                    :aria-expanded="showBotsInfo ? 'true' : 'false'"
-                    @click="emit('update:showBotsInfo', !showBotsInfo)"
-                    @mouseenter="emit('update:showBotsInfo', true)"
-                    @mouseleave="emit('update:showBotsInfo', false)"
-                    @focus="emit('update:showBotsInfo', true)"
-                    @blur="emit('update:showBotsInfo', false)"
-                  >
-                    i
-                  </button>
-                  <Transition name="create-room-modal__tooltip">
-                    <div
-                      v-if="showBotsInfo"
-                      class="create-room-modal__tooltip"
-                      role="tooltip"
+            <div class="create-room-modal__field-group">
+              <div class="create-room-modal__field-meta">
+                <div class="create-room-modal__field-label create-room-modal__field-label--with-icon">
+                  <span>Bots</span>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      class="create-room-modal__info-trigger"
+                      aria-label="Explain bots and room size"
+                      :aria-expanded="showBotsInfo ? 'true' : 'false'"
+                      @click="emit('update:showBotsInfo', !showBotsInfo)"
+                      @mouseenter="emit('update:showBotsInfo', true)"
+                      @mouseleave="emit('update:showBotsInfo', false)"
+                      @focus="emit('update:showBotsInfo', true)"
+                      @blur="emit('update:showBotsInfo', false)"
                     >
-                      Room size includes bots. Example: 4 seats + 2 bots = 2 human players.
-                    </div>
-                  </Transition>
+                      i
+                    </button>
+                    <Transition name="create-room-modal__tooltip">
+                      <div
+                        v-if="showBotsInfo"
+                        class="create-room-modal__tooltip"
+                        role="tooltip"
+                      >
+                        Bots fill the open seats. Example: 4 seats + 2 bots = 2 human players.
+                      </div>
+                    </Transition>
+                  </div>
                 </div>
+                <p class="create-room-modal__field-helper">
+                  {{ roomSetupSummary }}
+                </p>
               </div>
               <div class="relative">
                 <select
@@ -300,7 +311,6 @@ watch(() => props.visible, async (open) => {
 <style scoped>
 .create-room-modal__field-label {
   display: block;
-  margin-bottom: 0.375rem;
   color: rgb(203 213 225);
   font-size: 0.875rem;
   font-weight: 600;
@@ -311,7 +321,26 @@ watch(() => props.visible, async (open) => {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  min-height: 1.25rem;
+}
+
+.create-room-modal__field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-room-modal__field-meta {
+  min-height: 3.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.create-room-modal__field-helper {
+  margin: 0;
+  color: rgb(148 163 184);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.1rem;
 }
 
 .create-room-modal__info-trigger {
@@ -391,6 +420,11 @@ watch(() => props.visible, async (open) => {
 
 .create-room-modal--compact .create-room-modal__body .mb-4 {
   margin-bottom: 0.72rem;
+}
+
+.create-room-modal--compact .create-room-modal__field-helper {
+  font-size: 0.68rem;
+  line-height: 1rem;
 }
 
 .create-room-modal--compact .create-room-modal__body .mb-5 {
