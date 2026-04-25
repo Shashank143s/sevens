@@ -29,10 +29,8 @@ const { topInsetCss } = useAndroidViewportInsets()
 
 const players = ref<PlayerInfo[]>([])
 const router = useRouter()
-const { clearCredentials, getRoomMeta } = useRoomCredentials()
+const { clearCredentials } = useRoomCredentials()
 const { isOnline } = useOnlineStatus()
-const roomMeta = getRoomMeta(props.matchId)
-const shouldFinalizeGame = Boolean(roomMeta?.creatorOwned)
 
 const winnerID = computed(() => state.value?.ctx?.gameover?.winner)
 const isGameOver = computed(() => winnerID.value != null)
@@ -72,7 +70,6 @@ const finalizedGame = ref<Awaited<ReturnType<typeof completeGameRecord>> | null>
 const gameFinishedLocally = ref(false)
 const redirectDeadline = ref<number | null>(null)
 let redirectTimer: ReturnType<typeof setInterval> | null = null
-let deleteRequested = false
 let completionSynced = false
 
 function inferWinnerCoinDelta(game?: Awaited<ReturnType<typeof getGameRecord>>['game'] | null) {
@@ -151,14 +148,6 @@ watch(
     clearCredentials(props.matchId)
     await syncCompletedGame()
     await loadWinnerEconomy()
-    // Best-effort: delete the room from the lobby once the game ends.
-    if (!deleteRequested) {
-      deleteRequested = true
-      fetch(`${useRuntimeConfig().public.apiBase}/api/match/delete/${props.matchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      }).catch(() => {})
-    }
     resumeRedirectTimer()
   },
   { immediate: true },
@@ -344,7 +333,7 @@ async function watchRewardVideo() {
 }
 
 async function syncCompletedGame() {
-  if (!shouldFinalizeGame || completionSynced || winnerID.value == null || state.value?.playerID == null) return
+  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
   let lastError: unknown = null
   try {

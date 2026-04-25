@@ -1,4 +1,4 @@
-import { connect } from 'mongoose';
+import { connect, disconnect } from 'mongoose';
 import { MONGODB_URI } from '../config';
 
 let connectionPromise: Promise<typeof import('mongoose')> | null = null;
@@ -10,4 +10,13 @@ export function connectToDatabase() {
   }
 
   return connectionPromise;
+}
+
+export async function closeDatabaseConnection() {
+  if (!connectionPromise) return;
+  try {
+    await disconnect();
+  } finally {
+    connectionPromise = null;
+  }
 }

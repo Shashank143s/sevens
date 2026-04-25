@@ -62,6 +62,11 @@ export type UpdateGamePayload = {
   };
 };
 
+export type GameEndMessagePayload = UpdateGamePayload & {
+  matchID: string;
+  correlationId: string;
+};
+
 export type JoinAuthorizationPayload = {
   password?: string;
   user_id?: string;

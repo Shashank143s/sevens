@@ -2,20 +2,25 @@
   "name": "sevens-server",
   "scripts": {
     "dev": "ts-node src/server.ts",
+    "dev:consumer": "ts-node src/consumer/main.ts",
     "slice-cards": "node scripts/slice-cards.mjs",
     "backfill-room-creators": "ts-node src/scripts/backfill-room-creators.ts",
     "build": "tsc",
-    "start": "node dist/server/src/server.js"
+    "start": "node dist/server/src/server.js",
+    "start:consumer": "node dist/server/src/consumer/main.js"
   },
   "dependencies": {
+    "amqplib": "^0.10.9",
     "boardgame.io": "^0.50.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "google-auth-library": "^10.6.2",
     "mongoose": "^9.3.1",
+    "redis": "^4.7.1",
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/express": "^4.17.21",
     "@types/node": "^22.5.5",
     "ts-node": "^10.9.2",

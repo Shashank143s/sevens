@@ -20,6 +20,8 @@ export type ApiRouteContext = JsonBodyContext & {
 export type JoinRouteContext = ApiRouteContext;
 export type AccountRouteContext = ApiRouteContext;
 export type GameRouteContext = ApiRouteContext;
+
+export type GameRouteServer = DeleteRouteServer;
 export type AuthRouteContext = ApiRouteContext;
 export type CleanupRouteContext = ApiRouteContext & {
   headers?: Record<string, string | string[] | undefined>;

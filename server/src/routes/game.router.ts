@@ -6,11 +6,13 @@ import {
   updateGameRecord,
 } from '../services/game-record.service';
 import { fetchGameDetails, joinGame } from '../services/game.service';
-import type { CreateGamePayload, JoinAuthorizationPayload, UpdateGamePayload } from '../types/game-record.types';
-import type { GameRouteContext, RouteNext } from '../types/route.types';
+import { publishGameEndMessage } from '../services/game-end-publisher.service';
+import type { CreateGamePayload, GameEndMessagePayload, JoinAuthorizationPayload, UpdateGamePayload } from '../types/game-record.types';
+import type { GameRouteContext, GameRouteServer, RouteNext } from '../types/route.types';
 import type { JoinGamePayload, JoinGameResponse } from '../types/service.types';
 import { readJsonBody } from '../utils/common.util';
 import { setJson } from '../utils/http.util';
+import { randomUUID } from 'node:crypto';
 
 function matchGamePath(ctx: GameRouteContext) {
   return ctx.path.match(/^\/api\/game\/([^/]+)$/);
@@ -34,6 +36,32 @@ async function handlePost(ctx: GameRouteContext, matchID: string) {
   const payload = (await readJsonBody(ctx)) as CreateGamePayload;
   const game = await createGameRecord(matchID, payload);
   setJson(ctx, 200, { game: game.toObject() as Record<string, unknown> });
+}
+
+async function closeBoardgameMatch(server: GameRouteServer, matchID: string) {
+  await server.db.wipe(matchID);
+  server.transport?.deleteMatchQueue?.(matchID);
+}
+
+async function handleDelete(ctx: GameRouteContext, server: GameRouteServer, matchID: string) {
+  const payload = (await readJsonBody(ctx)) as UpdateGamePayload & { correlationId?: string };
+  const correlationId = String(payload.correlationId ?? '').trim() || randomUUID();
+  const message: GameEndMessagePayload = {
+    ...payload,
+    status: 'completed',
+    matchID,
+    correlationId,
+  };
+
+  await publishGameEndMessage(message);
+  await closeBoardgameMatch(server, matchID);
+
+  setJson(ctx, 200, {
+    published: true,
+    closed: true,
+    matchID,
+    correlationId,
+  });
 }
 
 async function handlePut(ctx: GameRouteContext, matchID: string) {
@@ -156,19 +184,60 @@ async function handleJoin(ctx: GameRouteContext, matchID: string) {
   return setJson(ctx, 200, joinData);
 }
 
-async function dispatchGameRoute(ctx: GameRouteContext, matchID: string) {
+async function dispatchGameRoute(ctx: GameRouteContext, server: GameRouteServer, matchID: string) {
   if (ctx.method === 'GET') return handleGet(ctx, matchID);
   if (ctx.method === 'POST') return handlePost(ctx, matchID);
   if (ctx.method === 'PUT') return handlePut(ctx, matchID);
+  if (ctx.method === 'DELETE') return handleDelete(ctx, server, matchID);
   return null;
 }
 
-export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise<void> {
-  const joinMatch = matchJoinPath(ctx);
-  if (joinMatch) {
+export function createGameRoute(server: GameRouteServer) {
+  return async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise<void> {
+    const joinMatch = matchJoinPath(ctx);
+    if (joinMatch) {
+      try {
+        await handleJoin(ctx, joinMatch[1]);
+      } catch (error) {
+        if ((error as { status?: number }).status === 409) {
+          return setJson(ctx, 409, {
+            error: (error as Error).message,
+            reason: (error as { reason?: string }).reason ?? 'conflict',
+          });
+        }
+        console.error('[game-route] Error:', error);
+        setJson(ctx, 500, { error: 'Internal server error' });
+      }
+      return;
+    }
+
+    const authorizeMatch = matchAuthorizeJoinPath(ctx);
+    if (authorizeMatch) {
+      try {
+        await handleAuthorizeJoin(ctx, authorizeMatch[1]);
+      } catch (error) {
+        if ((error as { status?: number }).status === 409) {
+          return setJson(ctx, 409, {
+            error: (error as Error).message,
+            reason: (error as { reason?: string }).reason ?? 'conflict',
+          });
+        }
+        console.error('[game-route] Error:', error);
+        setJson(ctx, 500, { error: 'Internal server error' });
+      }
+      return;
+    }
+
+    const match = matchGamePath(ctx);
+    if (!match) return next();
+
+    const putStartedAt = ctx.method === 'PUT' ? process.hrtime.bigint() : null;
     try {
-      await handleJoin(ctx, joinMatch[1]);
+      await dispatchGameRoute(ctx, server, match[1]);
     } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes('room name')) {
+        return setJson(ctx, 400, { error: error.message });
+      }
       if ((error as { status?: number }).status === 409) {
         return setJson(ctx, 409, {
           error: (error as Error).message,
@@ -177,48 +246,10 @@ export async function gameRoute(ctx: GameRouteContext, next: RouteNext): Promise
       }
       console.error('[game-route] Error:', error);
       setJson(ctx, 500, { error: 'Internal server error' });
-    }
-    return;
-  }
-
-  const authorizeMatch = matchAuthorizeJoinPath(ctx);
-  if (authorizeMatch) {
-    try {
-      await handleAuthorizeJoin(ctx, authorizeMatch[1]);
-    } catch (error) {
-      if ((error as { status?: number }).status === 409) {
-        return setJson(ctx, 409, {
-          error: (error as Error).message,
-          reason: (error as { reason?: string }).reason ?? 'conflict',
-        });
+    } finally {
+      if (putStartedAt) {
+        logGamePutTiming(match[1], putStartedAt, ctx.status);
       }
-      console.error('[game-route] Error:', error);
-      setJson(ctx, 500, { error: 'Internal server error' });
     }
-    return;
-  }
-
-  const match = matchGamePath(ctx);
-  if (!match) return next();
-
-  const putStartedAt = ctx.method === 'PUT' ? process.hrtime.bigint() : null;
-  try {
-    await dispatchGameRoute(ctx, match[1]);
-  } catch (error) {
-    if (error instanceof Error && error.message.toLowerCase().includes('room name')) {
-      return setJson(ctx, 400, { error: error.message });
-    }
-    if ((error as { status?: number }).status === 409) {
-      return setJson(ctx, 409, {
-        error: (error as Error).message,
-        reason: (error as { reason?: string }).reason ?? 'conflict',
-      });
-    }
-    console.error('[game-route] Error:', error);
-    setJson(ctx, 500, { error: 'Internal server error' });
-  } finally {
-    if (putStartedAt) {
-      logGamePutTiming(match[1], putStartedAt, ctx.status);
-    }
-  }
+  };
 }

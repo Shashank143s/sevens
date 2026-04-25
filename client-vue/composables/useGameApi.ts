@@ -66,14 +66,39 @@ export function useGameApi() {
   }
 
   async function completeGameRecord(matchID: string, winnerPlayerID: string) {
-    return $fetch<GameRecordResponse>(buildGameUrl(matchID), {
-      method: 'PUT',
-      body: {
-        status: 'completed',
-        winner_seat_id: winnerPlayerID,
-        ended_at: new Date().toISOString(),
-      },
-    })
+    try {
+      await $fetch(buildGameUrl(matchID), {
+        method: 'DELETE',
+        body: {
+          status: 'completed',
+          winner_seat_id: winnerPlayerID,
+          ended_at: new Date().toISOString(),
+        },
+      })
+    } catch (error: any) {
+      throw new Error(error?.data?.error ?? 'Failed to end room')
+    }
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        const gameRecord = await getGameRecord(matchID)
+        const settlementStatus = gameRecord.game?.coin_settlement?.status
+        if (settlementStatus === 'completed' || settlementStatus === 'void') {
+          return gameRecord
+        }
+        if (attempt === 7) {
+          return gameRecord
+        }
+      } catch (error) {
+        if (attempt === 7) {
+          throw error
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 800))
+    }
+
+    throw new Error('Game settlement did not complete in time.')
   }
 
   return {

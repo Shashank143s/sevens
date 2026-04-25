@@ -25,8 +25,10 @@ The backend powers multiplayer game state, room lifecycle, joining, account sync
 
 ```bash
 npm run dev
+npm run dev:consumer
 npm run build
 npm run start
+npm run start:consumer
 ```
 
 ## Local Setup
@@ -50,6 +52,24 @@ FRONTEND_ORIGIN=http://localhost:3000
 FRONTEND_ORIGIN_REGEX=^https?:\/\/(localhost(:\d+)?)$
 MONGODB_URI=mongodb://127.0.0.1:27017/sevens
 MAX_DAILY_GAMES_PER_USER=10
+RABBITMQ_URL=amqps://user:pass@host/vhost
+RABBITMQ_EXCHANGE=sevens.game
+RABBITMQ_EXCHANGE_TYPE=topic
+RABBITMQ_ROUTING_KEY=sevens.game.end
+RABBITMQ_QUEUE=sevens.game.end
+RABBITMQ_RETRY_EXCHANGE=sevens.game.retry
+RABBITMQ_RETRY_QUEUE=sevens.game.end.retry
+RABBITMQ_RETRY_ROUTING_KEY=sevens.game.end.retry
+RABBITMQ_RETRY_DELAY_MS=5000
+RABBITMQ_DLX_EXCHANGE=dlx.sevens.game
+RABBITMQ_DLX_QUEUE=dlx.sevens.game.end
+RABBITMQ_DLX_ROUTING_KEY=dlx.sevens.game.end
+RABBITMQ_MAX_RETRIES=3
+REDIS_HOST=redis-host.example.com
+REDIS_PORT=19966
+REDIS_USERNAME=default
+REDIS_PASSWORD=secret
+REDIS_TLS=true
 ```
 
 Notes:
@@ -93,3 +113,4 @@ server/
 
 - Deployed on Render
 - Update CORS env values when changing frontend domains
+- Run the consumer as a separate process with `npm run start:consumer`
