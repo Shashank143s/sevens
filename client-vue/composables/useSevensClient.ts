@@ -2,6 +2,7 @@ import { Client } from 'boardgame.io/client'
 import { SocketIO } from 'boardgame.io/multiplayer'
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
+import { io as createSocket } from 'socket.io-client'
 import { Sevens } from '@server/game'
 import type { Card, Suit } from '@shared/types'
 import { useRuntimeConfig } from 'nuxt/app'
@@ -29,16 +30,20 @@ export function useSevensClient(
   const state: Ref<GameState | null> = ref(null)
 
   const config = useRuntimeConfig()
+  const socketServer = config.public.socketServer as string
+  const socket = createSocket(`${socketServer.replace(/\/$/, '')}/sevens`, {
+    autoConnect: false,
+    transports: ['websocket', 'polling'],
+  })
+
   const client = Client({
     game: Sevens,
-    multiplayer: SocketIO({ server: config.public.socketServer as string }),
+    multiplayer: SocketIO({ server: socketServer, socket }),
     debug: false,
     matchID,
     playerID: playerId,
     credentials,
   })
-
-  client.start()
 
   const unsubscribe = client.subscribe((s) => {
     if (s) {
@@ -53,9 +58,13 @@ export function useSevensClient(
     }
   })
 
+  client.start()
+  socket.connect()
+
   onUnmounted(() => {
     unsubscribe()
     client.stop()
+    socket.close()
   })
 
   return { state, client }
