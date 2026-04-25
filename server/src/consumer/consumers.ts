@@ -7,6 +7,7 @@ import {
   RABBITMQ_RETRY_DELAY_MS,
   RABBITMQ_RETRY_EXCHANGE,
   RABBITMQ_RETRY_ROUTING_KEY,
+  REDIS_PREFIX_KEY,
 } from '../config';
 import { updateGameRecord } from '../services/game-record.service';
 import type { GameEndMessagePayload } from '../types/game-record.types';
@@ -34,7 +35,7 @@ const COMPLETION_TTL_SECONDS = 300;
 const PROCESSING_LOCK_TTL_SECONDS = Math.max(300, COMPLETION_TTL_SECONDS * 2);
 
 function completionKey(matchID: string) {
-  return `end-match:${matchID}`;
+  return `${REDIS_PREFIX_KEY}:${matchID}`;
 }
 
 function processingKey(matchID: string) {
