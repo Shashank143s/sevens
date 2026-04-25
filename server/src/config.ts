@@ -43,6 +43,7 @@ const REDIS_USERNAME = (process.env.REDIS_USERNAME ?? 'default').trim();
 const REDIS_PASSWORD = (process.env.REDIS_PASSWORD ?? '').trim();
 const REDIS_TLS = (process.env.REDIS_TLS ?? 'false').trim().toLowerCase() !== 'false';
 const REDIS_PREFIX_KEY = (process.env.REDIS_PREFIX_KEY ?? 'end-match').trim();
+const CONSUMER_HEALTH_PORT = Number(process.env.CONSUMER_HEALTH_PORT ?? 9001);
 
 export {
   HOST,
@@ -82,4 +83,5 @@ export {
   REDIS_PASSWORD,
   REDIS_TLS,
   REDIS_PREFIX_KEY,
+  CONSUMER_HEALTH_PORT,
 };
