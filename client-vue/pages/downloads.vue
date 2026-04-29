@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import AdMobBottomBanner from '~/components/AdMobBottomBanner.vue'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -101,6 +102,8 @@ useSeoMeta({
         </div>
       </section>
     </main>
+
+    <AdMobBottomBanner />
   </div>
 </template>
 
@@ -111,7 +114,7 @@ useSeoMeta({
   padding:
     max(1.25rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right))
-    max(2rem, env(safe-area-inset-bottom))
+    calc(max(2rem, env(safe-area-inset-bottom)) + 50px)
     max(1rem, env(safe-area-inset-left));
   color: #f8fafc;
   background-size: cover;

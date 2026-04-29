@@ -16,6 +16,9 @@ const GOOGLE_TEST_REWARDED_AD_ID = 'ca-app-pub-3940256099942544/5224354917'
 
 let initPromise: Promise<boolean> | null = null
 let bannerVisible = false
+const interstitialCooldownMs = 5000
+let interstitialCooldownTimer: ReturnType<typeof setTimeout> | null = null
+let interstitialCooldownUntil = 0
 
 type AdMobRuntimeFlags = {
   admobEnabled?: string
@@ -54,6 +57,22 @@ function isTruthy(value: unknown, fallback = false) {
 function resolveAdId(explicitId: string | undefined, fallbackId: string) {
   const trimmed = explicitId?.trim()
   return trimmed || fallbackId
+}
+
+function isInterstitialCoolingDown() {
+  return interstitialCooldownUntil > Date.now()
+}
+
+function startInterstitialCooldown() {
+  interstitialCooldownUntil = Date.now() + interstitialCooldownMs
+  if (interstitialCooldownTimer != null) {
+    clearTimeout(interstitialCooldownTimer)
+  }
+
+  interstitialCooldownTimer = setTimeout(() => {
+    interstitialCooldownTimer = null
+    interstitialCooldownUntil = 0
+  }, interstitialCooldownMs)
 }
 
 function readRuntimeAdId(value: unknown) {
@@ -138,6 +157,7 @@ export function useAdMob() {
 
   async function showInterstitial() {
     if (!(await ensureReady())) return false
+    if (isInterstitialCoolingDown()) return false
 
     await AdMob.prepareInterstitial({
       adId: interstitialAdId.value,
@@ -146,6 +166,7 @@ export function useAdMob() {
       immersiveMode: true,
     })
     await AdMob.showInterstitial()
+    startInterstitialCooldown()
     return true
   }
 

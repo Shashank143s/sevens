@@ -5,6 +5,7 @@
     <string name="package_name">com.sevensroyale.app</string>
     <string name="custom_url_scheme">com.sevensroyale.app</string>
     <!-- Google sample AdMob app ID for test ads only. Replace with the real app ID before production. -->
-    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string> -->
+    <string name="admob_app_id">ca-app-pub-7523880309915043~1682627263</string>
     <string name="onesignal_app_id">0bc6e2db-c0e6-45b0-8503-469fc6ec23b2</string>
 </resources>

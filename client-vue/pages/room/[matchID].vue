@@ -311,12 +311,12 @@ const loadingCards = [
 
 <template>
   <!-- Not yet joined: show join form (pre-filled from session) -->
+  <RoomLoadingBanner v-if="!showGameBoard" :position="BannerAdPosition.BOTTOM_CENTER" />
   <div
     v-if="!joined"
     class="room-page__shell room-page__shell--join min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 sm:p-6 safe-area-padding"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <div class="w-full max-w-md" :class="{ 'max-w-xl': isCompact }">
       <div
         v-if="creatorRoomPassword"
@@ -385,7 +385,6 @@ const loadingCards = [
     class="min-h-screen min-h-[100dvh] bg-slate-900 bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center p-4 sm:p-6 safe-area-padding text-white"
     :style="{ backgroundImage: `url(${backgroundGame})` }"
   >
-    <RoomLoadingBanner :position="BannerAdPosition.TOP_CENTER" />
     <WaitingForPlayersModal
       :room-name="roomName"
       :joined-count="joinedCount"
@@ -406,10 +405,6 @@ const loadingCards = [
         :match-id="matchID"
         :player-id="playerID"
         :credentials="playerCredentials"
-      />
-      <RoomLoadingBanner
-        v-if="showTablePrepOverlay"
-        :position="BannerAdPosition.BOTTOM_CENTER"
       />
       <Transition name="table-prep-fade">
         <TablePrepScreen

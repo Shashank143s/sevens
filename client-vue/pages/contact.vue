@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import AdMobBottomBanner from '~/components/AdMobBottomBanner.vue'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -44,18 +45,6 @@ useSeoMeta({
 
       <section class="contact-grid">
         <article class="contact-card">
-          <h2>About the Game</h2>
-          <p>
-            Sevens Royale brings the traditional Sevens card game, also known to many players as Seven Up or
-            Seven Down, to the web with live rooms, coins, XP, leaderboards, and a mobile-friendly interface.
-          </p>
-          <p>
-            Whether you're here to play casually with friends or compete for coins and rank, the game is designed
-            to stay fast, simple, and fun.
-          </p>
-        </article>
-
-        <article class="contact-card">
           <h2>Developer Support</h2>
           <p>
             For support, bug reports, business inquiries, or feedback, please email the developer team at:
@@ -78,6 +67,8 @@ useSeoMeta({
         </article>
       </section>
     </main>
+
+    <AdMobBottomBanner />
   </div>
 </template>
 
@@ -88,7 +79,7 @@ useSeoMeta({
   padding:
     max(1.25rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right))
-    max(2rem, env(safe-area-inset-bottom))
+    calc(max(2rem, env(safe-area-inset-bottom)) + 50px)
     max(1rem, env(safe-area-inset-left));
   color: #f8fafc;
   background-size: cover;

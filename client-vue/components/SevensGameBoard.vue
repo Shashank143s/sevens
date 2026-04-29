@@ -330,7 +330,7 @@ async function watchRewardVideo() {
     }
 
     winnerCoinsDelta.value = (winnerCoinsDelta.value ?? 0) + 5
-    rewardStatus.value = `5 bonus coins added. Balance: ${winnerTotalCoins.value ?? '—'}`
+    rewardStatus.value = `5 bonus coins added.`
   } catch (error) {
     console.error('[game-board] Failed to show or credit reward video:', error)
     rewardStatus.value = rewardEarned
