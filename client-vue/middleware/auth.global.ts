@@ -1,19 +1,29 @@
 import { normalizePath } from '~/utils/normalizePath'
 
-export default defineNuxtRouteMiddleware((to) => {
-  if (import.meta.server) return
-
+export default defineNuxtRouteMiddleware(async (to) => {
   const path = normalizePath(to.path)
+  const { session, hydrateSession } = usePlayerSession()
+  // const authRedirecting = useState<boolean>('auth-redirecting', () => false)
+  hydrateSession()
+
+  if (
+    ['/login'].includes(path)
+  ) {
+    if (session.value?.name?.trim()) {
+      return navigateTo({ path: '/' })
+    }
+
+    return
+  }
 
   if (
     ['/', '/privacy-policy', '/terms-and-conditions', '/contact', '/downloads', '/instructions', '/blog'].includes(path)
     || path.startsWith('/blog/')
   ) return
 
-  const { session, hydrateSession } = usePlayerSession()
-  const authRedirecting = useState<boolean>('auth-redirecting', () => false)
-  hydrateSession()
   if (session.value?.name?.trim()) return
-
-  authRedirecting.value = true
+  // else return navigateTo({
+  //   path: '/',
+  // })
+  // authRedirecting.value = true
 })

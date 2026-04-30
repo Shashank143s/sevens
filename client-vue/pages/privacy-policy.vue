@@ -79,6 +79,18 @@ useSeoMeta({
           Google AdMob (ads) and OneSignal (push notifications and subscription delivery).
           These providers may process technical identifiers and event data according to their own policies.
         </p>
+        <p>
+          Google may use cookies, IP addresses, web beacons, or similar technologies when delivering ads
+          and measuring ad performance. For more information about how Google uses data on partner sites
+          and apps, see
+          <a
+            href="https://policies.google.com/technologies/partner-sites"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            How Google uses data when you use our partners’ sites or apps
+          </a>.
+        </p>
       </section>
 
       <section class="legal-card">
