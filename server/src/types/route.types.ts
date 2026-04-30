@@ -5,6 +5,8 @@ export type ApiRouteContext = JsonBodyContext & {
   path: string;
   status: number;
   body?: unknown;
+  get: (header: string) => string;
+  set: (header: string, value: string) => void;
   state?: {
     geo?: {
       ipAddress?: string;

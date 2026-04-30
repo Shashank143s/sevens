@@ -259,7 +259,7 @@ onMounted(() => {
   padding:
     max(1.25rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right))
-    max(2rem, env(safe-area-inset-bottom))
+    calc(max(2rem, env(safe-area-inset-bottom)) + 96px)
     max(1rem, env(safe-area-inset-left));
   color: #f8fafc;
   background-size: cover;
@@ -787,7 +787,7 @@ onMounted(() => {
   padding:
     max(1rem, env(safe-area-inset-top))
     max(0.85rem, env(safe-area-inset-right))
-    max(1.5rem, env(safe-area-inset-bottom))
+    calc(max(1.5rem, env(safe-area-inset-bottom)) + 96px)
     max(0.85rem, env(safe-area-inset-left));
 }
 
@@ -816,7 +816,7 @@ onMounted(() => {
   padding:
     max(0.85rem, env(safe-area-inset-top))
     max(0.65rem, env(safe-area-inset-right))
-    max(1.2rem, env(safe-area-inset-bottom))
+    calc(max(1.2rem, env(safe-area-inset-bottom)) + 96px)
     max(0.65rem, env(safe-area-inset-left));
 }
 
@@ -1047,7 +1047,7 @@ onMounted(() => {
     padding:
       max(1.75rem, env(safe-area-inset-top))
       max(1.5rem, env(safe-area-inset-right))
-      max(2.5rem, env(safe-area-inset-bottom))
+      calc(max(2.5rem, env(safe-area-inset-bottom)) + 96px)
       max(1.5rem, env(safe-area-inset-left));
   }
 

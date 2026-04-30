@@ -557,6 +557,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.lobby-page {
+  padding-bottom: calc(max(2rem, env(safe-area-inset-bottom)) + 50px);
+}
+
 .lobby-page--compact {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;

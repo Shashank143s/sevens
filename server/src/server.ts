@@ -7,6 +7,8 @@ import { geoMiddleware } from './middleware/geo.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
 import { accountRoute } from './routes/account.router';
 import { authRoute } from './routes/auth.router';
+import { loginRoute } from './routes/login.router';
+import { sessionRoute } from './routes/session.router';
 import { joinRoute } from './routes/join.router';
 import { createDeleteRoute } from './routes/delete.router';
 import { createCleanupRoute } from './routes/cleanup.router';
@@ -24,6 +26,8 @@ const server = Server({
 function registerRoutes() {
   server.app.use(corsMiddleware);
   server.app.use(geoMiddleware);
+  server.app.use(loginRoute);
+  server.app.use(sessionRoute);
   server.app.use(authRoute);
   server.app.use(accountRoute);
   server.app.use(leaderboardRoute);

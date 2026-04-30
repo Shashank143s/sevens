@@ -19,7 +19,7 @@ const splashLogoSrc = computed(() => `${config.app.baseURL}branding/sevens-seven
 const normalizedRoutePath = computed(() => normalizePath(route.path))
 const isNativeApp = computed(() => isAndroidApp.value || (mounted.value && nativeApp.value))
 const showWebSplash = computed(() => isWebApp.value && mounted.value && !nativeApp.value)
-const isProtectedRoute = computed(() => normalizedRoutePath.value !== '/')
+const isProtectedRoute = computed(() => !['/', '/login'].includes(normalizedRoutePath.value))
 const desktopAuthReady = computed(() => !import.meta.client || !isProtectedRoute.value || sessionHydrated.value)
 const router = useRouter()
 
