@@ -203,6 +203,7 @@ async function copyRoomPassword() {
 }
 
 const enterGame = async () => {
+  if (joining.value) return
   if (!playerName.value.trim()) return
   if (!isOnline.value) {
     joinError.value = 'Reconnect before joining this table.'
@@ -366,14 +367,14 @@ const loadingCards = [
         :avatar="avatar"
         :room-password="roomPassword"
         :requires-password="requiresPassword"
+        :joining="joining"
         @update:player-name="playerName = $event"
         @update:avatar="avatar = $event"
         @update:room-password="roomPassword = $event"
         @submit="enterGame"
       />
-      <p class="mt-3 text-center text-sm text-slate-400">
-        <span v-if="joining">Joining table...</span>
-        <span v-else-if="checkingRoom">Checking room status...</span>
+      <p class="mt-3 flex items-center justify-center gap-2 text-center text-sm text-slate-400">
+        <span v-if="checkingRoom">Checking room status...</span>
         <span v-else-if="!isOnline">Offline mode prevents joining until you reconnect.</span>
       </p>
     </div>

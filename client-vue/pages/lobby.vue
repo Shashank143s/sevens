@@ -202,6 +202,7 @@ function normalizeStakeInput() {
 }
 
 async function doCreateRoom() {
+  if (creating.value) return
   if (!isOnline.value) {
     error.value = 'Reconnect before creating a room.'
     return
@@ -232,7 +233,7 @@ async function doCreateRoom() {
       await joinBots(matchID, aiCount)
     }
     closeCreateModal()
-    router.push(`/room/${matchID}`)
+    await router.push(`/room/${matchID}`)
   } catch (e) {
     await refreshCoinsBalance()
     error.value = e instanceof Error ? e.message : 'Failed to create room'

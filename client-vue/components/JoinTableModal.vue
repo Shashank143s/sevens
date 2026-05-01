@@ -10,6 +10,7 @@ const props = defineProps<{
   roomPassword?: string
   requiresPassword?: boolean
   disabled?: boolean
+  joining?: boolean
 }>()
 const { isCompact } = useUiDensity()
 
@@ -64,9 +65,10 @@ const emit = defineEmits<{
           :value="playerName"
           type="text"
           placeholder="Your alias"
+          :disabled="disabled || joining"
           class="join-table-modal__input w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
           @input="emit('update:playerName', ($event.target as HTMLInputElement).value)"
-          @keydown.enter="!disabled && emit('submit')"
+          @keydown.enter="!disabled && !joining && emit('submit')"
         >
       </div>
 
@@ -76,9 +78,10 @@ const emit = defineEmits<{
           :value="roomPassword"
           type="password"
           placeholder="Room password"
+          :disabled="disabled || joining"
           class="join-table-modal__input w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
           @input="emit('update:roomPassword', ($event.target as HTMLInputElement).value)"
-          @keydown.enter="!disabled && emit('submit')"
+          @keydown.enter="!disabled && !joining && emit('submit')"
         >
       </div>
 
@@ -93,6 +96,7 @@ const emit = defineEmits<{
         </div>
         <AvatarPicker
           :model-value="avatar"
+          :disabled="!!joining"
           @update:model-value="emit('update:avatar', $event)"
         />
       </div>
@@ -100,7 +104,8 @@ const emit = defineEmits<{
       <div class="grid grid-cols-2 gap-3">
         <button
           type="button"
-          class="join-table-modal__secondary-btn inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white"
+          class="join-table-modal__secondary-btn inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="joining"
           @click="router.push('/lobby')"
         >
           Back to Lobby
@@ -108,10 +113,21 @@ const emit = defineEmits<{
         <button
           type="button"
           class="join-table-modal__submit inline-flex items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 font-bold text-slate-900 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="disabled"
+          :disabled="disabled || joining"
+          :aria-busy="joining ? 'true' : 'false'"
           @click="emit('submit')"
         >
-          {{ disabled ? 'Room Full' : 'Join' }}
+          <svg
+            v-if="joining"
+            class="h-5 w-5 animate-spin text-slate-900"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" />
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          <span>{{ joining ? 'Joining table' : (disabled ? 'Room Full' : 'Join') }}</span>
         </button>
       </div>
     </div>

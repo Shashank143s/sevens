@@ -3,6 +3,7 @@ const avatars = ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁',
 
 defineProps<{
   modelValue: string
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -20,7 +21,8 @@ const select = (avatar: string) => {
       v-for="a in avatars"
       :key="a"
       type="button"
-      class="text-3xl sm:text-4xl md:text-5xl hover:scale-125 active:scale-95 transition p-2 rounded-xl sm:rounded-2xl active:bg-slate-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+      class="text-3xl sm:text-4xl md:text-5xl hover:scale-125 active:scale-95 transition p-2 rounded-xl sm:rounded-2xl active:bg-slate-100 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
+      :disabled="disabled"
       @click="select(a)"
     >
       {{ a }}

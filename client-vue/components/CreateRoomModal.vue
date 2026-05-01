@@ -65,6 +65,11 @@ const createRoomPasswordValue = computed({
   set: (value: string) => emit('update:createRoomPassword', value),
 })
 
+function requestClose() {
+  if (props.creating) return
+  emit('close')
+}
+
 watch(() => props.visible, async (open) => {
   if (!open) return
   await nextTick()
@@ -79,7 +84,7 @@ watch(() => props.visible, async (open) => {
       v-if="visible"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4"
       :class="isCompact ? 'p-2.5 sm:p-3' : ''"
-      @click.self="emit('close')"
+      @click.self="requestClose"
     >
       <div
         class="create-room-modal w-full max-w-md overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/95 shadow-[0_30px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl"
@@ -103,7 +108,8 @@ watch(() => props.visible, async (open) => {
                 type="button"
                 class="inline-flex h-9 w-9 items-center justify-center rounded-full text-xl leading-none text-slate-400 transition hover:bg-white/8 hover:text-white"
                 aria-label="Close"
-                @click="emit('close')"
+                :disabled="creating"
+                @click="requestClose"
               >
                 ×
               </button>
@@ -118,6 +124,7 @@ watch(() => props.visible, async (open) => {
             type="text"
             maxlength="40"
             placeholder="Friday Night Table"
+            :disabled="creating"
             class="create-room-modal__input mb-1.5 w-full rounded-2xl bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2"
             :class="roomNameError
               ? 'border border-red-400/70 focus:ring-red-400'
@@ -138,6 +145,7 @@ watch(() => props.visible, async (open) => {
               <div class="relative">
                 <select
                   v-model.number="createNumPlayersValue"
+                  :disabled="creating"
                   class="create-room-modal__select w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option :value="2">2 Players</option>
@@ -171,6 +179,7 @@ watch(() => props.visible, async (open) => {
                       class="create-room-modal__info-trigger"
                       aria-label="Explain bots and room size"
                       :aria-expanded="showBotsInfo ? 'true' : 'false'"
+                      :disabled="creating"
                       @click="emit('update:showBotsInfo', !showBotsInfo)"
                       @mouseenter="emit('update:showBotsInfo', true)"
                       @mouseleave="emit('update:showBotsInfo', false)"
@@ -197,6 +206,7 @@ watch(() => props.visible, async (open) => {
               <div class="relative">
                 <select
                   v-model.number="createAiBotsValue"
+                  :disabled="creating"
                   class="create-room-modal__select w-full appearance-none rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <option
@@ -237,6 +247,7 @@ watch(() => props.visible, async (open) => {
                     type="button"
                     class="create-room-modal__step-btn inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
                     aria-label="Decrease stake"
+                    :disabled="creating"
                     @click="emit('decrementStake')"
                   >
                     −
@@ -246,6 +257,7 @@ watch(() => props.visible, async (open) => {
                     type="number"
                     min="10"
                     step="10"
+                    :disabled="creating"
                     class="create-room-modal__stake-input w-14 bg-transparent px-1 text-center text-base font-bold text-amber-100 focus:outline-none"
                     @blur="emit('normalizeStakeInput')"
                     @input="emit('markStakeTouched')"
@@ -254,6 +266,7 @@ watch(() => props.visible, async (open) => {
                     type="button"
                     class="create-room-modal__step-btn inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-slate-200 transition hover:bg-white/8"
                     aria-label="Increase stake"
+                    :disabled="creating"
                     @click="emit('incrementStake')"
                   >
                     +
@@ -269,13 +282,14 @@ watch(() => props.visible, async (open) => {
               <p class="text-sm font-semibold text-slate-200">Private room</p>
               <p class="mt-1 text-xs text-slate-400">Only players with the password can join.</p>
             </div>
-            <button
+              <button
               type="button"
               class="relative inline-flex h-7 w-12 items-center rounded-full border transition"
               :class="createPrivateRoom ? 'border-amber-300/40 bg-amber-400/80' : 'border-white/10 bg-slate-800/80'"
               role="switch"
               :aria-checked="createPrivateRoom"
               aria-label="Toggle private room"
+              :disabled="creating"
               @click="createPrivateRoomValue = !createPrivateRoom"
             >
               <span
@@ -290,6 +304,7 @@ watch(() => props.visible, async (open) => {
               v-model="createRoomPasswordValue"
               type="password"
               placeholder="Room password"
+              :disabled="creating"
               class="create-room-modal__input w-full rounded-2xl border border-slate-600 bg-slate-800/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
           </div>
@@ -298,9 +313,20 @@ watch(() => props.visible, async (open) => {
             type="button"
             class="create-room-modal__submit flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-amber-500 py-3 font-bold text-slate-900 disabled:opacity-50 hover:bg-amber-600"
             :disabled="creating || !!roomNameError || !!stakeError"
+            :aria-busy="creating ? 'true' : 'false'"
             @click="emit('submit')"
           >
-            Create Room
+            <svg
+              v-if="creating"
+              class="h-5 w-5 animate-spin text-slate-900"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" />
+              <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <span>{{ creating ? 'Creating your room' : 'Create room' }}</span>
           </button>
         </div>
       </div>
