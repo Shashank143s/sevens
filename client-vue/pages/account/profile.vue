@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import backgroundGame from '~/assets/images/poker_cards_table.png'
+import botLogo from '~/assets/images/bot_logo.png'
+import humanLogo from '~/assets/images/human_logo.webp'
 import UserAvatar from '~/components/UserAvatar.vue'
-import type { AccountRecentGame } from '~/composables/useAccountApi'
+import type { AccountMatchup, AccountRecentGame } from '~/composables/useAccountApi'
 import { useAccountApi } from '~/composables/useAccountApi'
 import { usePlayerSession } from '~/composables/usePlayerSession'
 
@@ -9,8 +11,9 @@ const PAGE_SIZE = 4
 
 const router = useRouter()
 const { session, hydrated } = usePlayerSession()
-const { getAccountSummary, getAccountGames } = useAccountApi()
+const { getAccountSummary, getAccountGames, getAccountMatchups } = useAccountApi()
 const { isCompact } = useUiDensity()
+const { isAndroidApp } = useAppSource()
 
 const mounted = ref(false)
 const isLoading = ref(true)
@@ -24,11 +27,31 @@ const stats = ref<{ games_played: number, wins: number, losses: number }>({
   losses: 0,
 })
 const recentGames = ref<AccountRecentGame[]>([])
+const matchups = ref<AccountMatchup[]>([])
 
 const sessionReady = computed(() => mounted.value && hydrated.value)
 const accountIdentifier = computed(() => (session.value?.id || session.value?.email?.trim() || '').trim())
 const fullName = computed(() => (sessionReady.value ? session.value?.name?.trim() : '') || 'Player')
 const profileImage = computed(() => (sessionReady.value ? session.value?.image : undefined))
+const botShowdown = computed(() => matchups.value.find((matchup) => matchup.isBot) ?? {
+  isBot: true,
+  opponent: {},
+  games: { total: 0, won: 0, lost: 0 },
+})
+const humanShowdown = computed(() => matchups.value
+  .filter((matchup) => !matchup.isBot)
+  .reduce<AccountMatchup>((accumulator, matchup) => {
+    accumulator.games.total += matchup.games.total
+    accumulator.games.won += matchup.games.won
+    accumulator.games.lost += matchup.games.lost
+    return accumulator
+  }, {
+    isBot: false,
+    opponent: {},
+    games: { total: 0, won: 0, lost: 0 },
+  }))
+
+const showShowdownFooter = computed(() => !isCompact.value && !isAndroidApp.value)
 
 const playedTotal = computed(() => {
   const fromStats = Math.max(stats.value.games_played || 0, 0)
@@ -126,6 +149,13 @@ async function loadProfile() {
       ?? gamesResponse.user.stats
       ?? { games_played: 0, wins: 0, losses: 0 }
     recentGames.value = gamesResponse.recent_games_page.games ?? []
+
+    try {
+      const matchupResponse = await getAccountMatchups(accountIdentifier.value)
+      matchups.value = matchupResponse.matchups ?? []
+    } catch {
+      matchups.value = []
+    }
   } catch {
     loadError.value = 'We could not load your profile right now.'
   } finally {
@@ -139,6 +169,11 @@ function goToRecentGames() {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat().format(value)
+}
+
+function formatPercent(won: number, total: number) {
+  if (total <= 0) return '0%'
+  return `${Math.round((won / total) * 100)}%`
 }
 
 onMounted(async () => {
@@ -229,6 +264,115 @@ onMounted(async () => {
             <div class="profile-page__xp-levels">
               <span>Lv {{ levelProgress.currentLevel }}</span>
               <span>Lv {{ levelProgress.currentLevel + 1 }}</span>
+            </div>
+          </section>
+
+          <section class="profile-page__section profile-page__section--showdown">
+            <div class="profile-page__section-head">
+              <h2>Matchup Stats</h2>
+              <NuxtLink
+                to="/account/matchup"
+                class="profile-page__recent-link"
+                aria-label="Open matchup stats"
+              >
+                <IconsDirectionalArrowIcon class="profile-page__recent-link-icon" />
+              </NuxtLink>
+            </div>
+
+            <div class="profile-page__showdown-list">
+              <article class="profile-page__showdown-card profile-page__showdown-card--bot">
+                <div class="profile-page__showdown-top">
+                  <div class="profile-page__showdown-side profile-page__showdown-side--self">
+                    <UserAvatar
+                      class="profile-page__showdown-avatar profile-page__showdown-avatar--user"
+                      :name="fullName"
+                      :image-src="profileImage"
+                    />
+                    <div class="profile-page__showdown-wins">
+                      <span>WINS</span>
+                      <strong>{{ formatNumber(botShowdown.games.won) }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="profile-page__showdown-vs">V/S</div>
+
+                  <div class="profile-page__showdown-side profile-page__showdown-side--opponent">
+                    <div class="profile-page__showdown-wins">
+                      <span>WINS</span>
+                      <strong>{{ formatNumber(botShowdown.games.lost) }}</strong>
+                    </div>
+                    <UserAvatar
+                      class="profile-page__showdown-avatar profile-page__showdown-avatar--bot"
+                      name="Bots"
+                      :image-src="botLogo"
+                    />
+                  </div>
+                </div>
+
+                <div v-if="showShowdownFooter" class="profile-page__showdown-divider" />
+
+                <div v-if="showShowdownFooter" class="profile-page__showdown-bottom">
+                  <div class="profile-page__showdown-stat">
+                    <span>WIN %</span>
+                    <strong>{{ formatPercent(botShowdown.games.won, botShowdown.games.total) }}</strong>
+                  </div>
+                  <div class="profile-page__showdown-stat profile-page__showdown-stat--center">
+                    <span>GAMES</span>
+                    <strong>{{ formatNumber(botShowdown.games.total) }}</strong>
+                  </div>
+                  <div class="profile-page__showdown-stat profile-page__showdown-stat--opponent">
+                    <span>WIN %</span>
+                    <strong>{{ formatPercent(botShowdown.games.lost, botShowdown.games.total) }}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="profile-page__showdown-card profile-page__showdown-card--human">
+                <div class="profile-page__showdown-top">
+                  <div class="profile-page__showdown-side profile-page__showdown-side--self">
+                    <UserAvatar
+                      class="profile-page__showdown-avatar profile-page__showdown-avatar--user"
+                      :name="fullName"
+                      :image-src="profileImage"
+                    />
+                    <div class="profile-page__showdown-wins">
+                      <span>WINS</span>
+                      <strong>{{ formatNumber(humanShowdown.games.won) }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="profile-page__showdown-vs">V/S</div>
+
+                  <div class="profile-page__showdown-side profile-page__showdown-side--opponent">
+                    <div class="profile-page__showdown-wins">
+                      <span>WINS</span>
+                      <strong>{{ formatNumber(humanShowdown.games.lost) }}</strong>
+                    </div>
+                    <UserAvatar
+                      class="profile-page__showdown-avatar profile-page__showdown-avatar--human"
+                      name="Human Players"
+                      :image-src="humanLogo"
+                    />
+                  </div>
+                </div>
+
+                <div v-if="showShowdownFooter" class="profile-page__showdown-divider" />
+
+                <div v-if="showShowdownFooter" class="profile-page__showdown-bottom">
+                  <div class="profile-page__showdown-stat">
+                    <span>WIN %</span>
+                    <strong>{{ formatPercent(humanShowdown.games.won, humanShowdown.games.total) }}</strong>
+                  </div>
+                  <div class="profile-page__showdown-stat profile-page__showdown-stat--center">
+                    <span>GAMES</span>
+                    <strong>{{ formatNumber(humanShowdown.games.total) }}</strong>
+                  </div>
+                  <div class="profile-page__showdown-stat profile-page__showdown-stat--opponent">
+                    <span>WIN %</span>
+                    <strong>{{ formatPercent(humanShowdown.games.lost, humanShowdown.games.total) }}</strong>
+                  </div>
+                </div>
+              </article>
             </div>
           </section>
 
@@ -683,6 +827,188 @@ onMounted(async () => {
   text-transform: uppercase;
 }
 
+.profile-page__showdown-list {
+  display: grid;
+  gap: 0.48rem;
+  margin-top: 0.78rem;
+}
+
+.profile-page__showdown-card {
+  display: grid;
+  gap: 0.52rem;
+  padding: 0.62rem 0.66rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at right top, rgba(250, 204, 21, 0.08), transparent 22%),
+    radial-gradient(circle at left bottom, rgba(59, 130, 246, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.74));
+  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.22);
+}
+
+.profile-page__showdown-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.58rem;
+}
+
+.profile-page__showdown-side {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  min-width: 0;
+}
+
+.profile-page__showdown-side--opponent {
+  justify-content: flex-end;
+}
+
+.profile-page__showdown-avatar {
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.12rem;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.22);
+}
+
+.profile-page__showdown-avatar :deep(.user-avatar__image),
+.profile-page__showdown-avatar :deep(.user-avatar__fallback) {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.profile-page__showdown-avatar :deep(.user-avatar__fallback) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(132, 134, 150, 0.82);
+  color: #f8f4ec;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.profile-page__showdown-avatar--user {
+  border-color: rgba(250, 204, 21, 0.24);
+  background:
+    radial-gradient(circle at top, rgba(250, 204, 21, 0.38), rgba(15, 23, 42, 0.72));
+}
+
+.profile-page__showdown-avatar--bot {
+  border-color: rgba(96, 165, 250, 0.2);
+  background:
+    radial-gradient(circle at top, rgba(96, 165, 250, 0.22), rgba(15, 23, 42, 0.72));
+}
+
+.profile-page__showdown-avatar--bot :deep(.user-avatar__image) {
+  width: 220%;
+  height: 220%;
+}
+
+.profile-page__showdown-avatar--bot :deep(.user-avatar__fallback) {
+  background: rgba(15, 23, 42, 0.84);
+  color: #fde68a;
+}
+
+.profile-page__showdown-avatar--human {
+  border-color: rgba(34, 211, 238, 0.24);
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.22), rgba(15, 23, 42, 0.72));
+}
+
+.profile-page__showdown-avatar--human :deep(.user-avatar__fallback) {
+  background: rgba(15, 23, 42, 0.84);
+  color: #a5f3fc;
+}
+
+.profile-page__showdown-vs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.7rem;
+  min-height: 2.7rem;
+  padding: 0 0.34rem;
+  border-radius: 0.88rem;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  background: rgba(15, 23, 42, 0.66);
+  color: #facc15;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.profile-page__showdown-wins {
+  display: grid;
+  justify-items: center;
+  gap: 0.06rem;
+  min-width: 3.5rem;
+  padding: 0.08rem 0;
+  text-align: center;
+}
+
+.profile-page__showdown-wins span {
+  color: rgba(148, 163, 184, 0.88);
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-page__showdown-wins strong {
+  color: #f8fafc;
+  font-size: 1.04rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.profile-page__showdown-divider {
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.22), rgba(56, 189, 248, 0.22), transparent);
+}
+
+.profile-page__showdown-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.profile-page__showdown-stat {
+  display: grid;
+  justify-items: center;
+  gap: 0.06rem;
+  padding: 0.08rem 0;
+  text-align: center;
+}
+
+.profile-page__showdown-stat span {
+  color: rgba(148, 163, 184, 0.88);
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-page__showdown-stat strong {
+  color: #dbeafe;
+  font-size: 0.94rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.profile-page__showdown-stat--center strong {
+  color: #f8fafc;
+}
+
+.profile-page__showdown-stat--opponent strong {
+  color: #a5f3fc;
+}
+
 .profile-page__section--recent {
   background:
     radial-gradient(circle at top right, rgba(250, 204, 21, 0.16), transparent 38%),
@@ -796,4 +1122,70 @@ onMounted(async () => {
 .profile-page--compact .profile-page__content {
   max-width: 56rem;
 }
+
+.profile-page--compact .profile-page__section--showdown {
+  margin-top: 0.56rem;
+  padding-top: 0.62rem;
+  padding-bottom: 0.62rem;
+}
+
+.profile-page--compact .profile-page__showdown-list {
+  gap: 0.46rem;
+  margin-top: 0.58rem;
+}
+
+.profile-page--compact .profile-page__showdown-card {
+  gap: 0.44rem;
+  padding: 0.52rem 0.56rem;
+  border-radius: 0.96rem;
+}
+
+.profile-page--compact .profile-page__showdown-top {
+  gap: 0.42rem;
+}
+
+.profile-page--compact .profile-page__showdown-side {
+  gap: 0.42rem;
+}
+
+.profile-page--compact .profile-page__showdown-avatar {
+  width: 2.28rem;
+  height: 2.28rem;
+}
+
+.profile-page--compact .profile-page__showdown-vs {
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  font-size: 0.56rem;
+}
+
+.profile-page--compact .profile-page__showdown-wins {
+  min-width: 3rem;
+  padding: 0.06rem 0;
+}
+
+.profile-page--compact .profile-page__showdown-wins span {
+  font-size: 0.42rem;
+}
+
+.profile-page--compact .profile-page__showdown-wins strong {
+  font-size: 0.88rem;
+}
+
+.profile-page--compact .profile-page__showdown-bottom {
+  gap: 0.32rem;
+}
+
+.profile-page--compact .profile-page__showdown-stat {
+  padding: 0.06rem 0;
+}
+
+.profile-page--compact .profile-page__showdown-stat span {
+  font-size: 0.42rem;
+}
+
+.profile-page--compact .profile-page__showdown-stat strong {
+  font-size: 0.84rem;
+}
+
 </style>

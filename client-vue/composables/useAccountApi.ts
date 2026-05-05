@@ -90,6 +90,20 @@ export type AccountRecentGame = {
   ended_at?: string
 }
 
+export type AccountMatchup = {
+  isBot: boolean
+  opponent: {
+    name?: string
+    email?: string
+    image?: string
+  }
+  games: {
+    total: number
+    won: number
+    lost: number
+  }
+}
+
 type GetAccountResponse = {
   user: AccountApiUser
   recent_games_page: {
@@ -119,6 +133,10 @@ type GetAccountGamesResponse = {
     limit: number
     has_more: boolean
   }
+}
+
+type GetAccountMatchupsResponse = {
+  matchups: AccountMatchup[]
 }
 
 type DeleteAccountResponse = {
@@ -157,6 +175,10 @@ export function useAccountApi() {
     return $fetch<GetAccountGamesResponse>(`${buildAccountUrl(userID)}/games`, {
       query: { offset, limit },
     })
+  }
+
+  async function getAccountMatchups(userID: string) {
+    return $fetch<GetAccountMatchupsResponse>(`${buildAccountUrl(userID)}/matchups`)
   }
 
   async function upsertAccount(userID: string, payload: UpsertAccountPayload) {
@@ -205,6 +227,7 @@ export function useAccountApi() {
     deleteAccount,
     getAccount,
     getAccountGames,
+    getAccountMatchups,
     getAccountSummary,
     getLeaderboard,
     rewardCoins,

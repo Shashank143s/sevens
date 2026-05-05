@@ -112,6 +112,24 @@ export type AccountGamesResponse = {
   };
 };
 
+export type AccountMatchup = {
+  isBot: boolean;
+  opponent: {
+    name?: string;
+    email?: string;
+    image?: string;
+  };
+  games: {
+    total: number;
+    won: number;
+    lost: number;
+  };
+};
+
+export type AccountMatchupsResponse = {
+  matchups: AccountMatchup[];
+};
+
 export type GoogleSignInPayload = {
   credential?: string;
   legal_accepted_at?: string | number | Date;

@@ -1,7 +1,16 @@
 import { Types } from 'mongoose';
 import { GameModel, UserModel } from '../models';
 import { MAX_DAILY_GAMES_PER_USER } from '../config';
-import type { AccountApiUserPayload, AccountGamesResponse, AccountGeoPayload, AccountPayload, LeaderboardEntry, LeaderboardResponse, RecentGameResult } from '../types/account.types';
+import type {
+  AccountApiUserPayload,
+  AccountGamesResponse,
+  AccountGeoPayload,
+  AccountMatchupsResponse,
+  AccountPayload,
+  LeaderboardEntry,
+  LeaderboardResponse,
+  RecentGameResult,
+} from '../types/account.types';
 import { getRemainingRoomsForUser } from './room-quota.service';
 import { buildFullName, splitFullName } from '../utils/name.util';
 import { createUserLookup, normalizeDate, normalizeEmail } from '../utils/user.util';
@@ -166,6 +175,136 @@ async function findRecentGames(userId: string, offset = 0, limit = 5) {
   };
 }
 
+async function findAccountMatchups(userId: string): Promise<AccountMatchupsResponse> {
+  const objectId = new Types.ObjectId(userId);
+  const result = await GameModel.aggregate([
+    {
+      $match: {
+        'players.user_id': objectId,
+        status: 'completed',
+      },
+    },
+    {
+      $project: {
+        winner_user_id: 1,
+        opponents: {
+          $filter: {
+            input: '$players',
+            as: 'p',
+            cond: {
+              $ne: ['$$p.user_id', objectId],
+            },
+          },
+        },
+      },
+    },
+    {
+      $unwind: '$opponents',
+    },
+    {
+      $group: {
+        _id: {
+          player_id: '$opponents.user_id',
+          is_bot: '$opponents.is_bot',
+        },
+        total_games_against: {
+          $sum: 1,
+        },
+        total_games_won: {
+          $sum: {
+            $cond: [
+              {
+                $eq: ['$winner_user_id', objectId],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        total_games_lost: {
+          $sum: {
+            $cond: [
+              {
+                $or: [
+                  {
+                    $and: [
+                      { $eq: ['$opponents.is_bot', true] },
+                      { $eq: ['$winner_user_id', null] },
+                    ],
+                  },
+                  {
+                    $eq: ['$winner_user_id', '$opponents.user_id'],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id.player_id',
+        foreignField: '_id',
+        as: 'opponents',
+      },
+    },
+    {
+      $unwind: {
+        path: '$opponents',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $set: {
+        isBot: '$_id.is_bot',
+        opponent: {
+          name: '$opponents.full_name',
+          email: '$opponents.email',
+          image: '$opponents.profile_image_url',
+        },
+        games: {
+          total: '$total_games_against',
+          won: '$total_games_won',
+          lost: '$total_games_lost',
+        },
+      },
+    },
+    {
+      $project: {
+        isBot: 1,
+        opponent: 1,
+        games: 1,
+      },
+    },
+    {
+      $sort: {
+        'games.total': -1,
+        'opponent.name': 1,
+      },
+    },
+  ]);
+
+  return {
+    matchups: (result ?? []).map((entry: any) => ({
+      isBot: Boolean(entry?.isBot),
+      opponent: {
+        name: entry?.opponent?.name,
+        email: entry?.opponent?.email,
+        image: entry?.opponent?.image,
+      },
+      games: {
+        total: entry?.games?.total ?? 0,
+        won: entry?.games?.won ?? 0,
+        lost: entry?.games?.lost ?? 0,
+      },
+    })),
+  };
+}
+
 // Returns account data plus the recent history needed for the account page.
 export async function getAccountByIdentifier(identifier: string, offset = 0, limit = 5) {
   const user = await findAccountSummaryByIdentifier(identifier);
@@ -211,6 +350,12 @@ export async function getAccountGamesByIdentifier(identifier: string, offset = 0
     },
     recent_games_page: recent_games,
   };
+}
+
+export async function getAccountMatchupsByIdentifier(identifier: string): Promise<AccountMatchupsResponse | null> {
+  const user = await findAccountSummaryByIdentifier(identifier);
+  if (!user) return null;
+  return findAccountMatchups(String(user._id));
 }
 
 function resolveEmail(identifier: string, payload: AccountPayload) {

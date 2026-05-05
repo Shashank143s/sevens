@@ -1,4 +1,12 @@
-import { deleteAccountByIdentifier, getAccountByIdentifier, getAccountGamesByIdentifier, getAccountSummaryByIdentifier, rewardCoinsByIdentifier, upsertAccountWithGeo } from '../services/account.service';
+import {
+  deleteAccountByIdentifier,
+  getAccountByIdentifier,
+  getAccountGamesByIdentifier,
+  getAccountMatchupsByIdentifier,
+  getAccountSummaryByIdentifier,
+  rewardCoinsByIdentifier,
+  upsertAccountWithGeo,
+} from '../services/account.service';
 import type { AccountPayload, RewardCoinsPayload } from '../types/account.types';
 import type { AccountRouteContext, RouteNext } from '../types/route.types';
 import { matchRoute, setJson } from '../utils/http.util';
@@ -14,6 +22,10 @@ function matchAccountSummaryPath(ctx: AccountRouteContext) {
 
 function matchAccountGamesPath(ctx: AccountRouteContext) {
   return ctx.path.match(/^\/api\/account\/([^/]+)\/games$/);
+}
+
+function matchAccountMatchupsPath(ctx: AccountRouteContext) {
+  return ctx.path.match(/^\/api\/account\/([^/]+)\/matchups$/);
 }
 
 function matchAccountRewardCoinsPath(ctx: AccountRouteContext) {
@@ -44,6 +56,12 @@ async function handleGetSummary(ctx: AccountRouteContext, userID: string) {
 async function handleGetGames(ctx: AccountRouteContext, userID: string) {
   const { offset, limit } = readPagination(ctx);
   const account = await getAccountGamesByIdentifier(userID, offset, limit);
+  if (!account) return setJson(ctx, 404, { error: 'Account not found' });
+  setJson(ctx, 200, account as Record<string, unknown>);
+}
+
+async function handleGetMatchups(ctx: AccountRouteContext, userID: string) {
+  const account = await getAccountMatchupsByIdentifier(userID);
   if (!account) return setJson(ctx, 404, { error: 'Account not found' });
   setJson(ctx, 200, account as Record<string, unknown>);
 }
@@ -118,6 +136,18 @@ export async function accountRoute(ctx: AccountRouteContext, next: RouteNext): P
     try {
       if (ctx.method !== 'GET') return setJson(ctx, 405, { error: 'Method not allowed' });
       await handleGetGames(ctx, gamesMatch[1]);
+    } catch (error) {
+      console.error('[account-route] Error:', error);
+      setJson(ctx, 500, { error: 'Internal server error' });
+    }
+    return;
+  }
+
+  const matchupsMatch = matchAccountMatchupsPath(ctx);
+  if (matchupsMatch) {
+    try {
+      if (ctx.method !== 'GET') return setJson(ctx, 405, { error: 'Method not allowed' });
+      await handleGetMatchups(ctx, matchupsMatch[1]);
     } catch (error) {
       console.error('[account-route] Error:', error);
       setJson(ctx, 500, { error: 'Internal server error' });
