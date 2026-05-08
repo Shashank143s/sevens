@@ -401,7 +401,7 @@ onMounted(() => {
           <div class="flex items-center gap-3">
             <button
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-slate-900/70 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-white/10 bg-slate-900/70 px-3 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm transition hover:bg-slate-800/85 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="loading || !isOnline"
               aria-label="Refresh rooms"
               title="Refresh rooms"
@@ -422,10 +422,11 @@ onMounted(() => {
                 <path d="M3 22v-6h6" />
                 <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16" />
               </svg>
+              <span class="text-[0.68rem] font-semibold uppercase tracking-[0.16em]">Refresh</span>
             </button>
             <button
               type="button"
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-300/20 bg-amber-400 text-slate-950 shadow-[0_14px_30px_rgba(245,158,11,0.18)] transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-amber-300/20 bg-amber-400 px-3 text-slate-950 shadow-[0_14px_30px_rgba(245,158,11,0.18)] transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="createRoomDisabled"
               aria-label="Create room"
               title="Create room"
@@ -444,6 +445,7 @@ onMounted(() => {
                 <path d="M12 5v14" />
                 <path d="M5 12h14" />
               </svg>
+              <span class="text-[0.68rem] font-semibold uppercase tracking-[0.16em]">Create</span>
             </button>
           </div>
         </div>
