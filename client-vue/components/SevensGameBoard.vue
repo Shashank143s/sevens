@@ -344,7 +344,7 @@ async function watchRewardVideo() {
 }
 
 async function syncCompletedGame() {
-  if (!shouldFinalizeGame || completionSynced || winnerID.value == null || state.value?.playerID == null) return
+  if (completionSynced || winnerID.value == null || state.value?.playerID == null) return
   completionSynced = true
   let lastError: unknown = null
   try {
